@@ -53,6 +53,8 @@ class LineChartEngineTest {
         val layout = LineChartEngine.layout(data)
         assertEquals(3, layout.stats.perSeries.size)
         assertEquals(2, layout.stats.segments.size) // MAIN/PRIMARY 시리즈(pace) 기준
+        assertEquals("pace", layout.stats.segmentSeriesId)
+        layout.stats.segments.forEach { assertTrue(it.count > 0) }
     }
 
     @Test
@@ -60,5 +62,19 @@ class LineChartEngineTest {
         val r = LineChartEngine.nearest(data, 0.95)
         assertEquals(3, r.size)
         assertEquals(1.0, r[0].x, 1e-9)
+    }
+
+    @Test
+    fun orphan_axis_with_only_ref_line_still_gets_ticks() {
+        // SECONDARY 축엔 시리즈가 없고 RefLine만 있어도 axisTicks에 Y_SECONDARY가 나와야 한다.
+        val d = LineChartData(
+            series = listOf(
+                Series("pace", listOf(Point(0.0, 6.0), Point(1.0, 5.0)), axis = Axis.PRIMARY, role = SeriesRole.MAIN),
+            ),
+            referenceLines = listOf(RefLine(170.0, axis = Axis.SECONDARY)),
+        )
+        val layout = LineChartEngine.layout(d)
+        val axes = layout.axisTicks.map { it.axis }.toSet()
+        assertTrue(ChartAxis.Y_SECONDARY in axes)
     }
 }

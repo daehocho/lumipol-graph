@@ -14,8 +14,8 @@ data class RefBandLayout(val axis: Axis, val lower: Double, val upper: Double)  
 data class MarkerLayout(val position: Double, val label: String?, val emphasis: Boolean) // X 위치 0.0~1.0
 
 data class SeriesStat(val id: String, val min: Double, val max: Double, val avg: Double)
-data class SegmentStat(val min: Double, val max: Double, val avg: Double)
-data class Stats(val perSeries: List<SeriesStat>, val segments: List<SegmentStat>)
+data class SegmentStat(val min: Double, val max: Double, val avg: Double, val count: Int)
+data class Stats(val perSeries: List<SeriesStat>, val segments: List<SegmentStat>, val segmentSeriesId: String?)
 
 data class LineChartLayout(
     val series: List<SeriesLayout>,

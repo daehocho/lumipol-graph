@@ -3,6 +3,7 @@ package com.lumipol.graph
 import com.lumipol.graph.scale.niceScale
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class NiceScaleTest {
@@ -27,5 +28,17 @@ class NiceScaleTest {
         val s = niceScale(97.0, 0.0)
         assertEquals(0.0, s.niceMin, 1e-9)
         assertEquals(100.0, s.niceMax, 1e-9)
+    }
+
+    @Test
+    fun works_with_small_max_ticks() {
+        val s = niceScale(0.0, 10.0, maxTicks = 3)
+        assertTrue(s.niceMin <= 0.0 && s.niceMax >= 10.0)
+        assertTrue(s.ticks.isNotEmpty())
+    }
+
+    @Test
+    fun rejects_max_ticks_below_two() {
+        assertFailsWith<IllegalArgumentException> { niceScale(0.0, 10.0, maxTicks = 1) }
     }
 }
