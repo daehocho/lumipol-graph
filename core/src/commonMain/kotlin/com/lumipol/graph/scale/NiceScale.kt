@@ -36,6 +36,8 @@ fun niceScale(min: Double, max: Double, maxTicks: Int = 5): NiceScale {
     return NiceScale(niceMin, niceMax, step, ticks)
 }
 
+// round=false 는 <= 로, round=true 는 < 로 구간을 나누는 비대칭 경계는 실수가 아니라
+// Heckbert의 표준 "nice numbers" 공식 그대로다(범위 산정 시엔 보수적으로 올림, 스텝 산정 시엔 반올림).
 private fun niceNum(x: Double, round: Boolean): Double {
     val exp = floor(log10(x))
     val f = x / 10.0.pow(exp)

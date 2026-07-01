@@ -38,7 +38,8 @@ object LineChartEngine {
             )
         }
 
-        // 축 tick
+        // 축 tick: 어떤 출력 요소(시리즈/기준선/밴드)든 참조하는 축은 항상 여기 등장한다 —
+        // refLine/refBand의 값도 yValues()에 흡수되어 해당 축의 도메인+틱을 만들어내기 때문.
         val axisTicks = buildList {
             add(AxisTicksLayout(ChartAxis.X, xNice.ticks.map { AxisTick(it, xDom.normalize(it)) }))
             yNice[Axis.PRIMARY]?.let { ns ->
@@ -73,9 +74,10 @@ object LineChartEngine {
             refLines = refLines,
             refBands = refBands,
             markers = markers,
-            stats = Stats(perSeries, segments),
+            stats = Stats(perSeries, segments, splitBase?.id),
         )
     }
 
+    /** [x]는 원시 데이터-도메인 단위(0..1 정규화 아님) — 렌더러는 터치 위치를 원시 x로 변환한 뒤 호출해야 한다. */
     fun nearest(data: LineChartData, x: Double): List<NearestResult> = nearestQuery(data, x)
 }

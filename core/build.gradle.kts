@@ -5,6 +5,7 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(17)
     jvm() // 호스트에서 빠른 commonTest 실행용
 
     val xcf = XCFramework("LumipolGraph")

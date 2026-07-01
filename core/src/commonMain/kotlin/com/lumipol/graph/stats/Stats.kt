@@ -23,7 +23,7 @@ fun segmentStats(series: Series, count: Int): List<SegmentStat> {
         bins[idx].add(p.y)
     }
     return bins.map { b ->
-        if (b.isEmpty()) SegmentStat(0.0, 0.0, 0.0)
-        else SegmentStat(b.min(), b.max(), b.average())
+        if (b.isEmpty()) SegmentStat(0.0, 0.0, 0.0, 0)
+        else SegmentStat(b.min(), b.max(), b.average(), b.size)
     }
 }

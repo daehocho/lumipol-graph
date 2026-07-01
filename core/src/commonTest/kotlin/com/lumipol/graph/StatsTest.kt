@@ -33,4 +33,34 @@ class StatsTest {
     fun zero_count_yields_no_segments() {
         assertEquals(0, segmentStats(s, 0).size)
     }
+
+    @Test
+    fun segment_count_reflects_points_per_bin() {
+        val segs = segmentStats(s, 2)
+        assertEquals(2, segs[0].count)
+        assertEquals(2, segs[1].count)
+    }
+
+    @Test
+    fun zero_span_puts_all_points_in_first_bin() {
+        val flat = Series("flat", listOf(Point(5.0, 1.0), Point(5.0, 2.0), Point(5.0, 3.0)))
+        val segs = segmentStats(flat, 2)
+        assertEquals(2, segs.size)
+        assertEquals(3, segs[0].count)
+        assertEquals(0, segs[1].count)
+        assertEquals(0.0, segs[1].min, 1e-9)
+        assertEquals(0.0, segs[1].max, 1e-9)
+        assertEquals(0.0, segs[1].avg, 1e-9)
+    }
+
+    @Test
+    fun empty_series_guard() {
+        val empty = Series("e", emptyList())
+        val stat = seriesStat(empty)
+        assertEquals("e", stat.id)
+        assertEquals(0.0, stat.min, 1e-9)
+        assertEquals(0.0, stat.max, 1e-9)
+        assertEquals(0.0, stat.avg, 1e-9)
+        assertEquals(0, segmentStats(empty, 3).size)
+    }
 }
