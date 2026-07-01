@@ -1,0 +1,10 @@
+.gradle/
+build/
+*.xcframework/
+.DS_Store
+.idea/
+local.properties
+# 스펙/플랜 문서는 커밋하지 않음 (사용자 지침)
+rd-charts-DESIGN.md
+docs/superpowers/
+.superpowers/
