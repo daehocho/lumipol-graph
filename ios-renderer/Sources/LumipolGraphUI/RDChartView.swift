@@ -27,6 +27,7 @@ public final class RDChartView: UIView {
     private(set) var currentPlotArea: PlotArea?
     private var chartLayers: [CALayer] = []
     private var touchMarkerLayer: CALayer?
+    private var activeMarkerRawX: Double?
 
     /// 차트를 그린다. 터치 질의를 위해 `data`를 보관한다.
     /// - Parameters:
@@ -57,6 +58,7 @@ public final class RDChartView: UIView {
     }
 
     private func rebuildLayers() {
+        let markerRawX = activeMarkerRawX
         hideTouchMarker()
         chartLayers.forEach { $0.removeFromSuperlayer() }
         chartLayers = []
@@ -72,6 +74,9 @@ public final class RDChartView: UIView {
         chartLayers = layers
         if isAnimationEnabled {
             animateMainLines()
+        }
+        if let markerRawX {
+            showTouchMarker(atX: markerRawX)
         }
     }
 
@@ -101,11 +106,13 @@ public final class RDChartView: UIView {
         guard let marker = TouchMarker.makeLayer(atRawX: rawX, context: context) else { return }
         layer.addSublayer(marker)
         touchMarkerLayer = marker
+        activeMarkerRawX = rawX
     }
 
     @objc public func hideTouchMarker() {
         touchMarkerLayer?.removeFromSuperlayer()
         touchMarkerLayer = nil
+        activeMarkerRawX = nil
     }
 
     private func installGestures() {

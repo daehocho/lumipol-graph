@@ -44,4 +44,15 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertFalse(names.contains("series.ghost.pace_prev"))
         XCTAssertEqual(names.filter { $0 == "series.main.pace" }.count, 1)
     }
+
+    func testTouchMarkerSurvivesRelayout() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        view.showTouchMarker(atX: 2.4)
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+        XCTAssertTrue((view.layer.sublayers ?? []).contains { $0.name == "touch.marker" })
+    }
 }
