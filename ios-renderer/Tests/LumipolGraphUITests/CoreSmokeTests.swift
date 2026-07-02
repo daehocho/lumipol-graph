@@ -1,0 +1,27 @@
+import XCTest
+import LumipolGraph
+@testable import LumipolGraphUI
+
+final class CoreSmokeTests: XCTestCase {
+    func testEngineProducesLayoutForSimpleSeries() {
+        let data = LineChartData(
+            series: [
+                Series(
+                    id: "pace",
+                    points: [Point(x: 0, y: 5), Point(x: 1, y: 6)],
+                    axis: .primary,
+                    role: .main
+                )
+            ],
+            referenceLines: [],
+            referenceBands: [],
+            segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let layout = LineChartEngine.shared.layout(data: data)
+        XCTAssertEqual(layout.series.count, 1)
+        XCTAssertFalse(layout.axisTicks.isEmpty)
+        // 최신 계약(커밋 6fb6841) 확인 — stale xcframework면 컴파일 실패
+        XCTAssertNil(layout.stats.segmentSeriesId)
+    }
+}

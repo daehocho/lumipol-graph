@@ -8,3 +8,8 @@ local.properties
 rd-charts-DESIGN.md
 docs/superpowers/
 .superpowers/
+
+# SPM/Xcode 생성물
+.build/
+DerivedData/
+*.xcodeproj/
