@@ -10,6 +10,8 @@ enum TouchMarker {
         let style: ChartStyle
         let plotArea: PlotArea
         let formatter: (ChartAxis, Double) -> String
+        /// seriesId → 말풍선 표시명 (없으면 raw id 노출)
+        var displayNames: [String: String] = [:]
     }
 
     /// 원본 도메인 x 기준 마커 레이어. 표시 불가(플롯 영역 없음·축 변환 불능·근접점 없음)면 nil.
@@ -69,7 +71,8 @@ enum TouchMarker {
             dot.fillColor = dotColor.cgColor
             container.addSublayer(dot)
             topDotY = min(topDotY, point.y)
-            bubbleLines.append("\(result.seriesId) \(context.formatter(chartAxis, result.y))")
+            let displayName = context.displayNames[result.seriesId] ?? result.seriesId
+            bubbleLines.append("\(displayName) \(context.formatter(chartAxis, result.y))")
         }
         guard !bubbleLines.isEmpty else { return nil }
         container.addSublayer(
