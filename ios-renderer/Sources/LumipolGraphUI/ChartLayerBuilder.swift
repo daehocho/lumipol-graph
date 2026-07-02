@@ -229,7 +229,7 @@ enum ChartLayerBuilder {
     static func textLayer(_ text: String, font: UIFont, color: UIColor) -> CATextLayer {
         let layer = CATextLayer()
         layer.string = text
-        layer.font = font // UIFont는 CTFont와 toll-free bridged
+        layer.font = font // CATextLayer.font는 UIFont 인스턴스를 직접 수용한다
         layer.fontSize = font.pointSize
         layer.foregroundColor = color.cgColor
         layer.contentsScale = UIScreen.main.scale
