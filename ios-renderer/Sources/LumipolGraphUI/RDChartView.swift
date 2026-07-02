@@ -97,8 +97,7 @@ public final class RDChartView: UIView {
     /// 원본 도메인 x 위치에 근접점 마커(수직선+점+말풍선)를 표시한다.
     @objc public func showTouchMarker(atX rawX: Double) {
         guard let data, let chartLayout, let plotArea = currentPlotArea else { return }
-        touchMarkerLayer?.removeFromSuperlayer()
-        touchMarkerLayer = nil
+        hideTouchMarker()
         let context = TouchMarker.Context(
             data: data, layout: chartLayout, style: style,
             plotArea: plotArea, formatter: labelFormatter
