@@ -11,15 +11,23 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.17.0")
     ],
     targets: [
-        .binaryTarget(name: "LumipolGraph", path: "Frameworks/LumipolGraph.xcframework"),
-        .target(name: "LumipolGraphUI", dependencies: ["LumipolGraph"]),
+        .binaryTarget(
+            name: "LumipolGraph",
+            path: "ios-renderer/Frameworks/LumipolGraph.xcframework"
+        ),
+        .target(
+            name: "LumipolGraphUI",
+            dependencies: ["LumipolGraph"],
+            path: "ios-renderer/Sources/LumipolGraphUI"
+        ),
         .testTarget(
             name: "LumipolGraphUITests",
             dependencies: [
                 "LumipolGraphUI",
                 "LumipolGraph",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
-            ]
+            ],
+            path: "ios-renderer/Tests/LumipolGraphUITests"
         ),
     ]
 )
