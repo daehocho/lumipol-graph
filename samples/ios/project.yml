@@ -5,7 +5,7 @@ options:
     iOS: "15.0"
 packages:
   LumipolGraphUI:
-    path: ../../ios-renderer
+    path: ../..
 targets:
   LumipolGraphSample:
     type: application
