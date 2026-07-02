@@ -12,7 +12,7 @@ struct PlotArea: Equatable {
         self.invertedAxes = invertedAxes
     }
 
-    var isRenderable: Bool { rect.width > 0 && rect.height > 0 }
+    var isRenderable: Bool { rect.size.width > 0 && rect.size.height > 0 }
 
     func x(_ nx: Double) -> CGFloat {
         rect.minX + CGFloat(nx) * rect.width

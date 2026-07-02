@@ -53,4 +53,11 @@ final class PlotAreaTests: XCTestCase {
         XCTAssertFalse(zero.isRenderable)
         XCTAssertTrue(area.isRenderable)
     }
+
+    func testInsetsLargerThanBoundsIsNotRenderable() {
+        // .zero 바운드 + 기본 insets → inset(by:)가 음수 크기 rect를 만든다.
+        // CGRect.width/height는 절댓값을 반환하므로 size로 판별해야 한다.
+        let collapsed = PlotArea(bounds: .zero, insets: ChartStyle.default.plotInsets)
+        XCTAssertFalse(collapsed.isRenderable)
+    }
 }
