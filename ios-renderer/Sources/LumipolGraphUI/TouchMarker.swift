@@ -19,9 +19,12 @@ enum TouchMarker {
               let xScale = AxisScale(ticks: xTicks)
         else { return nil }
         let results = LineChartEngine.shared.nearest(data: context.data, x: rawX)
+        // 수직선 x는 첫 시리즈의 근접점 기준 — 계약상 시리즈별 근접 x가 다를 수 있으나
+        // 러닝 데이터는 공통 샘플링 x를 쓰므로 하나로 통일한다.
         guard let snappedX = results.first?.x else { return nil }
         let nx = min(max(xScale.position(ofValue: snappedX), 0), 1)
         let axisBySeriesId = Dictionary(uniqueKeysWithValues: context.data.series.map { ($0.id, $0.axis) })
+        let roleBySeriesId = Dictionary(uniqueKeysWithValues: context.data.series.map { ($0.id, $0.role) })
 
         let container = CALayer()
         container.name = "touch.marker"
@@ -55,9 +58,15 @@ enum TouchMarker {
                 arcCenter: point, radius: context.style.touchDotRadius,
                 startAngle: 0, endAngle: .pi * 2, clockwise: true
             ).cgPath
-            dot.fillColor = (axis == .secondary
-                ? context.style.secondaryLineColor
-                : context.style.primaryLineColor).cgColor
+            let dotColor: UIColor
+            if roleBySeriesId[result.seriesId] == .ghost {
+                dotColor = context.style.ghostLineColor
+            } else if axis == .secondary {
+                dotColor = context.style.secondaryLineColor
+            } else {
+                dotColor = context.style.primaryLineColor
+            }
+            dot.fillColor = dotColor.cgColor
             container.addSublayer(dot)
             topDotY = min(topDotY, point.y)
             bubbleLines.append("\(result.seriesId) \(context.formatter(chartAxis, result.y))")

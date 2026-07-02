@@ -55,4 +55,35 @@ final class RDChartViewTests: XCTestCase {
         view.layoutIfNeeded()
         XCTAssertTrue((view.layer.sublayers ?? []).contains { $0.name == "touch.marker" })
     }
+
+    private func mainLineLayers(of view: RDChartView) -> [CAShapeLayer] {
+        (view.layer.sublayers ?? []).compactMap { $0 as? CAShapeLayer }
+            .filter { $0.name?.hasPrefix("series.main.") == true }
+    }
+
+    func testEntranceAnimationRunsOnlyOnFirstLayoutAfterRender() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.render(TestFixtures.paceOnly) // isAnimationEnabled 기본값 true
+        view.layoutIfNeeded()
+        let animated = mainLineLayers(of: view)
+        XCTAssertFalse(animated.isEmpty)
+        XCTAssertTrue(animated.allSatisfy { $0.animation(forKey: "strokeEnd") != nil })
+
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+        let relaidOut = mainLineLayers(of: view)
+        XCTAssertFalse(relaidOut.isEmpty)
+        XCTAssertTrue(relaidOut.allSatisfy { $0.animation(forKey: "strokeEnd") == nil })
+    }
+
+    func testRenderResetsTouchMarker() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        view.showTouchMarker(atX: 2.4)
+        view.render(TestFixtures.paceOnly)
+        view.layoutIfNeeded()
+        XCTAssertFalse((view.layer.sublayers ?? []).contains { $0.name == "touch.marker" })
+    }
 }

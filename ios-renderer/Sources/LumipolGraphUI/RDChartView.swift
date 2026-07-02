@@ -28,6 +28,7 @@ public final class RDChartView: UIView {
     private var chartLayers: [CALayer] = []
     private var touchMarkerLayer: CALayer?
     private var activeMarkerRawX: Double?
+    private var needsEntranceAnimation = false
 
     /// 차트를 그린다. 터치 질의를 위해 `data`를 보관한다.
     /// - Parameters:
@@ -39,12 +40,14 @@ public final class RDChartView: UIView {
         invertedAxes: Set<Axis> = [],
         labelFormatter: ((ChartAxis, Double) -> String)? = nil
     ) {
+        hideTouchMarker()
         self.data = data
         self.style = style
         self.invertedAxes = invertedAxes
         self.labelFormatter = labelFormatter ?? RDChartView.defaultFormatter
         self.chartLayout = LineChartEngine.shared.layout(data: data)
-        rebuildLayers()
+        needsEntranceAnimation = isAnimationEnabled
+        setNeedsLayout()
     }
 
     /// ObjC 진입점 — 기본 스타일·반전 없음·기본 포매터.
@@ -72,8 +75,9 @@ public final class RDChartView: UIView {
         )
         layers.forEach { layer.addSublayer($0) }
         chartLayers = layers
-        if isAnimationEnabled {
+        if needsEntranceAnimation {
             animateMainLines()
+            needsEntranceAnimation = false
         }
         if let markerRawX {
             showTouchMarker(atX: markerRawX)
