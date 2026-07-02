@@ -1,0 +1,147 @@
+import XCTest
+import LumipolGraph
+@testable import LumipolGraphUI
+
+final class ChartLayerBuilderTests: XCTestCase {
+    // 손으로 만든 정규화 레이아웃 — plotArea rect (0,0,100,100)에서 픽셀 정확값을 검증한다.
+    private let layout = LineChartLayout(
+        series: [
+            SeriesLayout(id: "pace", role: .main, points: [
+                NormalizedPoint(x: 0, y: 0), NormalizedPoint(x: 1, y: 1),
+            ]),
+            SeriesLayout(id: "pace_prev", role: .ghost, points: [
+                NormalizedPoint(x: 0, y: 1), NormalizedPoint(x: 1, y: 0),
+            ]),
+        ],
+        axisTicks: [
+            AxisTicksLayout(axis: .x, ticks: [AxisTick(value: 0, position: 0), AxisTick(value: 5, position: 1)]),
+            AxisTicksLayout(axis: .yPrimary, ticks: [AxisTick(value: 4, position: 0), AxisTick(value: 6, position: 1)]),
+        ],
+        refLines: [RefLineLayout(axis: .primary, position: 0.5, label: "목표")],
+        refBands: [RefBandLayout(axis: .primary, lower: 0.25, upper: 0.75)],
+        markers: [
+            MarkerLayout(position: 0.5, label: "1km", emphasis: false),
+            MarkerLayout(position: 1.0, label: "2km", emphasis: true),
+        ],
+        stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+    )
+    private let data = LineChartData(
+        series: [
+            Series(id: "pace", points: [], axis: .primary, role: .main),
+            Series(id: "pace_prev", points: [], axis: .primary, role: .ghost),
+        ],
+        referenceLines: [], referenceBands: [], segmentMarkers: [],
+        config: ChartConfig(segmentCount: 0, maxTicks: 5)
+    )
+    private let plotArea = PlotArea(bounds: CGRect(x: 0, y: 0, width: 100, height: 100), insets: .zero)
+
+    private func build() -> [CALayer] {
+        ChartLayerBuilder.build(
+            layout: layout, data: data, style: .default, plotArea: plotArea,
+            formatter: { _, value in "\(value)" }
+        )
+    }
+
+    private func layer(named name: String, in layers: [CALayer]) -> CALayer? {
+        layers.first { $0.name == name }
+    }
+
+    func testBuildsExpectedLayerTree() {
+        let names = build().compactMap(\.name)
+        XCTAssertEqual(names, [
+            "band.0", "marker.0", "marker.1",
+            "series.ghost.pace_prev",
+            "series.gradient.pace", "series.main.pace",
+            "refLine.0",
+            "axisLabels.x", "axisLabels.yPrimary",
+        ])
+    }
+
+    func testMainLinePathSpansPlotRect() {
+        let main = layer(named: "series.main.pace", in: build()) as? CAShapeLayer
+        // (0,0)→아래왼쪽 (0,100), (1,1)→위오른쪽 (100,0)
+        XCTAssertEqual(main?.path?.boundingBox, CGRect(x: 0, y: 0, width: 100, height: 100))
+        XCTAssertEqual(main?.lineWidth, ChartStyle.default.lineWidth)
+    }
+
+    func testGhostLineIsDashed() {
+        let ghost = layer(named: "series.ghost.pace_prev", in: build()) as? CAShapeLayer
+        XCTAssertEqual(ghost?.lineDashPattern, ChartStyle.default.ghostDashPattern)
+    }
+
+    func testRefLineSitsAtNormalizedPosition() {
+        let refLine = layer(named: "refLine.0", in: build())
+        let line = refLine?.sublayers?.compactMap { $0 as? CAShapeLayer }.first
+        // position 0.5, 정상 축 → y = 50
+        XCTAssertEqual(line?.path?.boundingBox.midY, 50)
+        // 라벨(CATextLayer) 존재
+        XCTAssertTrue(refLine?.sublayers?.contains { $0 is CATextLayer } ?? false)
+    }
+
+    func testBandCoversNormalizedRange() {
+        let band = layer(named: "band.0", in: build())
+        // lower 0.25→y75, upper 0.75→y25 (정상 축) → frame (0,25,100,50)
+        XCTAssertEqual(band?.frame, CGRect(x: 0, y: 25, width: 100, height: 50))
+    }
+
+    func testMarkersAreVerticalLinesWithLabels() {
+        let layers = build()
+        let marker = layer(named: "marker.0", in: layers)
+        let line = marker?.sublayers?.compactMap { $0 as? CAShapeLayer }.first
+        XCTAssertEqual(line?.path?.boundingBox.midX, 50)
+        XCTAssertTrue(marker?.sublayers?.contains { $0 is CATextLayer } ?? false)
+        // emphasis 마커는 굵은 선
+        let emphasisLine = layer(named: "marker.1", in: layers)?
+            .sublayers?.compactMap { $0 as? CAShapeLayer }.first
+        XCTAssertEqual(emphasisLine?.lineWidth, 1.5)
+    }
+
+    func testAxisLabelsUseFormatter() {
+        let layers = ChartLayerBuilder.build(
+            layout: layout, data: data, style: .default, plotArea: plotArea,
+            formatter: { axis, value in axis == .x ? "\(Int(value))km" : "v\(Int(value))" }
+        )
+        let xLabels = layer(named: "axisLabels.x", in: layers)?
+            .sublayers?.compactMap { ($0 as? CATextLayer)?.string as? String }
+        XCTAssertEqual(xLabels, ["0km", "5km"])
+        let yLabels = layer(named: "axisLabels.yPrimary", in: layers)?
+            .sublayers?.compactMap { ($0 as? CATextLayer)?.string as? String }
+        XCTAssertEqual(yLabels, ["v4", "v6"])
+    }
+
+    func testInvertedAxisFlipsSeriesAndRefLine() {
+        let inverted = PlotArea(
+            bounds: CGRect(x: 0, y: 0, width: 100, height: 100), insets: .zero,
+            invertedAxes: [.primary]
+        )
+        let layers = ChartLayerBuilder.build(
+            layout: layout, data: data, style: .default, plotArea: inverted,
+            formatter: { _, value in "\(value)" }
+        )
+        let band = layer(named: "band.0", in: layers)
+        // 반전이어도 min/max 처리로 동일 프레임
+        XCTAssertEqual(band?.frame, CGRect(x: 0, y: 25, width: 100, height: 50))
+    }
+
+    func testNotRenderablePlotAreaProducesNoLayers() {
+        let zero = PlotArea(bounds: .zero, insets: .zero)
+        let layers = ChartLayerBuilder.build(
+            layout: layout, data: data, style: .default, plotArea: zero,
+            formatter: { _, value in "\(value)" }
+        )
+        XCTAssertTrue(layers.isEmpty)
+    }
+
+    func testSeriesWithFewerThanTwoPointsIsSkipped() {
+        let single = LineChartLayout(
+            series: [SeriesLayout(id: "one", role: .main, points: [NormalizedPoint(x: 0.5, y: 0.5)])],
+            axisTicks: [], refLines: [], refBands: [], markers: [],
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+        )
+        let layers = ChartLayerBuilder.build(
+            layout: single, data: data, style: .default, plotArea: plotArea,
+            formatter: { _, value in "\(value)" }
+        )
+        XCTAssertTrue(layers.isEmpty)
+    }
+}
