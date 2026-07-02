@@ -77,4 +77,11 @@ class LineChartEngineTest {
         val axes = layout.axisTicks.map { it.axis }.toSet()
         assertTrue(ChartAxis.Y_SECONDARY in axes)
     }
+
+    @Test
+    fun segment_series_id_is_null_when_no_split_requested() {
+        val layout = LineChartEngine.layout(data.copy(config = ChartConfig(segmentCount = 0)))
+        assertTrue(layout.stats.segments.isEmpty())
+        assertEquals(null, layout.stats.segmentSeriesId)
+    }
 }
