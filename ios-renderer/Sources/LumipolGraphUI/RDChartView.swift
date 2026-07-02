@@ -24,6 +24,7 @@ public final class RDChartView: UIView {
     private(set) var style: ChartStyle = .default
     private(set) var invertedAxes: Set<Axis> = []
     private(set) var labelFormatter: (ChartAxis, Double) -> String = RDChartView.defaultFormatter
+    private(set) var seriesDisplayNames: [String: String] = [:]
     private(set) var currentPlotArea: PlotArea?
     private var chartLayers: [CALayer] = []
     private var touchMarkerLayer: CALayer?
@@ -31,20 +32,26 @@ public final class RDChartView: UIView {
     private var needsEntranceAnimation = false
 
     /// 차트를 그린다. 터치 질의를 위해 `data`를 보관한다.
+    ///
+    /// 레이어는 즉시 만들어지지 않고 **다음 레이아웃 패스(`layoutSubviews`)에서 구축**된다.
+    /// `render()` 직후 레이어가 필요하면(스냅샷 등) `layoutIfNeeded()`를 호출할 것.
     /// - Parameters:
     ///   - invertedAxes: 화면에서 뒤집을 Y축(예: 페이스 — 위=빠름). 코어 출력은 값-공간 그대로.
     ///   - labelFormatter: 축 tick 값 → 표시 문자열. 코어/렌더러는 단위를 모른다(앱 주입).
+    ///   - seriesDisplayNames: 터치 말풍선에 쓸 seriesId → 표시명 (미지정 시 raw id).
     public func render(
         _ data: LineChartData,
         style: ChartStyle = .default,
         invertedAxes: Set<Axis> = [],
-        labelFormatter: ((ChartAxis, Double) -> String)? = nil
+        labelFormatter: ((ChartAxis, Double) -> String)? = nil,
+        seriesDisplayNames: [String: String] = [:]
     ) {
         hideTouchMarker()
         self.data = data
         self.style = style
         self.invertedAxes = invertedAxes
         self.labelFormatter = labelFormatter ?? RDChartView.defaultFormatter
+        self.seriesDisplayNames = seriesDisplayNames
         self.chartLayout = LineChartEngine.shared.layout(data: data)
         needsEntranceAnimation = isAnimationEnabled
         setNeedsLayout()
@@ -104,7 +111,8 @@ public final class RDChartView: UIView {
         hideTouchMarker()
         let context = TouchMarker.Context(
             data: data, layout: chartLayout, style: style,
-            plotArea: plotArea, formatter: labelFormatter
+            plotArea: plotArea, formatter: labelFormatter,
+            displayNames: seriesDisplayNames
         )
         guard let marker = TouchMarker.makeLayer(atRawX: rawX, context: context) else { return }
         layer.addSublayer(marker)
