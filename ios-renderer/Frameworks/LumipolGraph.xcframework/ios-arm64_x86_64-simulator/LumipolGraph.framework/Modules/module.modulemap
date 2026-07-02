@@ -1,0 +1,5 @@
+framework module "LumipolGraph" {
+    umbrella header "LumipolGraph.h"
+    export *
+    module * { export * }
+}
