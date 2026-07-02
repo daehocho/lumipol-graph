@@ -127,8 +127,12 @@ public final class RDChartView: UIView {
     }
 
     private func installGestures() {
-        addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:))))
-        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleGesture(_:))))
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
+        pan.delegate = self
+        tap.delegate = self
+        addGestureRecognizer(pan)
+        addGestureRecognizer(tap)
     }
 
     @objc private func handleGesture(_ recognizer: UIGestureRecognizer) {
@@ -143,5 +147,17 @@ public final class RDChartView: UIView {
 
     static func defaultFormatter(_ axis: ChartAxis, _ value: Double) -> String {
         String(format: "%g", value)
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+extension RDChartView: UIGestureRecognizerDelegate {
+    /// 스크롤 컨테이너(UIScrollView) 안에서도 터치 마커가 동작하도록 동시 인식을 허용한다.
+    /// 세로 스크롤 중에도 마커가 따라오는 감각은 DGCharts drag-highlight와 동일.
+    public func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        true
     }
 }
