@@ -1,6 +1,8 @@
 .gradle/
 build/
 *.xcframework/
+# SPM binary target 배포용 — 이 xcframework만 커밋 (scripts/sync-xcframework.sh로 재생성)
+!ios-renderer/Frameworks/LumipolGraph.xcframework/
 .DS_Store
 .idea/
 local.properties
