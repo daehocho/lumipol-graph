@@ -9,6 +9,16 @@ public final class RDChartView: UIView {
     /// main 라인 등장 애니메이션(strokeEnd 0→1). 스냅샷/테스트에서는 끈다.
     @objc public var isAnimationEnabled: Bool = true
 
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
+        installGestures()
+    }
+
+    public required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        installGestures()
+    }
+
     private(set) var data: LineChartData?
     private(set) var chartLayout: LineChartLayout?
     private(set) var style: ChartStyle = .default
@@ -16,6 +26,7 @@ public final class RDChartView: UIView {
     private(set) var labelFormatter: (ChartAxis, Double) -> String = RDChartView.defaultFormatter
     private(set) var currentPlotArea: PlotArea?
     private var chartLayers: [CALayer] = []
+    private var touchMarkerLayer: CALayer?
 
     /// 차트를 그린다. 터치 질의를 위해 `data`를 보관한다.
     /// - Parameters:
@@ -46,6 +57,7 @@ public final class RDChartView: UIView {
     }
 
     private func rebuildLayers() {
+        hideTouchMarker()
         chartLayers.forEach { $0.removeFromSuperlayer() }
         chartLayers = []
         currentPlotArea = nil
@@ -73,6 +85,42 @@ public final class RDChartView: UIView {
             animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
             shape.add(animation, forKey: "strokeEnd")
         }
+    }
+
+    // MARK: - Touch marker
+
+    /// 원본 도메인 x 위치에 근접점 마커(수직선+점+말풍선)를 표시한다.
+    @objc public func showTouchMarker(atX rawX: Double) {
+        guard let data, let chartLayout, let plotArea = currentPlotArea else { return }
+        touchMarkerLayer?.removeFromSuperlayer()
+        touchMarkerLayer = nil
+        let context = TouchMarker.Context(
+            data: data, layout: chartLayout, style: style,
+            plotArea: plotArea, formatter: labelFormatter
+        )
+        guard let marker = TouchMarker.makeLayer(atRawX: rawX, context: context) else { return }
+        layer.addSublayer(marker)
+        touchMarkerLayer = marker
+    }
+
+    @objc public func hideTouchMarker() {
+        touchMarkerLayer?.removeFromSuperlayer()
+        touchMarkerLayer = nil
+    }
+
+    private func installGestures() {
+        addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:))))
+        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleGesture(_:))))
+    }
+
+    @objc private func handleGesture(_ recognizer: UIGestureRecognizer) {
+        guard let chartLayout, let plotArea = currentPlotArea,
+              let xTicks = chartLayout.axisTicks.first(where: { $0.axis == .x })?.ticks,
+              let xScale = AxisScale(ticks: xTicks)
+        else { return }
+        let location = recognizer.location(in: self)
+        let rawX = xScale.value(atPosition: plotArea.normalizedX(at: location.x))
+        showTouchMarker(atX: rawX)
     }
 
     static func defaultFormatter(_ axis: ChartAxis, _ value: Double) -> String {

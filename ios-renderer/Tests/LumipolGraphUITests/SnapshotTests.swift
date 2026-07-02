@@ -42,4 +42,13 @@ final class SnapshotTests: XCTestCase {
         )
         assertSnapshot(of: view, as: .image)
     }
+
+    // ④ 터치 마커 표시 (x=2.4 → 2.5km 지점 스냅, 페이스·심박 동시 말풍선)
+    func testTouchMarkerShown() {
+        let view = makeChartView(
+            TestFixtures.fullChart, invertedAxes: [.primary], formatter: TestFixtures.format
+        )
+        view.showTouchMarker(atX: 2.4)
+        assertSnapshot(of: view, as: .image)
+    }
 }
