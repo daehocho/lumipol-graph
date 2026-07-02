@@ -74,7 +74,7 @@ object LineChartEngine {
             refLines = refLines,
             refBands = refBands,
             markers = markers,
-            stats = Stats(perSeries, segments, splitBase?.id),
+            stats = Stats(perSeries, segments, if (segments.isEmpty()) null else splitBase?.id),
         )
     }
 
