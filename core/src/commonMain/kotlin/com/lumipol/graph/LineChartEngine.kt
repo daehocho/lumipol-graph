@@ -14,10 +14,13 @@ object LineChartEngine {
     fun layout(data: LineChartData): LineChartLayout {
         val maxTicks = data.config.maxTicks
 
-        // X 도메인 (모든 시리즈 점의 x)
+        // X 도메인 (모든 시리즈 점의 x) — min은 nice 경계로 내리되 max는 데이터 끝에 맞춘다.
+        // 도메인 축(X)까지 nice 올림하면 데이터 뒤로 빈 구간이 생겨(예: 10.06km → 15km) 플롯 폭을 낭비한다.
         val xs = data.series.flatMap { it.points }.map { it.x }
         val xNice = niceScale(xs.minOrNull() ?: 0.0, xs.maxOrNull() ?: 1.0, maxTicks)
-        val xDom = AxisDomain(xNice.niceMin, xNice.niceMax)
+        val xMax = xs.maxOrNull() ?: xNice.niceMax
+        val xDom = AxisDomain(xNice.niceMin, xMax)
+        val xTicks = xNice.ticks.filter { it <= xMax + xNice.step * 1e-6 }
 
         // Y 도메인 (축별). 값이 없는 축은 null.
         val yNice: Map<Axis, NiceScale?> = Axis.entries.associateWith { axis ->
@@ -41,7 +44,7 @@ object LineChartEngine {
         // 축 tick: 어떤 출력 요소(시리즈/기준선/밴드)든 참조하는 축은 항상 여기 등장한다 —
         // refLine/refBand의 값도 yValues()에 흡수되어 해당 축의 도메인+틱을 만들어내기 때문.
         val axisTicks = buildList {
-            add(AxisTicksLayout(ChartAxis.X, xNice.ticks.map { AxisTick(it, xDom.normalize(it)) }))
+            add(AxisTicksLayout(ChartAxis.X, xTicks.map { AxisTick(it, xDom.normalize(it)) }))
             yNice[Axis.PRIMARY]?.let { ns ->
                 add(AxisTicksLayout(ChartAxis.Y_PRIMARY, ns.ticks.map { AxisTick(it, yDom.getValue(Axis.PRIMARY).normalize(it)) }))
             }

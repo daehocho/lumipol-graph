@@ -49,12 +49,61 @@ final class ChartLayerBuilderTests: XCTestCase {
     func testBuildsExpectedLayerTree() {
         let names = build().compactMap(\.name)
         XCTAssertEqual(names, [
+            "grid",
             "band.0", "marker.0", "marker.1",
             "series.ghost.pace_prev",
             "series.gradient.pace", "series.main.pace",
             "refLine.0",
             "axisLabels.x", "axisLabels.yPrimary",
         ])
+    }
+
+    func testGridDrawsDashedLinesAtTicks() {
+        let grid = layer(named: "grid", in: build()) as? CAShapeLayer
+        XCTAssertEqual(grid?.lineDashPattern, ChartStyle.default.gridLineDashPattern)
+        // x tick 2개(0,1) 세로선 + yPrimary tick 2개(0,1) 가로선 → 플롯 전체 바운딩
+        XCTAssertEqual(grid?.path?.boundingBox, CGRect(x: 0, y: 0, width: 100, height: 100))
+    }
+
+    func testNilGridColorOmitsGridLayer() {
+        var style = ChartStyle.default
+        style.gridLineColor = nil
+        let layers = ChartLayerBuilder.build(
+            layout: layout, data: data, style: style, plotArea: plotArea,
+            formatter: { _, value in "\(value)" }
+        )
+        XCTAssertNil(layer(named: "grid", in: layers))
+    }
+
+    func testGradientOnlyOnPrimaryAxisSeries() {
+        // secondary 축 main 시리즈는 fill 중첩 방지를 위해 그라데이션 없이 라인만 그린다.
+        let dualLayout = LineChartLayout(
+            series: [
+                SeriesLayout(id: "pace", role: .main, points: [
+                    NormalizedPoint(x: 0, y: 0), NormalizedPoint(x: 1, y: 1),
+                ]),
+                SeriesLayout(id: "hr", role: .main, points: [
+                    NormalizedPoint(x: 0, y: 1), NormalizedPoint(x: 1, y: 0),
+                ]),
+            ],
+            axisTicks: [], refLines: [], refBands: [], markers: [],
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+        )
+        let dualData = LineChartData(
+            series: [
+                Series(id: "pace", points: [], axis: .primary, role: .main),
+                Series(id: "hr", points: [], axis: .secondary, role: .main),
+            ],
+            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let layers = ChartLayerBuilder.build(
+            layout: dualLayout, data: dualData, style: .default, plotArea: plotArea,
+            formatter: { _, value in "\(value)" }
+        )
+        XCTAssertNotNil(layer(named: "series.gradient.pace", in: layers))
+        XCTAssertNil(layer(named: "series.gradient.hr", in: layers))
+        XCTAssertNotNil(layer(named: "series.main.hr", in: layers))
     }
 
     func testMainLinePathSpansPlotRect() {

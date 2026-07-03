@@ -79,6 +79,28 @@ class LineChartEngineTest {
     }
 
     @Test
+    fun x_domain_ends_at_data_max_not_nice_bound() {
+        // 데이터 max 10.06 → nice 올림(15) 대신 데이터 끝이 도메인 끝. 15 tick은 생기지 않는다.
+        val d = LineChartData(
+            series = listOf(Series("pace", (0..100).map { Point(it * 0.1006, 6.0 + it % 3) })),
+        )
+        val layout = LineChartEngine.layout(d)
+        val xTicks = layout.axisTicks.first { it.axis == ChartAxis.X }.ticks
+        assertEquals(10.0, xTicks.last().value, 1e-9)
+        assertTrue(xTicks.last().position < 1.0)
+        assertEquals(1.0, layout.series[0].points.last().x, 1e-9)
+    }
+
+    @Test
+    fun x_tick_on_data_max_survives_clamp() {
+        // 데이터 max가 정확히 tick 값(2.0)인 경우 부동소수 오차로 잘려나가면 안 된다.
+        val layout = LineChartEngine.layout(data)
+        val xTicks = layout.axisTicks.first { it.axis == ChartAxis.X }.ticks
+        assertEquals(2.0, xTicks.last().value, 1e-9)
+        assertEquals(1.0, xTicks.last().position, 1e-9)
+    }
+
+    @Test
     fun segment_series_id_is_null_when_no_split_requested() {
         val layout = LineChartEngine.layout(data.copy(config = ChartConfig(segmentCount = 0)))
         assertTrue(layout.stats.segments.isEmpty())

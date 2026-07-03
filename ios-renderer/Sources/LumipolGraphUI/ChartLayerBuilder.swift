@@ -2,7 +2,7 @@ import UIKit
 import LumipolGraph
 
 /// 코어 `LineChartLayout`(정규화 0~1)을 `ChartStyle`·`PlotArea`로 CALayer 트리에 조립한다.
-/// z-순서: 밴드 → 마커 → 고스트 → (그라데이션+main 라인) → 기준선 → 축 라벨.
+/// z-순서: 그리드 → 밴드 → 마커 → 고스트 → (그라데이션+main 라인) → 기준선 → 축 라벨.
 enum ChartLayerBuilder {
 
     static func build(
@@ -16,6 +16,10 @@ enum ChartLayerBuilder {
         let axisBySeriesId = Dictionary(uniqueKeysWithValues: data.series.map { ($0.id, $0.axis) })
         var layers: [CALayer] = []
 
+        if let gridColor = style.gridLineColor,
+           let grid = gridLayer(layout: layout, color: gridColor, style: style, plotArea: plotArea) {
+            layers.append(grid)
+        }
         for (index, band) in layout.refBands.enumerated() {
             layers.append(bandLayer(band, index: index, style: style, plotArea: plotArea))
         }
@@ -31,7 +35,7 @@ enum ChartLayerBuilder {
         for series in layout.series where series.role == .main {
             let axis = axisBySeriesId[series.id] ?? .primary
             guard let path = linePath(series.points, axis: axis, plotArea: plotArea) else { continue }
-            if style.gradientMaxAlpha > 0 {
+            if style.gradientMaxAlpha > 0, axis == .primary {
                 layers.append(gradientLayer(series, axis: axis, linePath: path, style: style, plotArea: plotArea))
             }
             layers.append(mainLineLayer(series, axis: axis, path: path, style: style))
@@ -114,6 +118,40 @@ enum ChartLayerBuilder {
         mask.path = areaPath.cgPath.copy(using: &translation)
         gradient.mask = mask
         return gradient
+    }
+
+    // MARK: - Grid
+
+    /// X tick 세로선 + Y tick 가로선 점선 그리드. 가로선은 primary 축 tick 기준(없으면 secondary).
+    private static func gridLayer(
+        layout: LineChartLayout, color: UIColor, style: ChartStyle, plotArea: PlotArea
+    ) -> CAShapeLayer? {
+        func ticks(_ axis: ChartAxis) -> [AxisTick] {
+            layout.axisTicks.first { $0.axis == axis }?.ticks ?? []
+        }
+        let path = UIBezierPath()
+        for tick in ticks(.x) {
+            let x = plotArea.x(tick.position)
+            path.move(to: CGPoint(x: x, y: plotArea.rect.minY))
+            path.addLine(to: CGPoint(x: x, y: plotArea.rect.maxY))
+        }
+        let primaryTicks = ticks(.yPrimary)
+        let (yTicks, yAxis): ([AxisTick], Axis) =
+            primaryTicks.isEmpty ? (ticks(.ySecondary), .secondary) : (primaryTicks, .primary)
+        for tick in yTicks {
+            let y = plotArea.y(tick.position, axis: yAxis)
+            path.move(to: CGPoint(x: plotArea.rect.minX, y: y))
+            path.addLine(to: CGPoint(x: plotArea.rect.maxX, y: y))
+        }
+        guard !path.isEmpty else { return nil }
+        let layer = CAShapeLayer()
+        layer.name = "grid"
+        layer.path = path.cgPath
+        layer.strokeColor = color.cgColor
+        layer.fillColor = nil
+        layer.lineWidth = style.gridLineWidth
+        layer.lineDashPattern = style.gridLineDashPattern
+        return layer
     }
 
     // MARK: - Reference / Marker
