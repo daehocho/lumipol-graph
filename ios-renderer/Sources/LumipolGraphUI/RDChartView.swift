@@ -27,6 +27,10 @@ public final class RDChartView: UIView {
     private(set) var seriesDisplayNames: [String: String] = [:]
     private(set) var currentPlotArea: PlotArea?
     private var chartLayers: [CALayer] = []
+    // 줌 변환 대상 콘텐츠(시리즈·그리드·밴드·마커·기준선)와 클립 컨테이너.
+    // 축 라벨·터치 마커는 루트에 남아 변환/클립을 받지 않는다.
+    private let clipContainer = CALayer()
+    private let contentContainer = CALayer()
     private var touchMarkerLayer: CALayer?
     private var activeMarkerRawX: Double?
     private var needsEntranceAnimation = false
@@ -68,6 +72,10 @@ public final class RDChartView: UIView {
     }
 
     private func rebuildLayers() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+
         let markerRawX = activeMarkerRawX
         hideTouchMarker()
         chartLayers.forEach { $0.removeFromSuperlayer() }
@@ -80,7 +88,21 @@ public final class RDChartView: UIView {
         let layers = ChartLayerBuilder.build(
             layout: chartLayout, data: data, style: style, plotArea: plotArea, formatter: labelFormatter
         )
-        layers.forEach { layer.addSublayer($0) }
+        clipContainer.name = "zoom.clip"
+        clipContainer.frame = bounds
+        contentContainer.name = "zoom.content"
+        contentContainer.frame = bounds
+        contentContainer.setAffineTransform(.identity)
+        contentContainer.sublayers?.forEach { $0.removeFromSuperlayer() }
+        for built in layers {
+            if built.name?.hasPrefix("axisLabels.") == true {
+                layer.addSublayer(built)
+            } else {
+                contentContainer.addSublayer(built)
+            }
+        }
+        clipContainer.addSublayer(contentContainer)
+        layer.addSublayer(clipContainer)
         chartLayers = layers
         if needsEntranceAnimation {
             animateMainLines()
