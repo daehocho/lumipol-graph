@@ -26,9 +26,11 @@ enum TouchMarker {
         guard let snappedX = results.first?.x else { return nil }
         // 스냅된 근접점이 현재 표시 도메인(창) 밖이면 마커를 만들지 않는다 —
         // 확대 창 경계 부근에서 창 밖 데이터로 스냅되는 것을 방지.
+        // 단, 도메인 양끝 값은 부동소수점 반올림으로 0/1을 수 ulp 벗어날 수 있으므로
+        // epsilon 이내는 창 안으로 간주해 클램프한다 (엄격 비교 시 끝 탭이 침묵 드롭됨).
         let rawNx = xScale.position(ofValue: snappedX)
-        guard (0...1).contains(rawNx) else { return nil }
-        let nx = rawNx
+        guard rawNx >= -1e-9, rawNx <= 1 + 1e-9 else { return nil }
+        let nx = min(max(rawNx, 0), 1)
         let axisBySeriesId = Dictionary(uniqueKeysWithValues: context.data.series.map { ($0.id, $0.axis) })
         let roleBySeriesId = Dictionary(uniqueKeysWithValues: context.data.series.map { ($0.id, $0.role) })
 

@@ -51,6 +51,14 @@ final class TouchMarkerTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(bubble!.frame.minX, plotArea.rect.minX - 0.5)
     }
 
+    func testMarkerShownAtDomainUpperBound() {
+        // 도메인 상한(마지막 포인트 x=5.0) — 정규화 x가 반올림으로 1을 수 ulp 넘어도
+        // 마커가 침묵 드롭되지 않아야 한다 (경계 클램프 회귀 방지).
+        let marker = makeMarker(atRawX: 5.0)
+        XCTAssertNotNil(marker)
+        XCTAssertEqual(marker?.name, "touch.marker")
+    }
+
     func testReturnsNilWhenAxisScaleUnavailable() {
         // 축 tick이 없는 빈 레이아웃 → 역산 불능 → nil
         let emptyLayout = LineChartLayout(
