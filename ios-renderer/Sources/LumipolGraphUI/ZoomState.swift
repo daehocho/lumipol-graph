@@ -34,14 +34,7 @@ struct ZoomState: Equatable {
 
     /// 프로그래매틱 줌·테스트용 — 폭 유지한 채 전체 범위로 클램프.
     mutating func setWindow(_ target: ClosedRange<Double>) {
-        let targetSpan = target.upperBound - target.lowerBound
-        var span = min(targetSpan, fullSpan)
-
-        // 목표 오버플로우 시 회전 공간 확보용으로 스팬 제한
-        if target.lowerBound + span > fullDomain.upperBound {
-            span = min(span, fullSpan / 2)
-        }
-
+        let span = min(target.upperBound - target.lowerBound, fullSpan)
         place(lower: target.lowerBound, span: span)
     }
 

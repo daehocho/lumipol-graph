@@ -55,8 +55,14 @@ final class ZoomStateTests: XCTestCase {
 
     func testSetWindowClampsToFullDomain() {
         var state = makeState()
-        state.setWindow(8...15)
+        state.setWindow(8...13)
         XCTAssertEqual(state.window, 5...10)  // 폭 5 유지, 오른쪽 끝 클램프
+    }
+
+    func testSetWindowWiderThanFullDomainClampsToFull() {
+        var state = makeState()
+        state.setWindow(-5...20)
+        XCTAssertEqual(state.window, 0...10)
     }
 
     func testResetRestoresFullDomain() {
