@@ -152,6 +152,7 @@ __attribute__((swift_name("LineChartEngine")))
 + (instancetype)lineChartEngine __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphLineChartEngine *shared __attribute__((swift_name("shared")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data __attribute__((swift_name("layout(data:)")));
+- (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("layout(data:xMin:xMax:)")));
 - (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x __attribute__((swift_name("nearest(data:x:)")));
 @end
 
@@ -490,7 +491,7 @@ __attribute__((swift_name("NiceScale")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("AxisDomainKt")))
 @interface LumipolGraphAxisDomainKt : LumipolGraphBase
-+ (NSArray<LumipolGraphDouble *> *)yValuesData:(LumipolGraphLineChartData *)data axis:(LumipolGraphAxis *)axis __attribute__((swift_name("yValues(data:axis:)")));
++ (NSArray<LumipolGraphDouble *> *)yValuesData:(LumipolGraphLineChartData *)data axis:(LumipolGraphAxis *)axis xWindow:(LumipolGraphAxisDomain * _Nullable)xWindow __attribute__((swift_name("yValues(data:axis:xWindow:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))
