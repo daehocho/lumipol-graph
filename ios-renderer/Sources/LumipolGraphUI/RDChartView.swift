@@ -12,11 +12,20 @@ public final class RDChartView: UIView {
     // MARK: - Zoom (X축 확대/팬)
 
     /// X축 핀치 줌 + 확대 상태 좌우 팬. 기본 꺼짐 — 기존 사용처 무영향.
+    ///
+    /// 더블탭 recognizer는 줌 활성화 시에만 뷰에 부착한다 — 항상 부착해 두면
+    /// 단일 탭(마커)의 require(toFail:)가 비활성 더블탭의 실패 전이를 기다리다
+    /// 영구 차단될 수 있다 (비활성 recognizer 대상 failure requirement는 문서상 보장 없음).
     @objc public var isZoomEnabled: Bool = false {
         didSet {
+            guard isZoomEnabled != oldValue else { return }
             pinchRecognizer.isEnabled = isZoomEnabled
-            doubleTapRecognizer.isEnabled = isZoomEnabled
-            if !isZoomEnabled { resetZoom() }
+            if isZoomEnabled {
+                addGestureRecognizer(doubleTapRecognizer)
+            } else {
+                removeGestureRecognizer(doubleTapRecognizer)
+                resetZoom()
+            }
         }
     }
     /// 최대 확대 배율 (전체 구간 대비)
@@ -25,6 +34,7 @@ public final class RDChartView: UIView {
     private var zoomState: ZoomState?
     private let pinchRecognizer = UIPinchGestureRecognizer()
     private let doubleTapRecognizer = UITapGestureRecognizer()
+    private let markerTapRecognizer = UITapGestureRecognizer()
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -300,21 +310,21 @@ public final class RDChartView: UIView {
         pan.delegate = self
         addGestureRecognizer(pan)
 
-        let tap = UITapGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
-        tap.delegate = self
-        addGestureRecognizer(tap)
+        markerTapRecognizer.addTarget(self, action: #selector(handleGesture(_:)))
+        markerTapRecognizer.delegate = self
+        addGestureRecognizer(markerTapRecognizer)
 
         pinchRecognizer.addTarget(self, action: #selector(handlePinch(_:)))
         pinchRecognizer.delegate = self
         pinchRecognizer.isEnabled = isZoomEnabled
         addGestureRecognizer(pinchRecognizer)
 
+        // 더블탭은 여기서 설정만 하고 부착하지 않는다 — isZoomEnabled didSet이 부착/해제.
+        // requirement는 타깃이 뷰에 미부착이면 효력 없으므로 한 번만 걸어 둔다.
         doubleTapRecognizer.numberOfTapsRequired = 2
         doubleTapRecognizer.addTarget(self, action: #selector(handleDoubleTap(_:)))
         doubleTapRecognizer.delegate = self
-        doubleTapRecognizer.isEnabled = isZoomEnabled
-        addGestureRecognizer(doubleTapRecognizer)
-        tap.require(toFail: doubleTapRecognizer)  // 기존 단일 탭(마커)은 더블탭 실패 후 발동
+        markerTapRecognizer.require(toFail: doubleTapRecognizer)  // 단일 탭(마커)은 더블탭 실패 후 발동
     }
 
     @objc private func handleGesture(_ recognizer: UIGestureRecognizer) {
