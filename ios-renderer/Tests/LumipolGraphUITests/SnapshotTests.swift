@@ -51,4 +51,14 @@ final class SnapshotTests: XCTestCase {
         view.showTouchMarker(atX: 2.4)
         assertSnapshot(of: view, as: .image)
     }
+
+    // ⑤ 확대 상태 (1.0~3.0km 창) — Y 재계산·tick 윈도잉·클립 확인
+    func testZoomedWindow() {
+        let view = makeChartView(
+            TestFixtures.fullChart, invertedAxes: [.primary], formatter: TestFixtures.format
+        )
+        view.isZoomEnabled = true
+        view.zoom(toXRange: 1.0...3.0)
+        assertSnapshot(of: view, as: .image)
+    }
 }
