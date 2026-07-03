@@ -158,6 +158,9 @@ public final class RDChartView: UIView {
 
     /// 원본 도메인 x 위치에 근접점 마커(수직선+점+말풍선)를 표시한다.
     @objc public func showTouchMarker(atX rawX: Double) {
+        if let state = zoomState, state.isZoomed, !state.window.contains(rawX) {
+            return
+        }
         guard let data, let chartLayout, let plotArea = currentPlotArea else { return }
         hideTouchMarker()
         let context = TouchMarker.Context(
@@ -184,6 +187,7 @@ public final class RDChartView: UIView {
         guard isZoomEnabled, range.upperBound > range.lowerBound else { return }
         ensureZoomState()
         zoomState?.setWindow(range)
+        hideTouchMarker()
         commitViewport()
     }
 
@@ -243,10 +247,15 @@ public final class RDChartView: UIView {
     }
 
     /// 제스처 진행 중 임시 X 변환 (하이브리드의 변환 단계 — 커밋 전 미리보기)
-    private func applyLiveTransform(scaleX: CGFloat, translationX: CGFloat, anchorX: CGFloat) {
-        var transform = CGAffineTransform(translationX: anchorX, y: 0)
+    ///
+    /// anchorX는 뷰 좌표(예: 제스처 위치)로 전달받는다. CALayer의 affine transform은
+    /// 레이어의 anchorPoint(기본값 = bounds 중앙) 기준으로 적용되므로, translate·scale·translate
+    /// 관용구가 anchorX를 실제 고정점으로 유지하려면 뷰 좌표를 중앙 기준 좌표로 환산해야 한다.
+    func applyLiveTransform(scaleX: CGFloat, translationX: CGFloat, anchorX: CGFloat) {
+        let centeredAnchorX = anchorX - contentContainer.bounds.midX
+        var transform = CGAffineTransform(translationX: centeredAnchorX, y: 0)
         transform = transform.scaledBy(x: scaleX, y: 1)
-        transform = transform.translatedBy(x: -anchorX, y: 0)
+        transform = transform.translatedBy(x: -centeredAnchorX, y: 0)
         transform = transform.concatenating(CGAffineTransform(translationX: translationX, y: 0))
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -283,6 +292,7 @@ public final class RDChartView: UIView {
     }
 
     private func handleZoomedPan(_ recognizer: UIPanGestureRecognizer) {
+        if pinchRecognizer.state == .began || pinchRecognizer.state == .changed { return }
         guard let plotArea = currentPlotArea else { return }
         switch recognizer.state {
         case .began:
@@ -308,6 +318,7 @@ public final class RDChartView: UIView {
     private func installGestures() {
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
         pan.delegate = self
+        pan.maximumNumberOfTouches = 1
         addGestureRecognizer(pan)
 
         markerTapRecognizer.addTarget(self, action: #selector(handleGesture(_:)))
@@ -332,6 +343,7 @@ public final class RDChartView: UIView {
             handleZoomedPan(pan)
             return
         }
+        if pinchRecognizer.state == .began || pinchRecognizer.state == .changed { return }
         guard let chartLayout, let plotArea = currentPlotArea,
               let xTicks = chartLayout.axisTicks.first(where: { $0.axis == .x })?.ticks,
               let xScale = AxisScale(ticks: xTicks)

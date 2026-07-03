@@ -24,7 +24,11 @@ enum TouchMarker {
         // 수직선 x는 첫 시리즈의 근접점 기준 — 계약상 시리즈별 근접 x가 다를 수 있으나
         // 러닝 데이터는 공통 샘플링 x를 쓰므로 하나로 통일한다.
         guard let snappedX = results.first?.x else { return nil }
-        let nx = min(max(xScale.position(ofValue: snappedX), 0), 1)
+        // 스냅된 근접점이 현재 표시 도메인(창) 밖이면 마커를 만들지 않는다 —
+        // 확대 창 경계 부근에서 창 밖 데이터로 스냅되는 것을 방지.
+        let rawNx = xScale.position(ofValue: snappedX)
+        guard (0...1).contains(rawNx) else { return nil }
+        let nx = rawNx
         let axisBySeriesId = Dictionary(uniqueKeysWithValues: context.data.series.map { ($0.id, $0.axis) })
         let roleBySeriesId = Dictionary(uniqueKeysWithValues: context.data.series.map { ($0.id, $0.role) })
 
