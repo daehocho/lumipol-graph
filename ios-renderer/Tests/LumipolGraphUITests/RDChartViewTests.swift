@@ -3,8 +3,18 @@ import LumipolGraph
 @testable import LumipolGraphUI
 
 final class RDChartViewTests: XCTestCase {
+    /// 루트(축 라벨·터치 마커)와 `zoom.clip > zoom.content`(시리즈·그리드 등) 양쪽을 합쳐 반환한다.
+    private func allChartLayers(of view: RDChartView) -> [CALayer] {
+        let root = view.layer.sublayers ?? []
+        let content = root
+            .first { $0.name == "zoom.clip" }?
+            .sublayers?.first { $0.name == "zoom.content" }?
+            .sublayers ?? []
+        return root + content
+    }
+
     private func chartLayerNames(of view: RDChartView) -> [String] {
-        (view.layer.sublayers ?? []).compactMap(\.name)
+        allChartLayers(of: view).compactMap(\.name)
     }
 
     func testRenderBuildsLayersAfterLayout() {
@@ -57,7 +67,7 @@ final class RDChartViewTests: XCTestCase {
     }
 
     private func mainLineLayers(of view: RDChartView) -> [CAShapeLayer] {
-        (view.layer.sublayers ?? []).compactMap { $0 as? CAShapeLayer }
+        allChartLayers(of: view).compactMap { $0 as? CAShapeLayer }
             .filter { $0.name?.hasPrefix("series.main.") == true }
     }
 
@@ -74,6 +84,25 @@ final class RDChartViewTests: XCTestCase {
         let relaidOut = mainLineLayers(of: view)
         XCTAssertFalse(relaidOut.isEmpty)
         XCTAssertTrue(relaidOut.allSatisfy { $0.animation(forKey: "strokeEnd") == nil })
+    }
+
+    func testPlotContentIsGroupedUnderContentContainerAndLabelsStayAtRoot() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.paceAndHeartRate)
+        view.layoutIfNeeded()
+
+        let rootNames = view.layer.sublayers?.compactMap(\.name) ?? []
+        // 축 라벨은 루트에 남는다 (줌 변환 제외 대상)
+        XCTAssertTrue(rootNames.contains("axisLabels.x"))
+        XCTAssertTrue(rootNames.contains { $0.hasPrefix("axisLabels.y") })
+        // 시리즈·그리드는 루트가 아니라 clip > content 컨테이너 아래
+        XCTAssertFalse(rootNames.contains { $0.hasPrefix("series.") || $0 == "grid" })
+        let clip = view.layer.sublayers?.first { $0.name == "zoom.clip" }
+        let content = clip?.sublayers?.first { $0.name == "zoom.content" }
+        let contentNames = content?.sublayers?.compactMap(\.name) ?? []
+        XCTAssertTrue(contentNames.contains { $0.hasPrefix("series.main.") })
+        XCTAssertTrue(contentNames.contains("grid"))
     }
 
     func testRenderResetsTouchMarker() {
