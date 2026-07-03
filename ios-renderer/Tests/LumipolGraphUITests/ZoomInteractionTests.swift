@@ -65,4 +65,24 @@ final class ZoomInteractionTests: XCTestCase {
         XCTAssertTrue(RDChartView.isHorizontalDominant(translation: CGPoint(x: 10, y: 3)))
         XCTAssertFalse(RDChartView.isHorizontalDominant(translation: CGPoint(x: 3, y: 10)))
     }
+
+    func testDoubleTapRecognizerAttachedOnlyWhenZoomEnabled() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        let doubleTaps: (RDChartView) -> Int = { v in
+            (v.gestureRecognizers ?? []).compactMap { $0 as? UITapGestureRecognizer }
+                .filter { $0.numberOfTapsRequired == 2 }.count
+        }
+        XCTAssertEqual(doubleTaps(view), 0)  // 기본: 미부착 → 단일 탭 requirement 무효
+        view.isZoomEnabled = true
+        XCTAssertEqual(doubleTaps(view), 1)
+        view.isZoomEnabled = false
+        XCTAssertEqual(doubleTaps(view), 0)
+    }
+
+    func testSingleTapRecognizerAlwaysAttached() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        let singleTaps = (view.gestureRecognizers ?? []).compactMap { $0 as? UITapGestureRecognizer }
+            .filter { $0.numberOfTapsRequired == 1 }
+        XCTAssertEqual(singleTaps.count, 1)
+    }
 }
