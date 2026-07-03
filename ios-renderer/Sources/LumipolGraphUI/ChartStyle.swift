@@ -6,8 +6,14 @@ public struct ChartStyle {
     public var lineWidth: CGFloat = 2
     public var primaryLineColor: UIColor = .systemBlue
     public var secondaryLineColor: UIColor = .systemRed
-    /// main 시리즈 라인색 기반 area 그라데이션의 시작 알파. 0이면 그라데이션 없음.
+    /// primary 축 main 시리즈 라인색 기반 area 그라데이션의 시작 알파. 0이면 그라데이션 없음.
+    /// secondary 축은 fill 중첩으로 탁해지므로 그라데이션 없이 라인만 그린다.
     public var gradientMaxAlpha: CGFloat = 0.25
+
+    // 그리드 (X tick 세로선 + Y tick 가로선). nil이면 그리드 없음.
+    public var gridLineColor: UIColor? = UIColor.systemGray4.withAlphaComponent(0.7)
+    public var gridLineDashPattern: [NSNumber] = [3, 3]
+    public var gridLineWidth: CGFloat = 0.5
 
     // 고스트(지난 러닝)
     public var ghostLineColor: UIColor = UIColor.systemGray.withAlphaComponent(0.7)
