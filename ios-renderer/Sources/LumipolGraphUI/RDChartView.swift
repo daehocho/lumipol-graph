@@ -1,6 +1,14 @@
 import UIKit
 import LumipolGraph
 
+/// 스크럽(터치 근접점) 값을 소비자에게 전달하는 델리게이트.
+public protocol RDChartScrubDelegate: AnyObject {
+    /// 스크럽 근접점 값. seriesId → 포맷된 값 문자열(labelFormatter 결과).
+    func chartView(_ view: RDChartView, didScrubTo valuesBySeriesId: [String: String])
+    /// 스크럽 종료(손 뗌·줌/팬 진입 등으로 마커가 사라질 때).
+    func chartViewDidEndScrub(_ view: RDChartView)
+}
+
 /// KMP 코어 `LineChartData`를 받아 CAShapeLayer로 라인차트를 그리는 UIView.
 /// 파이프라인: `LineChartEngine.layout` → `PlotArea`(픽셀 변환) → `ChartLayerBuilder`(레이어 조립).
 @objc(RDChartView)
@@ -8,6 +16,9 @@ public final class RDChartView: UIView {
 
     /// main 라인 등장 애니메이션(strokeEnd 0→1). 스냅샷/테스트에서는 끈다.
     @objc public var isAnimationEnabled: Bool = true
+
+    /// 스크럽 값 소비자. 미설정 시 값 전달 없음(기존 동작).
+    public weak var scrubDelegate: RDChartScrubDelegate?
 
     // MARK: - Zoom (X축 확대/팬)
 
@@ -51,7 +62,6 @@ public final class RDChartView: UIView {
     private(set) var style: ChartStyle = .default
     private(set) var invertedAxes: Set<Axis> = []
     private(set) var labelFormatter: (ChartAxis, Double) -> String = RDChartView.defaultFormatter
-    private(set) var seriesDisplayNames: [String: String] = [:]
     private(set) var currentPlotArea: PlotArea?
     private var chartLayers: [CALayer] = []
     // 줌 변환 대상 콘텐츠(시리즈·그리드·밴드·마커·기준선)와 클립 컨테이너.
@@ -69,21 +79,18 @@ public final class RDChartView: UIView {
     /// - Parameters:
     ///   - invertedAxes: 화면에서 뒤집을 Y축(예: 페이스 — 위=빠름). 코어 출력은 값-공간 그대로.
     ///   - labelFormatter: 축 tick 값 → 표시 문자열. 코어/렌더러는 단위를 모른다(앱 주입).
-    ///   - seriesDisplayNames: 터치 말풍선에 쓸 seriesId → 표시명 (미지정 시 raw id).
     public func render(
         _ data: LineChartData,
         style: ChartStyle = .default,
         invertedAxes: Set<Axis> = [],
-        labelFormatter: ((ChartAxis, Double) -> String)? = nil,
-        seriesDisplayNames: [String: String] = [:]
+        labelFormatter: ((ChartAxis, Double) -> String)? = nil
     ) {
-        hideTouchMarker()
+        removeTouchMarkerLayer()
         zoomState = nil
         self.data = data
         self.style = style
         self.invertedAxes = invertedAxes
         self.labelFormatter = labelFormatter ?? RDChartView.defaultFormatter
-        self.seriesDisplayNames = seriesDisplayNames
         self.chartLayout = LineChartEngine.shared.layout(data: data)
         needsEntranceAnimation = isAnimationEnabled
         setNeedsLayout()
@@ -105,7 +112,7 @@ public final class RDChartView: UIView {
         defer { CATransaction.commit() }
 
         let markerRawX = activeMarkerRawX
-        hideTouchMarker()
+        removeTouchMarkerLayer()
         chartLayers.forEach { $0.removeFromSuperlayer() }
         chartLayers = []
         currentPlotArea = nil
@@ -156,28 +163,39 @@ public final class RDChartView: UIView {
 
     // MARK: - Touch marker
 
-    /// 원본 도메인 x 위치에 근접점 마커(수직선+점+말풍선)를 표시한다.
+    /// 원본 도메인 x 위치에 근접점 마커(수직선+점)를 표시하고 값을 델리게이트로 전달한다.
     @objc public func showTouchMarker(atX rawX: Double) {
         if let state = zoomState, state.isZoomed, !state.window.contains(rawX) {
             return
         }
         guard let data, let chartLayout, let plotArea = currentPlotArea else { return }
-        hideTouchMarker()
+        removeTouchMarkerLayer()
         let context = TouchMarker.Context(
             data: data, layout: chartLayout, style: style,
-            plotArea: plotArea, formatter: labelFormatter,
-            displayNames: seriesDisplayNames
+            plotArea: plotArea, formatter: labelFormatter
         )
-        guard let marker = TouchMarker.makeLayer(atRawX: rawX, context: context) else { return }
-        layer.addSublayer(marker)
-        touchMarkerLayer = marker
+        guard let result = TouchMarker.make(atRawX: rawX, context: context) else {
+            scrubDelegate?.chartViewDidEndScrub(self)
+            return
+        }
+        layer.addSublayer(result.layer)
+        touchMarkerLayer = result.layer
         activeMarkerRawX = rawX
+        scrubDelegate?.chartView(self, didScrubTo: result.valuesBySeriesId)
     }
 
-    @objc public func hideTouchMarker() {
+    /// 마커 레이어만 제거(델리게이트 통지 없음) — 내부 재빌드·재렌더용.
+    private func removeTouchMarkerLayer() {
         touchMarkerLayer?.removeFromSuperlayer()
         touchMarkerLayer = nil
         activeMarkerRawX = nil
+    }
+
+    /// 스크럽 종료: 마커 제거 + (표시 중이었으면) 종료 통지.
+    @objc public func hideTouchMarker() {
+        let hadMarker = touchMarkerLayer != nil
+        removeTouchMarkerLayer()
+        if hadMarker { scrubDelegate?.chartViewDidEndScrub(self) }
     }
 
     // MARK: - Zoom
@@ -344,6 +362,12 @@ public final class RDChartView: UIView {
             return
         }
         if pinchRecognizer.state == .began || pinchRecognizer.state == .changed { return }
+        // 손을 떼면(팬 종료) 마커 제거 + 값 원복. 탭(markerTap)은 종료 분기에 안 걸려 기존대로 표시 유지.
+        if recognizer is UIPanGestureRecognizer,
+           recognizer.state == .ended || recognizer.state == .cancelled || recognizer.state == .failed {
+            hideTouchMarker()
+            return
+        }
         guard let chartLayout, let plotArea = currentPlotArea,
               let xTicks = chartLayout.axisTicks.first(where: { $0.axis == .x })?.ticks,
               let xScale = AxisScale(ticks: xTicks)

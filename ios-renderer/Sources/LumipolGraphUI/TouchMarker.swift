@@ -1,7 +1,7 @@
 import UIKit
 import LumipolGraph
 
-/// 터치 지점의 근접점 마커 레이어(수직선 + 시리즈별 점 + 값 말풍선)를 만든다.
+/// 터치 지점의 근접점 마커 레이어(수직선 + 시리즈별 점)를 만들고, 시리즈별 포맷 값을 반환한다.
 /// 근접 판정은 코어 `LineChartEngine.nearest`(원본 도메인 x) — 양 플랫폼 동일 로직.
 enum TouchMarker {
     struct Context {
@@ -10,12 +10,16 @@ enum TouchMarker {
         let style: ChartStyle
         let plotArea: PlotArea
         let formatter: (ChartAxis, Double) -> String
-        /// seriesId → 말풍선 표시명 (없으면 raw id 노출)
-        var displayNames: [String: String] = [:]
     }
 
-    /// 원본 도메인 x 기준 마커 레이어. 표시 불가(플롯 영역 없음·축 변환 불능·근접점 없음)면 nil.
-    static func makeLayer(atRawX rawX: Double, context: Context) -> CALayer? {
+    /// 마커 레이어 + seriesId→포맷값. 값(표시명 제외)은 스크럽 콜백으로 앱에 전달된다.
+    struct Result {
+        let layer: CALayer
+        let valuesBySeriesId: [String: String]
+    }
+
+    /// 원본 도메인 x 기준 마커. 표시 불가(플롯 없음·축 변환 불능·근접점 없음)면 nil.
+    static func make(atRawX rawX: Double, context: Context) -> Result? {
         guard context.plotArea.isRenderable,
               let xTicks = ticks(for: .x, in: context.layout),
               let xScale = AxisScale(ticks: xTicks)
@@ -48,8 +52,7 @@ enum TouchMarker {
         line.lineWidth = 1
         container.addSublayer(line)
 
-        var bubbleLines: [String] = []
-        var topDotY = context.plotArea.rect.maxY
+        var valuesBySeriesId: [String: String] = [:]
         for result in results {
             guard let axis = axisBySeriesId[result.seriesId],
                   let chartAxis = chartAxis(of: axis),
@@ -76,15 +79,10 @@ enum TouchMarker {
             }
             dot.fillColor = dotColor.cgColor
             container.addSublayer(dot)
-            topDotY = min(topDotY, point.y)
-            let displayName = context.displayNames[result.seriesId] ?? result.seriesId
-            bubbleLines.append("\(displayName) \(context.formatter(chartAxis, result.y))")
+            valuesBySeriesId[result.seriesId] = context.formatter(chartAxis, result.y)
         }
-        guard !bubbleLines.isEmpty else { return nil }
-        container.addSublayer(
-            bubbleLayer(lines: bubbleLines, anchorX: lineX, topY: topDotY, context: context)
-        )
-        return container
+        guard !valuesBySeriesId.isEmpty else { return nil }
+        return Result(layer: container, valuesBySeriesId: valuesBySeriesId)
     }
 
     private static func ticks(for axis: ChartAxis, in layout: LineChartLayout) -> [AxisTick]? {
@@ -95,40 +93,5 @@ enum TouchMarker {
         if axis == .primary { return .yPrimary }
         if axis == .secondary { return .ySecondary }
         return nil
-    }
-
-    private static func bubbleLayer(
-        lines: [String], anchorX: CGFloat, topY: CGFloat, context: Context
-    ) -> CALayer {
-        let font = context.style.bubbleFont
-        let padding: CGFloat = 6
-        let lineHeight = ceil(font.lineHeight)
-        let maxLineWidth = lines
-            .map { ceil(($0 as NSString).size(withAttributes: [.font: font]).width) }
-            .max() ?? 0
-        let size = CGSize(
-            width: maxLineWidth + padding * 2,
-            height: lineHeight * CGFloat(lines.count) + padding * 2
-        )
-        var origin = CGPoint(x: anchorX - size.width / 2, y: topY - size.height - 8)
-        origin.x = min(
-            max(origin.x, context.plotArea.rect.minX),
-            context.plotArea.rect.maxX - size.width
-        )
-        origin.y = max(origin.y, context.plotArea.rect.minY)
-
-        let bubble = CALayer()
-        bubble.name = "touch.bubble"
-        bubble.frame = CGRect(origin: origin, size: size)
-        bubble.backgroundColor = context.style.bubbleBackgroundColor.cgColor
-        bubble.cornerRadius = 6
-        for (index, text) in lines.enumerated() {
-            let label = ChartLayerBuilder.textLayer(
-                text, font: font, color: context.style.bubbleTextColor
-            )
-            label.frame.origin = CGPoint(x: padding, y: padding + lineHeight * CGFloat(index))
-            bubble.addSublayer(label)
-        }
-        return bubble
     }
 }

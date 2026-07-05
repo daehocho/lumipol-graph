@@ -115,4 +115,51 @@ final class RDChartViewTests: XCTestCase {
         view.layoutIfNeeded()
         XCTAssertFalse((view.layer.sublayers ?? []).contains { $0.name == "touch.marker" })
     }
+
+    // MARK: - Scrub delegate
+
+    private final class SpyScrubDelegate: RDChartScrubDelegate {
+        var scrubbed: [[String: String]] = []
+        var endCount = 0
+        func chartView(_ view: RDChartView, didScrubTo valuesBySeriesId: [String: String]) {
+            scrubbed.append(valuesBySeriesId)
+        }
+        func chartViewDidEndScrub(_ view: RDChartView) { endCount += 1 }
+    }
+
+    func testShowTouchMarkerReportsValuesToDelegate() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 2.4)
+        XCTAssertEqual(spy.scrubbed.last?["pace"], "5'30\"")
+        XCTAssertEqual(spy.scrubbed.last?["hr"], "166")
+        XCTAssertEqual(spy.endCount, 0, "표시 중에는 종료 콜백 없음")
+    }
+
+    func testHideTouchMarkerReportsEndOnceWhenShown() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 2.4)
+        view.hideTouchMarker()
+        XCTAssertEqual(spy.endCount, 1)
+    }
+
+    func testHideTouchMarkerNoEndWhenNothingShown() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.hideTouchMarker()
+        XCTAssertEqual(spy.endCount, 0, "표시된 마커가 없으면 종료 콜백도 없음")
+    }
 }
