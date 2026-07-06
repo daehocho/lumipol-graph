@@ -24,4 +24,18 @@ final class CoreSmokeTests: XCTestCase {
         // 최신 계약(커밋 6fb6841) 확인 — stale xcframework면 컴파일 실패
         XCTAssertNil(layout.stats.segmentSeriesId)
     }
+
+    func testBarEngineTypesExposed() {
+        let data = BarChartData(
+            samples: [SplitSample(distanceMeters: 1000, timeSeconds: 300)],
+            splitDistanceMeters: 1000,
+            targetPaceSecPerUnit: nil,
+            toleranceSecPerUnit: 10,
+            maxTicks: 5
+        )
+        let layout = BarChartEngine.shared.layout(data: data)
+        XCTAssertEqual(layout.bars.count, 1)
+        // 1km 정확한 샘플(0.3km 미만 부분 구간이 아님)이므로 isPartial == false
+        XCTAssertFalse(layout.bars[0].isPartial)
+    }
 }
