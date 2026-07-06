@@ -78,6 +78,8 @@ public final class RDChartView: UIView {
     private var pinchStartWindow: ClosedRange<Double>?
     /// 롱프레스 스크럽 모드 여부. 켜져 있으면 팬(스크롤)을 잠근다.
     private var isScrubbing = false
+    /// 페이스 라인 뒤 배경 고도 실루엣(장식). nil이면 그리지 않음.
+    private var backgroundArea: [AreaPoint]?
 
     /// 차트를 그린다. 터치 질의를 위해 `data`를 보관한다.
     ///
@@ -90,11 +92,13 @@ public final class RDChartView: UIView {
         _ data: LineChartData,
         style: ChartStyle = .default,
         invertedAxes: Set<Axis> = [],
-        labelFormatter: ((ChartAxis, Double) -> String)? = nil
+        labelFormatter: ((ChartAxis, Double) -> String)? = nil,
+        backgroundArea: [AreaPoint]? = nil
     ) {
         removeTouchMarkerLayer()
         zoomState = nil
         self.data = data
+        self.backgroundArea = backgroundArea
         self.style = style
         self.invertedAxes = invertedAxes
         self.labelFormatter = labelFormatter ?? RDChartView.defaultFormatter
@@ -136,6 +140,12 @@ public final class RDChartView: UIView {
         contentContainer.frame = bounds
         contentContainer.setAffineTransform(.identity)
         contentContainer.sublayers?.forEach { $0.removeFromSuperlayer() }
+        if let backgroundArea, let xScale = xAxisScale(),
+           let areaLayer = AreaSilhouette.layer(
+               points: backgroundArea, xScale: xScale, plotArea: plotArea, style: style
+           ) {
+            contentContainer.addSublayer(areaLayer)  // 최하단(그리드보다 아래)
+        }
         for built in layers {
             if built.name?.hasPrefix("axisLabels.") == true {
                 layer.addSublayer(built)
@@ -396,12 +406,17 @@ public final class RDChartView: UIView {
         }
     }
 
+    /// 현재 chartLayout의 X tick으로 도메인↔정규화 변환 스케일. tick 부족 시 nil.
+    private func xAxisScale() -> AxisScale? {
+        guard let xTicks = chartLayout?.axisTicks.first(where: { $0.axis == .x })?.ticks else {
+            return nil
+        }
+        return AxisScale(ticks: xTicks)
+    }
+
     /// 손가락 뷰 좌표 → 현재(창) 도메인 x로 환산해 스크럽 마커 표시. 롱프레스·비확대 스크럽 공용.
     func scrub(at location: CGPoint) {
-        guard let chartLayout, let plotArea = currentPlotArea,
-              let xTicks = chartLayout.axisTicks.first(where: { $0.axis == .x })?.ticks,
-              let xScale = AxisScale(ticks: xTicks)
-        else { return }
+        guard let plotArea = currentPlotArea, let xScale = xAxisScale() else { return }
         let rawX = xScale.value(atPosition: plotArea.normalizedX(at: location.x))
         showTouchMarker(atX: rawX)
     }

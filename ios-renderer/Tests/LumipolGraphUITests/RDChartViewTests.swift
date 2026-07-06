@@ -177,4 +177,30 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertTrue((view.layer.sublayers ?? []).contains { $0.name == "touch.marker" })
         XCTAssertFalse(spy.scrubbed.isEmpty, "확대 창에서도 스크럽 값이 전달돼야 함")
     }
+
+    // MARK: - Background area
+
+    func testBackgroundAreaDrawnBottomMostUnderContent() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(
+            TestFixtures.paceOnly,
+            backgroundArea: [AreaPoint(x: 0, y: 0), AreaPoint(x: 5, y: 100)]
+        )
+        view.layoutIfNeeded()
+        let content = view.layer.sublayers?
+            .first { $0.name == "zoom.clip" }?
+            .sublayers?.first { $0.name == "zoom.content" }
+        let contentNames = content?.sublayers?.compactMap(\.name) ?? []
+        XCTAssertEqual(contentNames.first, "area.altitude", "고도 실루엣은 콘텐츠 최하단")
+        XCTAssertTrue(contentNames.contains("series.main.pace"))
+    }
+
+    func testNoBackgroundAreaOmitsAreaLayer() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.paceOnly)
+        view.layoutIfNeeded()
+        XCTAssertFalse(chartLayerNames(of: view).contains("area.altitude"))
+    }
 }
