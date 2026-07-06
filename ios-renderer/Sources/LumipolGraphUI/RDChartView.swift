@@ -71,6 +71,8 @@ public final class RDChartView: UIView {
     private var touchMarkerLayer: CALayer?
     private var activeMarkerRawX: Double?
     private var needsEntranceAnimation = false
+    /// 확대 팬 진행 중 기준 창(제스처 시작 시점). 매 프레임 이 창에 누적 이동량을 적용해 재렌더.
+    private var panStartWindow: ClosedRange<Double>?
 
     /// 차트를 그린다. 터치 질의를 위해 `data`를 보관한다.
     ///
@@ -309,23 +311,26 @@ public final class RDChartView: UIView {
         resetZoom()
     }
 
+    /// 확대 상태 팬. 라이브 변환(콘텐츠 밀기)은 현재 창 조각만 갖고 있어 인접 구간이 빈 공간으로
+    /// 노출된다 — 대신 매 프레임 창을 이동시켜 재렌더(코어 재계산)한다. 항상 꽉 차고 Y도 실시간 재계산된다.
+    /// 기준 창(제스처 시작 시점)에 누적 이동량을 적용해 드리프트를 막는다.
     private func handleZoomedPan(_ recognizer: UIPanGestureRecognizer) {
         if pinchRecognizer.state == .began || pinchRecognizer.state == .changed { return }
-        guard let plotArea = currentPlotArea else { return }
+        guard let plotArea = currentPlotArea, plotArea.rect.width > 0 else { return }
         switch recognizer.state {
         case .began:
             hideTouchMarker()
-            updateClipMask(gestureActive: true)
+            panStartWindow = zoomState?.window
         case .changed:
-            // 창이 데이터 경계에 닿으면 그 방향으로는 콘텐츠를 밀지 않는다(빈 공간 방지).
-            let raw = Double(recognizer.translation(in: self).x)
-            let tx = zoomState?.clampedLivePanTranslation(raw, plotWidth: Double(plotArea.rect.width))
-                ?? raw
-            applyLiveTransform(scaleX: 1, translationX: CGFloat(tx), anchorX: 0)
-        case .ended, .cancelled:
+            guard let start = panStartWindow else { return }
+            let span = start.upperBound - start.lowerBound
+            // 오른쪽 드래그(+x) = 이전(왼쪽) 구간으로 → 창 왼쪽 이동.
             let fraction = Double(recognizer.translation(in: self).x / plotArea.rect.width)
-            zoomState?.pan(byFraction: fraction)
+            let targetLower = start.lowerBound - fraction * span
+            zoomState?.setWindow(targetLower ... (targetLower + span))
             commitViewport()
+        case .ended, .cancelled:
+            panStartWindow = nil
         default:
             break
         }
@@ -360,7 +365,9 @@ public final class RDChartView: UIView {
     }
 
     @objc private func handleGesture(_ recognizer: UIGestureRecognizer) {
-        if let pan = recognizer as? UIPanGestureRecognizer, zoomState?.isZoomed == true {
+        // 진행 중인 확대 팬은 창이 전체로 돌아가(isZoomed=false) 되어도 제스처 끝까지 팬 핸들러 유지.
+        if let pan = recognizer as? UIPanGestureRecognizer,
+           zoomState?.isZoomed == true || panStartWindow != nil {
             handleZoomedPan(pan)
             return
         }
