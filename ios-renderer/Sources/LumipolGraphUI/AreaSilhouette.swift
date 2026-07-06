@@ -20,4 +20,33 @@ enum AreaSilhouette {
         guard span > 0 else { return values.map { _ in 0 } }
         return values.map { ($0 - lo) / span }
     }
+
+    /// 도메인 area 포인트 → 실루엣 CAShapeLayer. 2점 미만이거나 렌더 불가 플롯이면 nil.
+    /// x: xScale로 정규화 위치 산출 후 plotArea.x. y: heightFraction × areaHeightFraction, 바닥(maxY) 기준 위로.
+    /// 축 반전 무관(자체 매핑) — plotArea.y는 쓰지 않는다.
+    static func layer(
+        points: [AreaPoint], xScale: AxisScale, plotArea: PlotArea, style: ChartStyle
+    ) -> CAShapeLayer? {
+        guard points.count >= 2, plotArea.isRenderable else { return nil }
+        let fractions = heightFractions(points.map { $0.y })
+        let baseY = plotArea.rect.maxY
+        let usableHeight = style.areaHeightFraction * plotArea.rect.height
+        func pixel(_ index: Int) -> CGPoint {
+            let px = plotArea.x(xScale.position(ofValue: points[index].x))
+            let py = baseY - CGFloat(fractions[index]) * usableHeight
+            return CGPoint(x: px, y: py)
+        }
+        let path = UIBezierPath()
+        path.move(to: pixel(0))
+        for index in 1..<points.count { path.addLine(to: pixel(index)) }
+        path.addLine(to: CGPoint(x: pixel(points.count - 1).x, y: baseY))
+        path.addLine(to: CGPoint(x: pixel(0).x, y: baseY))
+        path.close()
+        let layer = CAShapeLayer()
+        layer.name = "area.altitude"
+        layer.path = path.cgPath
+        layer.fillColor = style.areaFillColor.cgColor
+        layer.strokeColor = nil
+        return layer
+    }
 }

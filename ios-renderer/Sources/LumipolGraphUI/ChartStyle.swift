@@ -25,6 +25,10 @@ public struct ChartStyle {
     public var refLineDashPattern: [NSNumber] = [6, 3]
     public var refBandColor: UIColor = UIColor.systemOrange.withAlphaComponent(0.12)
 
+    // 배경 고도 실루엣 (장식 area — 축/스크럽 없음)
+    public var areaFillColor: UIColor = UIColor.systemGray3.withAlphaComponent(0.35)
+    public var areaHeightFraction: CGFloat = 0.35
+
     // 구간(km) 마커
     public var markerLineColor: UIColor = .systemGray4
     public var markerEmphasisLineColor: UIColor = .systemGray
