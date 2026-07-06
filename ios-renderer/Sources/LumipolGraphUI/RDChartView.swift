@@ -73,6 +73,8 @@ public final class RDChartView: UIView {
     private var needsEntranceAnimation = false
     /// 확대 팬 진행 중 기준 창(제스처 시작 시점). 매 프레임 이 창에 누적 이동량을 적용해 재렌더.
     private var panStartWindow: ClosedRange<Double>?
+    /// 라이브 핀치 진행 중 기준 창(제스처 시작 시점). 매 프레임 누적 배율을 적용해 재렌더.
+    private var pinchStartWindow: ClosedRange<Double>?
 
     /// 차트를 그린다. 터치 질의를 위해 `data`를 보관한다.
     ///
@@ -249,12 +251,11 @@ public final class RDChartView: UIView {
         updateClipMask()
     }
 
-    /// 줌 상태(확대 or 제스처 진행 중)일 때만 플롯 영역 클립.
+    /// 확대(줌 창) 상태일 때만 플롯 영역 클립 — 창 밖으로 이어지는 이웃 포인트 선을 가린다.
     /// 마스크 위쪽을 뷰 상단까지 열어 구간(km) 마커 라벨은 잘리지 않게 한다.
-    private func updateClipMask(gestureActive: Bool = false) {
+    private func updateClipMask() {
         guard let plotArea = currentPlotArea else { return }
-        let active = gestureActive || (zoomState?.isZoomed == true)
-        if active {
+        if zoomState?.isZoomed == true {
             let mask = CAShapeLayer()
             mask.path = UIBezierPath(rect: CGRect(
                 x: plotArea.rect.minX, y: 0,
@@ -266,42 +267,25 @@ public final class RDChartView: UIView {
         }
     }
 
-    /// 제스처 진행 중 임시 X 변환 (하이브리드의 변환 단계 — 커밋 전 미리보기)
-    ///
-    /// anchorX는 뷰 좌표(예: 제스처 위치)로 전달받는다. CALayer의 affine transform은
-    /// 레이어의 anchorPoint(기본값 = bounds 중앙) 기준으로 적용되므로, translate·scale·translate
-    /// 관용구가 anchorX를 실제 고정점으로 유지하려면 뷰 좌표를 중앙 기준 좌표로 환산해야 한다.
-    func applyLiveTransform(scaleX: CGFloat, translationX: CGFloat, anchorX: CGFloat) {
-        let centeredAnchorX = anchorX - contentContainer.bounds.midX
-        var transform = CGAffineTransform(translationX: centeredAnchorX, y: 0)
-        transform = transform.scaledBy(x: scaleX, y: 1)
-        transform = transform.translatedBy(x: -centeredAnchorX, y: 0)
-        transform = transform.concatenating(CGAffineTransform(translationX: translationX, y: 0))
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        contentContainer.setAffineTransform(transform)
-        CATransaction.commit()
-    }
-
+    /// 라이브 핀치. 콘텐츠 변환(스케일)은 현재 창 조각만 갖고 있어 확대 시 잘리거나 축소 시 빈 공간이
+    /// 노출된다 — 대신 매 프레임 창을 재계산해 재렌더(팬과 동일 전략). 앵커(손가락 중점)를 고정점으로 유지.
     @objc private func handlePinch(_ recognizer: UIPinchGestureRecognizer) {
         guard isZoomEnabled, let plotArea = currentPlotArea, data != nil else { return }
         switch recognizer.state {
         case .began:
             ensureZoomState()
             hideTouchMarker()
-            updateClipMask(gestureActive: true)
+            pinchStartWindow = zoomState?.window
         case .changed:
-            applyLiveTransform(
-                scaleX: max(recognizer.scale, 0.01), translationX: 0,
-                anchorX: recognizer.location(in: self).x
-            )
-        case .ended, .cancelled:
+            guard let start = pinchStartWindow else { return }
             let anchor = plotArea.normalizedX(at: recognizer.location(in: self).x)
             zoomState?.pinch(
-                by: Double(recognizer.scale), anchor: anchor,
-                maxScale: Double(maxZoomScale)
+                from: start, cumulativeScale: Double(recognizer.scale),
+                anchor: anchor, maxScale: Double(maxZoomScale)
             )
             commitViewport()
+        case .ended, .cancelled:
+            pinchStartWindow = nil
         default:
             break
         }
