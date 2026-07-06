@@ -107,6 +107,6 @@ final class ZoomInteractionTests: XCTestCase {
         let longPresses = (view.gestureRecognizers ?? [])
             .compactMap { $0 as? UILongPressGestureRecognizer }
         XCTAssertEqual(longPresses.count, 1)
-        XCTAssertEqual(longPresses.first?.minimumPressDuration ?? 0, 1.5, accuracy: 1e-9)
+        XCTAssertEqual(longPresses.first?.minimumPressDuration ?? 0, 0.5, accuracy: 1e-9)
     }
 }
