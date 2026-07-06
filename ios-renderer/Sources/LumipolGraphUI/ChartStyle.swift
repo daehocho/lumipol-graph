@@ -33,6 +33,16 @@ public struct ChartStyle {
     public var markerLineColor: UIColor = .systemGray4
     public var markerEmphasisLineColor: UIColor = .systemGray
 
+    // 스플릿 막대
+    public var barColors: [BarColorRole: UIColor] = [
+        .faster: UIColor.systemGreen,
+        .onTarget: UIColor.systemGray,
+        .slower: UIColor.systemOrange,
+    ]
+    public var barCornerRadius: CGFloat = 3
+    public var barReferenceLineColor: UIColor = UIColor.label.withAlphaComponent(0.6)
+    public var barMinHeight: CGFloat = 2   // 가장 빠른(짧은) 막대도 최소 가시 높이
+
     // 축 라벨
     public var axisLabelFont: UIFont = .systemFont(ofSize: 10)
     public var axisLabelColor: UIColor = .secondaryLabel
