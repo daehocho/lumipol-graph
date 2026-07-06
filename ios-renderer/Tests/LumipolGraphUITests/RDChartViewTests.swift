@@ -162,4 +162,19 @@ final class RDChartViewTests: XCTestCase {
         view.hideTouchMarker()
         XCTAssertEqual(spy.endCount, 0, "표시된 마커가 없으면 종료 콜백도 없음")
     }
+
+    func testScrubAtLocationReportsValuesWhenZoomed() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.isZoomEnabled = true
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        view.zoom(toXRange: 1.0 ... 3.0)
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.scrub(at: CGPoint(x: 195, y: 150))  // 플롯(≈44..346) 중앙 부근
+        XCTAssertTrue((view.layer.sublayers ?? []).contains { $0.name == "touch.marker" })
+        XCTAssertFalse(spy.scrubbed.isEmpty, "확대 창에서도 스크럽 값이 전달돼야 함")
+    }
 }
