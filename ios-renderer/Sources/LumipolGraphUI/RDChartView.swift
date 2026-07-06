@@ -362,11 +362,15 @@ public final class RDChartView: UIView {
             hideTouchMarker()
             return
         }
+        scrub(at: recognizer.location(in: self))
+    }
+
+    /// 손가락 뷰 좌표 → 현재(창) 도메인 x로 환산해 스크럽 마커 표시. 롱프레스·비확대 스크럽 공용.
+    func scrub(at location: CGPoint) {
         guard let chartLayout, let plotArea = currentPlotArea,
               let xTicks = chartLayout.axisTicks.first(where: { $0.axis == .x })?.ticks,
               let xScale = AxisScale(ticks: xTicks)
         else { return }
-        let location = recognizer.location(in: self)
         let rawX = xScale.value(atPosition: plotArea.normalizedX(at: location.x))
         showTouchMarker(atX: rawX)
     }
