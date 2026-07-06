@@ -101,4 +101,12 @@ final class ZoomInteractionTests: XCTestCase {
         let hasMarker = view.layer.sublayers?.contains { $0.name == "touch.marker" } ?? false
         XCTAssertFalse(hasMarker)
     }
+
+    func testLongPressRecognizerAttachedWithDuration() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        let longPresses = (view.gestureRecognizers ?? [])
+            .compactMap { $0 as? UILongPressGestureRecognizer }
+        XCTAssertEqual(longPresses.count, 1)
+        XCTAssertEqual(longPresses.first?.minimumPressDuration ?? 0, 1.5, accuracy: 1e-9)
+    }
 }

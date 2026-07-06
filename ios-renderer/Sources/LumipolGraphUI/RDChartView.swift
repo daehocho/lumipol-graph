@@ -46,6 +46,7 @@ public final class RDChartView: UIView {
     private let pinchRecognizer = UIPinchGestureRecognizer()
     private let doubleTapRecognizer = UITapGestureRecognizer()
     private let markerTapRecognizer = UITapGestureRecognizer()
+    private let longPressRecognizer = UILongPressGestureRecognizer()
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -75,6 +76,8 @@ public final class RDChartView: UIView {
     private var panStartWindow: ClosedRange<Double>?
     /// 라이브 핀치 진행 중 기준 창(제스처 시작 시점). 매 프레임 누적 배율을 적용해 재렌더.
     private var pinchStartWindow: ClosedRange<Double>?
+    /// 롱프레스 스크럽 모드 여부. 켜져 있으면 팬(스크롤)을 잠근다.
+    private var isScrubbing = false
 
     /// 차트를 그린다. 터치 질의를 위해 `data`를 보관한다.
     ///
@@ -346,9 +349,16 @@ public final class RDChartView: UIView {
         doubleTapRecognizer.addTarget(self, action: #selector(handleDoubleTap(_:)))
         doubleTapRecognizer.delegate = self
         markerTapRecognizer.require(toFail: doubleTapRecognizer)  // 단일 탭(마커)은 더블탭 실패 후 발동
+
+        longPressRecognizer.minimumPressDuration = 1.5
+        longPressRecognizer.addTarget(self, action: #selector(handleLongPress(_:)))
+        longPressRecognizer.delegate = self
+        addGestureRecognizer(longPressRecognizer)
     }
 
     @objc private func handleGesture(_ recognizer: UIGestureRecognizer) {
+        // 롱프레스 스크럽 중에는 팬(스크롤)을 무시해 확대 창을 고정한다.
+        if recognizer is UIPanGestureRecognizer, isScrubbing { return }
         // 진행 중인 확대 팬은 창이 전체로 돌아가(isZoomed=false) 되어도 제스처 끝까지 팬 핸들러 유지.
         if let pan = recognizer as? UIPanGestureRecognizer,
            zoomState?.isZoomed == true || panStartWindow != nil {
@@ -363,6 +373,24 @@ public final class RDChartView: UIView {
             return
         }
         scrub(at: recognizer.location(in: self))
+    }
+
+    /// 확대 상태에서 1.5초 롱프레스 후 드래그 = 스크럽(값 조회). 진입 시 햅틱, 스크럽 중 팬 잠금.
+    /// 100%에서도 발동하지만 기존 드래그 스크럽과 결과 동일해 무해.
+    @objc private func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
+        switch recognizer.state {
+        case .began:
+            isScrubbing = true
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            scrub(at: recognizer.location(in: self))
+        case .changed:
+            scrub(at: recognizer.location(in: self))
+        case .ended, .cancelled, .failed:
+            isScrubbing = false
+            hideTouchMarker()
+        default:
+            break
+        }
     }
 
     /// 손가락 뷰 좌표 → 현재(창) 도메인 x로 환산해 스크럽 마커 표시. 롱프레스·비확대 스크럽 공용.
