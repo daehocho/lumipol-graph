@@ -77,4 +77,36 @@ final class ZoomStateTests: XCTestCase {
         state.pinch(by: 0, anchor: 0.5, maxScale: 10)
         XCTAssertEqual(state.window, 0...10)
     }
+
+    // MARK: - Live pan translation clamp
+
+    func testLivePanClampAllowsMovementWithinAvailableRange() {
+        var state = makeState()
+        state.pinch(by: 2.0, anchor: 0.5, maxScale: 10)  // window 2.5...7.5, span 5, plotWidth 100 → 20px/도메인
+        // 왼쪽 여유 = 2.5 도메인 = 50px, 오른쪽 여유 = 2.5 도메인 = 50px
+        XCTAssertEqual(state.clampedLivePanTranslation(30, plotWidth: 100), 30, accuracy: 1e-9)
+        XCTAssertEqual(state.clampedLivePanTranslation(-30, plotWidth: 100), -30, accuracy: 1e-9)
+    }
+
+    func testLivePanClampLimitsBeyondAvailableRange() {
+        var state = makeState()
+        state.pinch(by: 2.0, anchor: 0.5, maxScale: 10)  // 2.5...7.5, 여유 각 50px(plotWidth 100)
+        XCTAssertEqual(state.clampedLivePanTranslation(999, plotWidth: 100), 50, accuracy: 1e-9)
+        XCTAssertEqual(state.clampedLivePanTranslation(-999, plotWidth: 100), -50, accuracy: 1e-9)
+    }
+
+    func testLivePanClampAtRightEdgeBlocksLeftwardContentDrag() {
+        var state = makeState()
+        state.pinch(by: 2.0, anchor: 0.5, maxScale: 10)
+        state.pan(byFraction: -10.0)  // 오른쪽 끝 클램프 → window 5...10
+        // 콘텐츠를 왼쪽으로(tx<0, 이후 구간) 밀어도 창이 더 못 감 → 0으로 클램프(빈 공간 방지)
+        XCTAssertEqual(state.clampedLivePanTranslation(-200, plotWidth: 100), 0, accuracy: 1e-9)
+        // 반대(tx>0, 이전 구간)로는 여유 있음(5 도메인 = 100px)
+        XCTAssertEqual(state.clampedLivePanTranslation(80, plotWidth: 100), 80, accuracy: 1e-9)
+    }
+
+    func testLivePanClampReturnsZeroWhenNotZoomed() {
+        let state = makeState()  // 확대 안 됨
+        XCTAssertEqual(state.clampedLivePanTranslation(50, plotWidth: 100), 0, accuracy: 1e-9)
+    }
 }

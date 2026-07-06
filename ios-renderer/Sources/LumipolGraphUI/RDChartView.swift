@@ -317,8 +317,11 @@ public final class RDChartView: UIView {
             hideTouchMarker()
             updateClipMask(gestureActive: true)
         case .changed:
-            applyLiveTransform(
-                scaleX: 1, translationX: recognizer.translation(in: self).x, anchorX: 0)
+            // 창이 데이터 경계에 닿으면 그 방향으로는 콘텐츠를 밀지 않는다(빈 공간 방지).
+            let raw = Double(recognizer.translation(in: self).x)
+            let tx = zoomState?.clampedLivePanTranslation(raw, plotWidth: Double(plotArea.rect.width))
+                ?? raw
+            applyLiveTransform(scaleX: 1, translationX: CGFloat(tx), anchorX: 0)
         case .ended, .cancelled:
             let fraction = Double(recognizer.translation(in: self).x / plotArea.rect.width)
             zoomState?.pan(byFraction: fraction)

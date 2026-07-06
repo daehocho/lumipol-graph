@@ -32,6 +32,18 @@ struct ZoomState: Equatable {
         place(lower: window.lowerBound - fraction * span, span: span)
     }
 
+    /// 라이브 팬 변환(px)을 창이 실제로 움직일 수 있는 범위로 클램프한다.
+    /// 창이 데이터 경계에 닿아 더 못 가는 방향으로는 콘텐츠도 밀리지 않아 빈 공간이 생기지 않는다.
+    /// - tx>0: 콘텐츠 오른쪽 이동(= 이전 구간 보기, 창 왼쪽 이동) 한도 = window.lower − fullDomain.lower
+    /// - tx<0: 콘텐츠 왼쪽 이동(= 이후 구간 보기, 창 오른쪽 이동) 한도 = fullDomain.upper − window.upper
+    func clampedLivePanTranslation(_ tx: Double, plotWidth: Double) -> Double {
+        guard isZoomed, span > 0, plotWidth > 0 else { return 0 }
+        let pxPerDomain = plotWidth / span
+        let leftAvail = (window.lowerBound - fullDomain.lowerBound) * pxPerDomain
+        let rightAvail = (fullDomain.upperBound - window.upperBound) * pxPerDomain
+        return min(max(tx, -rightAvail), leftAvail)
+    }
+
     /// 프로그래매틱 줌·테스트용 — 폭 유지한 채 전체 범위로 클램프.
     mutating func setWindow(_ target: ClosedRange<Double>) {
         let span = min(target.upperBound - target.lowerBound, fullSpan)
