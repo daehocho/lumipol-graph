@@ -58,8 +58,10 @@ public final class RDBarChartView: UIView {
                 line.lineDashPattern = style.gridLineDashPattern
                 contentLayer.addSublayer(line)
             }
-            addLabel(text: yTickLabel(tick.value), at: CGPoint(x: insets.left - 4, y: y),
-                     align: .right)
+            if style.barShowYAxisLabels {
+                addLabel(text: yTickLabel(tick.value), at: CGPoint(x: insets.left - 4, y: y),
+                         align: .right)
+            }
         }
 
         // 막대
