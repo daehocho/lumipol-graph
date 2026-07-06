@@ -381,7 +381,10 @@ public final class RDChartView: UIView {
         switch recognizer.state {
         case .began:
             isScrubbing = true
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            // 햅틱은 "확대 상태 값 조회 진입" 신호 — 100%(비확대)에선 기존 드래그 스크럽과 동일해 울리지 않는다.
+            if zoomState?.isZoomed == true {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            }
             scrub(at: recognizer.location(in: self))
         case .changed:
             scrub(at: recognizer.location(in: self))
