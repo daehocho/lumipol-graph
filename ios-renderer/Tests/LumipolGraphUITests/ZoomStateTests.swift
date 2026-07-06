@@ -77,4 +77,31 @@ final class ZoomStateTests: XCTestCase {
         state.pinch(by: 0, anchor: 0.5, maxScale: 10)
         XCTAssertEqual(state.window, 0...10)
     }
+
+    // MARK: - Live pinch (기준 창 + 누적 배율)
+
+    func testPinchFromStartIsCumulativeAndAnchored() {
+        var state = makeState()
+        let start = state.window  // 0...10
+        state.pinch(from: start, cumulativeScale: 2.0, anchor: 0.5, maxScale: 10)
+        XCTAssertEqual(state.window.lowerBound, 2.5, accuracy: 1e-9)
+        XCTAssertEqual(state.window.upperBound, 7.5, accuracy: 1e-9)
+        // 같은 기준 창에서 배율만 키우면 누적(드리프트 없음)
+        state.pinch(from: start, cumulativeScale: 4.0, anchor: 0.5, maxScale: 10)
+        XCTAssertEqual(state.window.lowerBound, 3.75, accuracy: 1e-9)
+        XCTAssertEqual(state.window.upperBound, 6.25, accuracy: 1e-9)
+    }
+
+    func testPinchFromFullZoomOutStaysFull() {
+        var state = makeState()
+        state.pinch(from: state.window, cumulativeScale: 0.5, anchor: 0.5, maxScale: 10)
+        XCTAssertEqual(state.window, 0...10)
+        XCTAssertFalse(state.isZoomed)
+    }
+
+    func testPinchFromRespectsMaxScale() {
+        var state = makeState()
+        state.pinch(from: state.window, cumulativeScale: 100.0, anchor: 0.5, maxScale: 10)
+        XCTAssertEqual(state.scale, 10.0, accuracy: 1e-9)
+    }
 }

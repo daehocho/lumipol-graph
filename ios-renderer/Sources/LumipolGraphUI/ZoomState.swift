@@ -27,6 +27,16 @@ struct ZoomState: Equatable {
         place(lower: anchorValue - anchor * targetSpan, span: targetSpan)
     }
 
+    /// 기준 창(제스처 시작)에서 누적 배율·앵커로 새 창 계산 (라이브 핀치 프레임마다 호출).
+    /// gestureScale은 제스처 시작 대비 누적값이라 매 프레임 기준 창에서 다시 계산해 드리프트를 막는다.
+    mutating func pinch(from startWindow: ClosedRange<Double>, cumulativeScale: Double, anchor: Double, maxScale: Double) {
+        guard cumulativeScale > 0 else { return }
+        let startSpan = startWindow.upperBound - startWindow.lowerBound
+        let targetSpan = min(max(startSpan / cumulativeScale, fullSpan / maxScale), fullSpan)
+        let anchorValue = startWindow.lowerBound + anchor * startSpan
+        place(lower: anchorValue - anchor * targetSpan, span: targetSpan)
+    }
+
     /// 플롯 폭 대비 드래그 비율만큼 좌우 이동 (오른쪽 드래그 = 이전 구간).
     mutating func pan(byFraction fraction: Double) {
         place(lower: window.lowerBound - fraction * span, span: span)

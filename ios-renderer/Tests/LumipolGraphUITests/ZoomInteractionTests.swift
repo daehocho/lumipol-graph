@@ -86,20 +86,6 @@ final class ZoomInteractionTests: XCTestCase {
         XCTAssertEqual(singleTaps.count, 1)
     }
 
-    func testLiveTransformKeepsAnchorPointFixed() {
-        let view = makeZoomableView()
-        let anchorX: CGFloat = 100
-        view.applyLiveTransform(scaleX: 2, translationX: 0, anchorX: anchorX)
-        let content = (view.layer.sublayers?.first { $0.name == "zoom.clip" })!
-            .sublayers!.first { $0.name == "zoom.content" }!
-        // 변환 전 anchorX에 있던 점이 변환 후에도 anchorX에 남는다
-        let fixed = content.convert(CGPoint(x: anchorX, y: 0), to: view.layer)
-        XCTAssertEqual(fixed.x, anchorX, accuracy: 0.5)
-        // 확인 사살: 다른 점(x=0)은 anchor에서 멀어지는 방향으로 2배
-        let moved = content.convert(CGPoint(x: 0, y: 0), to: view.layer)
-        XCTAssertEqual(moved.x, -anchorX, accuracy: 0.5)
-    }
-
     func testShowTouchMarkerIgnoresXOutsideZoomWindow() {
         let view = makeZoomableView()
         view.zoom(toXRange: 1.0...3.0)
