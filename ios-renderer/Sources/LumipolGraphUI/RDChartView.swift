@@ -350,7 +350,7 @@ public final class RDChartView: UIView {
         doubleTapRecognizer.delegate = self
         markerTapRecognizer.require(toFail: doubleTapRecognizer)  // 단일 탭(마커)은 더블탭 실패 후 발동
 
-        longPressRecognizer.minimumPressDuration = 1.5
+        longPressRecognizer.minimumPressDuration = 0.5
         longPressRecognizer.addTarget(self, action: #selector(handleLongPress(_:)))
         longPressRecognizer.delegate = self
         addGestureRecognizer(longPressRecognizer)
