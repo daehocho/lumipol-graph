@@ -40,6 +40,7 @@ public struct ChartStyle {
         .slower: UIColor.systemOrange,
     ]
     public var barCornerRadius: CGFloat = 3
+    public var barShowYAxisLabels: Bool = true   // false면 y틱 라벨 숨김(그리드·참조선은 유지)
     public var barReferenceLineColor: UIColor = UIColor.label.withAlphaComponent(0.6)
     public var barMinHeight: CGFloat = 2   // 가장 빠른(짧은) 막대도 최소 가시 높이
 

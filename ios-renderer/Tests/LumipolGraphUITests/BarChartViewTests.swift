@@ -54,4 +54,29 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertLessThan(view.barLayers[2].opacity, 1.0)   // 부분막대 흐림
         XCTAssertEqual(view.barLayers[0].opacity, 1.0)
     }
+
+    /// contentLayer 안의 CATextLayer 개수. barLabels:nil로 렌더하면 y틱 라벨만 남는다.
+    private func textLayerCount(_ view: RDBarChartView) -> Int {
+        (view.layer.sublayers ?? [])
+            .flatMap { $0.sublayers ?? [] }
+            .filter { $0 is CATextLayer }
+            .count
+    }
+
+    func testYAxisLabelsHiddenWhenFlagFalse() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = false
+        view.render(sampleLayout(barCount: 3), style: style, barLabels: nil)
+        XCTAssertEqual(textLayerCount(view), 0)   // y틱 라벨 없음
+    }
+
+    func testYAxisLabelsShownWhenFlagTrue() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = true
+        view.render(sampleLayout(barCount: 3), style: style, barLabels: nil)
+        // sampleLayout는 yTicks 2개 → 라벨 2개
+        XCTAssertEqual(textLayerCount(view), 2)
+    }
 }
