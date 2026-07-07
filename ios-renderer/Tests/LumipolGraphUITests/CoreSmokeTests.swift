@@ -38,4 +38,25 @@ final class CoreSmokeTests: XCTestCase {
         // 1km 정확한 샘플(0.3km 미만 부분 구간이 아님)이므로 isPartial == false
         XCTAssertFalse(layout.bars[0].isPartial)
     }
+
+    func testDonutEngineTypesExposed() {
+        let data = DonutChartData(segments: [
+            DonutSegment(value: 30, colorRole: .zone1),
+            DonutSegment(value: 70, colorRole: .zone2),
+        ])
+        let layout = DonutEngine.shared.layout(data: data)
+        XCTAssertEqual(layout.segments.count, 2)
+        XCTAssertEqual(layout.total, 100, accuracy: 1e-6)
+        XCTAssertEqual(layout.segments[0].sweepFraction, 0.3, accuracy: 1e-6)
+    }
+
+    func testOverlaySeriesRoleExposed() {
+        let s = Series(
+            id: "o",
+            points: [Point(x: 0, y: 1000), Point(x: 1, y: 2000)],
+            axis: .primary,
+            role: .overlay
+        )
+        XCTAssertEqual(s.role, SeriesRole.overlay)
+    }
 }
