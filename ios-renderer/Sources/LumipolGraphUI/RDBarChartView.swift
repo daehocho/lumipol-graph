@@ -94,6 +94,11 @@ public final class RDBarChartView: UIView {
             if let labels = barLabels, i < labels.count {
                 addLabel(text: labels[i], at: CGPoint(x: rect.midX, y: rect.minY - 2), align: .center)
             }
+
+            if style.barShowXAxisLabels, let xLabels = xAxisLabels, i < xLabels.count {
+                let baseline = plot.maxY + 4  // 막대 바닥 축선 아래 여백
+                addLabel(text: xLabels[i], at: CGPoint(x: rect.midX, y: baseline), align: .topCenter)
+            }
         }
 
         // 참조선(목표/평균)
@@ -120,7 +125,7 @@ public final class RDBarChartView: UIView {
         String(Int(value.rounded()))  // 앱이 barLabels로 표시 페이스를 주므로 y틱은 원값(초)만
     }
 
-    private enum LabelAlign { case left, center, right }
+    private enum LabelAlign { case left, center, right, topCenter }
     private func addLabel(text: String, at point: CGPoint, align: LabelAlign) {
         let tl = ChartLayerBuilder.textLayer(text, font: style.axisLabelFont, color: style.axisLabelColor)
         let size = tl.frame.size
@@ -129,6 +134,7 @@ public final class RDBarChartView: UIView {
         case .left: origin.y -= size.height / 2
         case .center: origin.x -= size.width / 2; origin.y -= size.height
         case .right: origin.x -= size.width; origin.y -= size.height / 2
+        case .topCenter: origin.x -= size.width / 2
         }
         tl.frame = CGRect(origin: origin, size: size)
         contentLayer.addSublayer(tl)

@@ -94,6 +94,35 @@ final class BarChartViewTests: XCTestCase {
         view.layoutIfNeeded()
         XCTAssertTrue(view.allTextLayerStrings.contains("P300"))
     }
+
+    func testXAxisLabelsDrawnUnderBars() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+        let layout = BarChartLayout(
+            bars: [
+                BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false),
+                BarLayout(index: 1, value: 310, heightFraction: 0.6, colorRole: .slower, isPartial: false),
+            ],
+            yTicks: [], referenceLinePosition: nil
+        )
+        view.render(layout, style: .default, barLabels: nil, xAxisLabels: ["1", "2"], yLabelFormatter: nil)
+        view.layoutIfNeeded()
+        let strings = view.allTextLayerStrings
+        XCTAssertTrue(strings.contains("1"))
+        XCTAssertTrue(strings.contains("2"))
+    }
+
+    func testXAxisLabelsHiddenWhenFlagOff() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+        let layout = BarChartLayout(
+            bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false)],
+            yTicks: [], referenceLinePosition: nil
+        )
+        var style = ChartStyle.default
+        style.barShowXAxisLabels = false
+        view.render(layout, style: style, barLabels: nil, xAxisLabels: ["1"], yLabelFormatter: nil)
+        view.layoutIfNeeded()
+        XCTAssertFalse(view.allTextLayerStrings.contains("1"))
+    }
 }
 
 extension RDBarChartView {
