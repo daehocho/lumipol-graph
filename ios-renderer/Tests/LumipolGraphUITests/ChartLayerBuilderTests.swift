@@ -181,6 +181,41 @@ final class ChartLayerBuilderTests: XCTestCase {
         XCTAssertTrue(layers.isEmpty)
     }
 
+    func testOverlaySeriesProducesDashedLayerWithoutAxisLabelsOrGradient() {
+        let overlayLayout = LineChartLayout(
+            series: [
+                SeriesLayout(id: "p", role: .main, points: [
+                    NormalizedPoint(x: 0, y: 0.2), NormalizedPoint(x: 1, y: 0.8),
+                ]),
+                SeriesLayout(id: "o", role: .overlay, points: [
+                    NormalizedPoint(x: 0, y: 0.0), NormalizedPoint(x: 1, y: 1.0),
+                ]),
+            ],
+            axisTicks: [], refLines: [], refBands: [], markers: [],
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+        )
+        let overlayData = LineChartData(
+            series: [
+                Series(id: "p", points: [], axis: .primary, role: .main),
+                Series(id: "o", points: [], axis: .primary, role: .overlay),
+            ],
+            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let layers = ChartLayerBuilder.build(
+            layout: overlayLayout, data: overlayData, style: .default, plotArea: plotArea,
+            formatter: { _, value in "\(value)" }
+        )
+        let names = layers.compactMap(\.name)
+        XCTAssertTrue(names.contains("series.overlay.o"))
+        XCTAssertFalse(names.contains { $0.hasPrefix("series.gradient.o") })
+        XCTAssertFalse(names.contains { $0.hasPrefix("axisLabels") })
+        let overlay = layer(named: "series.overlay.o", in: layers) as? CAShapeLayer
+        XCTAssertEqual(overlay?.lineDashPattern, ChartStyle.default.overlayLineDashPattern)
+        XCTAssertEqual(overlay?.strokeColor, ChartStyle.default.overlayLineColor.cgColor)
+        XCTAssertEqual(overlay?.lineWidth, ChartStyle.default.overlayLineWidth)
+    }
+
     func testSeriesWithFewerThanTwoPointsIsSkipped() {
         let single = LineChartLayout(
             series: [SeriesLayout(id: "one", role: .main, points: [NormalizedPoint(x: 0.5, y: 0.5)])],
