@@ -1,7 +1,7 @@
 import UIKit
 import LumipolGraph
 
-public protocol RDHeartRateZoneScrubDelegate: AnyObject {
+public protocol RDHeartRateZoneSelectionDelegate: AnyObject {
     /// index=nil 이면 선택 해제.
     func heartRateZoneView(_ view: RDHeartRateZoneView, didSelectSegmentAt index: Int?)
 }
@@ -10,7 +10,7 @@ public protocol RDHeartRateZoneScrubDelegate: AnyObject {
 @objc(RDHeartRateZoneView)
 public final class RDHeartRateZoneView: UIView {
 
-    public weak var zoneDelegate: RDHeartRateZoneScrubDelegate?
+    public weak var zoneDelegate: RDHeartRateZoneSelectionDelegate?
     public private(set) var segmentLayers: [CAShapeLayer] = []
 
     private var data: DonutChartData = DonutChartData(segments: [])
@@ -36,6 +36,7 @@ public final class RDHeartRateZoneView: UIView {
 
         let ring = style.donutRingWidth
         let radius = (min(bounds.width, bounds.height) - ring) / 2
+        guard radius > 0 else { return }
         let center = CGPoint(x: bounds.midX, y: bounds.midY)
         let start = -CGFloat.pi / 2  // 12시 방향 시작, 시계방향
 

@@ -27,6 +27,17 @@ struct PlotArea: Equatable {
         CGPoint(x: x(np.x), y: y(np.y, axis: axis))
     }
 
+    /// 축 반전 여부와 무관하게 "값이 클수록 위" 규칙만 적용하는 y 변환.
+    /// 코어가 이미 자체 정규화한 오버레이 시리즈(축 없음) 전용 — 호스트 축의 `invertedAxes`를 무시한다.
+    func yIgnoringInversion(_ ny: Double) -> CGFloat {
+        rect.minY + CGFloat(1.0 - ny) * rect.height
+    }
+
+    /// 오버레이 시리즈 전용 포인트 변환 — `yIgnoringInversion` 참고.
+    func pointIgnoringInversion(_ np: NormalizedPoint) -> CGPoint {
+        CGPoint(x: x(np.x), y: yIgnoringInversion(np.y))
+    }
+
     /// 터치 x(픽셀) → 정규화 x. 플롯 영역 밖은 0~1로 클램프.
     func normalizedX(at px: CGFloat) -> Double {
         guard rect.width > 0 else { return 0 }
