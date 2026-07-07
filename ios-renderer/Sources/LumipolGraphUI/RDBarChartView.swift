@@ -10,6 +10,8 @@ public final class RDBarChartView: UIView {
 
     private var layout: BarChartLayout?
     private var barLabels: [String]?
+    private var xAxisLabels: [String]?
+    private var yLabelFormatter: ((Double) -> String)?
     private let contentLayer = CALayer()
 
     public override init(frame: CGRect) {
@@ -21,10 +23,18 @@ public final class RDBarChartView: UIView {
         layer.addSublayer(contentLayer)
     }
 
-    public func render(_ layout: BarChartLayout, style: ChartStyle = .default, barLabels: [String]? = nil) {
+    public func render(
+        _ layout: BarChartLayout,
+        style: ChartStyle = .default,
+        barLabels: [String]? = nil,
+        xAxisLabels: [String]? = nil,
+        yLabelFormatter: ((Double) -> String)? = nil
+    ) {
         self.layout = layout
         self.style = style
         self.barLabels = barLabels
+        self.xAxisLabels = xAxisLabels
+        self.yLabelFormatter = yLabelFormatter
         setNeedsLayout()
         layoutIfNeeded()  // layoutSubviews()→redraw()를 1회 유발 (테스트가 render 직후 barLayers 동기 접근)
     }
@@ -59,7 +69,8 @@ public final class RDBarChartView: UIView {
                 contentLayer.addSublayer(line)
             }
             if style.barShowYAxisLabels {
-                addLabel(text: yTickLabel(tick.value), at: CGPoint(x: insets.left - 4, y: y),
+                let text = yLabelFormatter?(tick.value) ?? yTickLabel(tick.value)
+                addLabel(text: text, at: CGPoint(x: insets.left - 4, y: y),
                          align: .right)
             }
         }
