@@ -42,3 +42,17 @@ data class BarChartLayout(
     val yTicks: List<AxisTick>,
     val referenceLinePosition: Double?,
 )
+
+/** 도넛 한 조각. fraction은 0.0~1.0(12시 0, 시계방향). value=원본 크기. */
+data class DonutSegmentLayout(
+    val startFraction: Double,
+    val sweepFraction: Double,
+    val value: Double,
+    val colorRole: DonutColorRole,
+)
+
+/** total=세그먼트 value 합(0이면 무데이터). */
+data class DonutChartLayout(
+    val segments: List<DonutSegmentLayout>,
+    val total: Double,
+)
