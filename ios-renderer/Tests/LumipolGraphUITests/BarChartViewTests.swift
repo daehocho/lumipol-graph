@@ -79,4 +79,28 @@ final class BarChartViewTests: XCTestCase {
         // sampleLayout는 yTicks 2개 → 라벨 2개
         XCTAssertEqual(textLayerCount(view), 2)
     }
+
+    func testYLabelFormatterIsApplied() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+        let layout = BarChartLayout(
+            bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false)],
+            yTicks: [AxisTick(value: 300, position: 0.5)],
+            referenceLinePosition: nil
+        )
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = true
+        view.render(layout, style: style, barLabels: nil, xAxisLabels: nil,
+                    yLabelFormatter: { value in "P\(Int(value))" })
+        view.layoutIfNeeded()
+        XCTAssertTrue(view.allTextLayerStrings.contains("P300"))
+    }
+}
+
+extension RDBarChartView {
+    /// 모든 CATextLayer 문자열(테스트용). textLayerCount와 동일하게 contentLayer(= layer.sublayers[0]) 하위를 순회.
+    var allTextLayerStrings: [String] {
+        (layer.sublayers ?? [])
+            .flatMap { $0.sublayers ?? [] }
+            .compactMap { ($0 as? CATextLayer)?.string as? String }
+    }
 }
