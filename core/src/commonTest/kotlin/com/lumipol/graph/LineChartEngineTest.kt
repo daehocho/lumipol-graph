@@ -106,4 +106,35 @@ class LineChartEngineTest {
         assertTrue(layout.stats.segments.isEmpty())
         assertEquals(null, layout.stats.segmentSeriesId)
     }
+
+    @Test
+    fun overlay_series_is_self_normalized_and_excluded_from_primary_domain() {
+        // primary 라인: y 0~100. overlay 라인: y 1000~2000 (다른 스케일).
+        val primary = Series(
+            id = "p",
+            points = listOf(Point(0.0, 0.0), Point(1.0, 100.0)),
+            axis = Axis.PRIMARY,
+            role = SeriesRole.MAIN,
+        )
+        val overlay = Series(
+            id = "o",
+            points = listOf(Point(0.0, 1000.0), Point(0.5, 1500.0), Point(1.0, 2000.0)),
+            axis = Axis.PRIMARY,
+            role = SeriesRole.OVERLAY,
+        )
+        val layout = LineChartEngine.layout(
+            LineChartData(series = listOf(primary, overlay))
+        )
+
+        // overlay는 자체 min(1000)~max(2000)으로 정규화 → 0.0, 0.5, 1.0
+        val o = layout.series.first { it.id == "o" }
+        assertEquals(SeriesRole.OVERLAY, o.role)
+        assertEquals(0.0, o.points[0].y, 1e-6)
+        assertEquals(0.5, o.points[1].y, 1e-6)
+        assertEquals(1.0, o.points[2].y, 1e-6)
+
+        // primary 축 틱 범위는 overlay(1000~2000)의 영향을 받지 않아야 한다.
+        val yPrimaryTicks = layout.axisTicks.first { it.axis == ChartAxis.Y_PRIMARY }.ticks
+        assertTrue(yPrimaryTicks.all { it.value <= 200.0 })
+    }
 }

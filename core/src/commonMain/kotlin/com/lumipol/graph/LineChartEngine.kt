@@ -55,13 +55,21 @@ object LineChartEngine {
         }
 
         // 시리즈 정규화 (이웃 포인트는 0..1 밖 좌표가 될 수 있고 렌더러가 클리핑)
+        // OVERLAY 역할은 축 도메인과 무관하게 자체 min~max로 y를 0..1 정규화한다.
         val seriesLayout = data.series.map { s ->
-            val dom = yDom.getValue(s.axis)
+            val points = visibleBySeries.getValue(s.id)
+            val normPoints = if (s.role == SeriesRole.OVERLAY) {
+                val ys = s.points.map { it.y }
+                val selfDom = AxisDomain(ys.minOrNull() ?: 0.0, ys.maxOrNull() ?: 1.0)
+                points.map { NormalizedPoint(xDom.normalize(it.x), selfDom.normalize(it.y)) }
+            } else {
+                val dom = yDom.getValue(s.axis)
+                points.map { NormalizedPoint(xDom.normalize(it.x), dom.normalize(it.y)) }
+            }
             SeriesLayout(
                 id = s.id,
                 role = s.role,
-                points = visibleBySeries.getValue(s.id)
-                    .map { NormalizedPoint(xDom.normalize(it.x), dom.normalize(it.y)) },
+                points = normPoints,
             )
         }
 
