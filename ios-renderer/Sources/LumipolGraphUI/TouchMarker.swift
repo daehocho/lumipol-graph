@@ -54,6 +54,11 @@ enum TouchMarker {
 
         var valuesBySeriesId: [String: String] = [:]
         for result in results {
+            if roleBySeriesId[result.seriesId] == .overlay {
+                // 오버레이: 축 없음 — 실값만 툴팁에 표시(터치 점은 생략).
+                valuesBySeriesId[result.seriesId] = context.formatter(.yOverlay, result.y)
+                continue
+            }
             guard let axis = axisBySeriesId[result.seriesId],
                   let chartAxis = chartAxis(of: axis),
                   let yTicks = ticks(for: chartAxis, in: context.layout),
