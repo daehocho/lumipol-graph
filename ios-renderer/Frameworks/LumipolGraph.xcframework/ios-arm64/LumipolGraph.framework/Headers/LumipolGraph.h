@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphAxis, LumipolGraphAxisDomain, LumipolGraphAxisTick, LumipolGraphAxisTicksLayout, LumipolGraphBarChartData, LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarColorRole, LumipolGraphBarLayout, LumipolGraphChartAxis, LumipolGraphChartConfig, LumipolGraphKotlinArray<T>, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinEnumCompanion, LumipolGraphLineChartData, LumipolGraphLineChartEngine, LumipolGraphLineChartLayout, LumipolGraphMarker, LumipolGraphMarkerLayout, LumipolGraphNearestResult, LumipolGraphNiceScale, LumipolGraphNormalizedPoint, LumipolGraphPoint, LumipolGraphRefBand, LumipolGraphRefBandLayout, LumipolGraphRefLine, LumipolGraphRefLineLayout, LumipolGraphSegmentStat, LumipolGraphSeries, LumipolGraphSeriesLayout, LumipolGraphSeriesRole, LumipolGraphSeriesStat, LumipolGraphSplitSample, LumipolGraphStats;
+@class LumipolGraphAxis, LumipolGraphAxisDomain, LumipolGraphAxisTick, LumipolGraphAxisTicksLayout, LumipolGraphBarChartData, LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarColorRole, LumipolGraphBarLayout, LumipolGraphChartAxis, LumipolGraphChartConfig, LumipolGraphDonutChartData, LumipolGraphDonutChartLayout, LumipolGraphDonutColorRole, LumipolGraphDonutEngine, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphKotlinArray<T>, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinEnumCompanion, LumipolGraphLineChartData, LumipolGraphLineChartEngine, LumipolGraphLineChartLayout, LumipolGraphMarker, LumipolGraphMarkerLayout, LumipolGraphNearestResult, LumipolGraphNiceScale, LumipolGraphNormalizedPoint, LumipolGraphPoint, LumipolGraphRefBand, LumipolGraphRefBandLayout, LumipolGraphRefLine, LumipolGraphRefLineLayout, LumipolGraphSegmentStat, LumipolGraphSeries, LumipolGraphSeriesLayout, LumipolGraphSeriesRole, LumipolGraphSeriesStat, LumipolGraphSplitSample, LumipolGraphStats;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -155,6 +155,16 @@ __attribute__((swift_name("BarChartEngine")))
 @end
 
 __attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("DonutEngine")))
+@interface LumipolGraphDonutEngine : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)donutEngine __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphDonutEngine *shared __attribute__((swift_name("shared")));
+- (LumipolGraphDonutChartLayout *)layoutData:(LumipolGraphDonutChartData *)data __attribute__((swift_name("layout(data:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("LineChartEngine")))
 @interface LumipolGraphLineChartEngine : LumipolGraphBase
 + (instancetype)alloc __attribute__((unavailable));
@@ -299,6 +309,70 @@ __attribute__((swift_name("ChartConfig")))
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) int32_t maxTicks __attribute__((swift_name("maxTicks")));
 @property (readonly) int32_t segmentCount __attribute__((swift_name("segmentCount")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("DonutChartData")))
+@interface LumipolGraphDonutChartData : LumipolGraphBase
+- (instancetype)initWithSegments:(NSArray<LumipolGraphDonutSegment *> *)segments __attribute__((swift_name("init(segments:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphDonutChartData *)doCopySegments:(NSArray<LumipolGraphDonutSegment *> *)segments __attribute__((swift_name("doCopy(segments:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) NSArray<LumipolGraphDonutSegment *> *segments __attribute__((swift_name("segments")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("DonutChartLayout")))
+@interface LumipolGraphDonutChartLayout : LumipolGraphBase
+- (instancetype)initWithSegments:(NSArray<LumipolGraphDonutSegmentLayout *> *)segments total:(double)total __attribute__((swift_name("init(segments:total:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphDonutChartLayout *)doCopySegments:(NSArray<LumipolGraphDonutSegmentLayout *> *)segments total:(double)total __attribute__((swift_name("doCopy(segments:total:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) NSArray<LumipolGraphDonutSegmentLayout *> *segments __attribute__((swift_name("segments")));
+@property (readonly) double total __attribute__((swift_name("total")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("DonutColorRole")))
+@interface LumipolGraphDonutColorRole : LumipolGraphKotlinEnum<LumipolGraphDonutColorRole *>
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
+- (instancetype)initWithName:(NSString *)name ordinal:(int32_t)ordinal __attribute__((swift_name("init(name:ordinal:)"))) __attribute__((objc_designated_initializer)) __attribute__((unavailable));
+@property (class, readonly) LumipolGraphDonutColorRole *zone1 __attribute__((swift_name("zone1")));
+@property (class, readonly) LumipolGraphDonutColorRole *zone2 __attribute__((swift_name("zone2")));
+@property (class, readonly) LumipolGraphDonutColorRole *zone3 __attribute__((swift_name("zone3")));
+@property (class, readonly) LumipolGraphDonutColorRole *zone4 __attribute__((swift_name("zone4")));
+@property (class, readonly) LumipolGraphDonutColorRole *zone5 __attribute__((swift_name("zone5")));
++ (LumipolGraphKotlinArray<LumipolGraphDonutColorRole *> *)values __attribute__((swift_name("values()")));
+@property (class, readonly) NSArray<LumipolGraphDonutColorRole *> *entries __attribute__((swift_name("entries")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("DonutSegment")))
+@interface LumipolGraphDonutSegment : LumipolGraphBase
+- (instancetype)initWithValue:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole __attribute__((swift_name("init(value:colorRole:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphDonutSegment *)doCopyValue:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole __attribute__((swift_name("doCopy(value:colorRole:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) LumipolGraphDonutColorRole *colorRole __attribute__((swift_name("colorRole")));
+@property (readonly) double value __attribute__((swift_name("value")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("DonutSegmentLayout")))
+@interface LumipolGraphDonutSegmentLayout : LumipolGraphBase
+- (instancetype)initWithStartFraction:(double)startFraction sweepFraction:(double)sweepFraction value:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole __attribute__((swift_name("init(startFraction:sweepFraction:value:colorRole:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphDonutSegmentLayout *)doCopyStartFraction:(double)startFraction sweepFraction:(double)sweepFraction value:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole __attribute__((swift_name("doCopy(startFraction:sweepFraction:value:colorRole:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) LumipolGraphDonutColorRole *colorRole __attribute__((swift_name("colorRole")));
+@property (readonly) double startFraction __attribute__((swift_name("startFraction")));
+@property (readonly) double sweepFraction __attribute__((swift_name("sweepFraction")));
+@property (readonly) double value __attribute__((swift_name("value")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -496,6 +570,7 @@ __attribute__((swift_name("SeriesRole")))
 - (instancetype)initWithName:(NSString *)name ordinal:(int32_t)ordinal __attribute__((swift_name("init(name:ordinal:)"))) __attribute__((objc_designated_initializer)) __attribute__((unavailable));
 @property (class, readonly) LumipolGraphSeriesRole *main __attribute__((swift_name("main")));
 @property (class, readonly) LumipolGraphSeriesRole *ghost __attribute__((swift_name("ghost")));
+@property (class, readonly) LumipolGraphSeriesRole *overlay __attribute__((swift_name("overlay")));
 + (LumipolGraphKotlinArray<LumipolGraphSeriesRole *> *)values __attribute__((swift_name("values()")));
 @property (class, readonly) NSArray<LumipolGraphSeriesRole *> *entries __attribute__((swift_name("entries")));
 @end
