@@ -41,8 +41,7 @@ enum ChartLayerBuilder {
             layers.append(mainLineLayer(series, axis: axis, path: path, style: style))
         }
         for series in layout.series where series.role == .overlay {
-            let axis = axisBySeriesId[series.id] ?? .primary
-            guard let path = linePath(series.points, axis: axis, plotArea: plotArea) else { continue }
+            guard let path = overlayLinePath(series.points, plotArea: plotArea) else { continue }
             layers.append(overlayLineLayer(series, path: path, style: style))
         }
         for (index, refLine) in layout.refLines.enumerated() {
@@ -62,6 +61,18 @@ enum ChartLayerBuilder {
         path.move(to: plotArea.point(points[0], axis: axis))
         for point in points.dropFirst() {
             path.addLine(to: plotArea.point(point, axis: axis))
+        }
+        return path
+    }
+
+    /// 오버레이 전용 라인 경로 — 코어가 이미 정규화한 값이라 호스트 축의 `invertedAxes`를 무시하고
+    /// 항상 "값이 클수록 위"로 그린다(`PlotArea.pointIgnoringInversion` 참고).
+    private static func overlayLinePath(_ points: [NormalizedPoint], plotArea: PlotArea) -> UIBezierPath? {
+        guard points.count >= 2 else { return nil }
+        let path = UIBezierPath()
+        path.move(to: plotArea.pointIgnoringInversion(points[0]))
+        for point in points.dropFirst() {
+            path.addLine(to: plotArea.pointIgnoringInversion(point))
         }
         return path
     }

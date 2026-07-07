@@ -46,6 +46,21 @@ final class ChartLayerBuilderTests: XCTestCase {
         layers.first { $0.name == name }
     }
 
+    /// CGPath의 move/line 포인트를 순서대로 추출(테스트 전용 — 곡선 세그먼트는 이 스위트에서 쓰지 않음).
+    private func pathPoints(_ path: CGPath) -> [CGPoint] {
+        var points: [CGPoint] = []
+        path.applyWithBlock { elementPtr in
+            let element = elementPtr.pointee
+            switch element.type {
+            case .moveToPoint, .addLineToPoint:
+                points.append(element.points[0])
+            default:
+                break
+            }
+        }
+        return points
+    }
+
     func testBuildsExpectedLayerTree() {
         let names = build().compactMap(\.name)
         XCTAssertEqual(names, [
@@ -214,6 +229,40 @@ final class ChartLayerBuilderTests: XCTestCase {
         XCTAssertEqual(overlay?.lineDashPattern, ChartStyle.default.overlayLineDashPattern)
         XCTAssertEqual(overlay?.strokeColor, ChartStyle.default.overlayLineColor.cgColor)
         XCTAssertEqual(overlay?.lineWidth, ChartStyle.default.overlayLineWidth)
+    }
+
+    func testOverlaySeriesIgnoresHostAxisInversion() {
+        // 오버레이는 코어가 자체 정규화한 값(1.0=최대)이라, 호스트 축이 반전(pace 축 등)이어도
+        // 항상 "값이 클수록 위"로 그려야 한다.
+        let overlayLayout = LineChartLayout(
+            series: [
+                SeriesLayout(id: "o", role: .overlay, points: [
+                    NormalizedPoint(x: 0, y: 0.0), NormalizedPoint(x: 1, y: 1.0),
+                ]),
+            ],
+            axisTicks: [], refLines: [], refBands: [], markers: [],
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+        )
+        let overlayData = LineChartData(
+            series: [
+                Series(id: "o", points: [], axis: .primary, role: .overlay),
+            ],
+            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let invertedPlotArea = PlotArea(
+            bounds: CGRect(x: 0, y: 0, width: 100, height: 100), insets: .zero,
+            invertedAxes: [.primary]
+        )
+        let layers = ChartLayerBuilder.build(
+            layout: overlayLayout, data: overlayData, style: .default, plotArea: invertedPlotArea,
+            formatter: { _, value in "\(value)" }
+        )
+        let overlay = layer(named: "series.overlay.o", in: layers) as? CAShapeLayer
+        let points = overlay?.path.map(pathPoints) ?? []
+        XCTAssertEqual(points.count, 2)
+        // x=0 → y-fraction 0.0(최소), x=1 → y-fraction 1.0(최대) → 최대값이 화면 위(작은 y)여야 함
+        XCTAssertLessThan(points[1].y, points[0].y)
     }
 
     func testSeriesWithFewerThanTwoPointsIsSkipped() {
