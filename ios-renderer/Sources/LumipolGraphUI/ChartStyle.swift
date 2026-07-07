@@ -45,6 +45,17 @@ public struct ChartStyle {
     public var barReferenceLineColor: UIColor = UIColor.label.withAlphaComponent(0.6)
     public var barMinHeight: CGFloat = 2   // 가장 빠른(짧은) 막대도 최소 가시 높이
 
+    // 심박존 도넛
+    public var donutColors: [DonutColorRole: UIColor] = [
+        .zone1: .systemBlue,
+        .zone2: UIColor.systemGreen.withAlphaComponent(0.7),
+        .zone3: .systemYellow,
+        .zone4: .systemOrange,
+        .zone5: .systemRed,
+    ]
+    public var donutRingWidth: CGFloat = 28
+    public var donutEmptyColor: UIColor = UIColor.systemGray4.withAlphaComponent(0.5)
+
     // 축 라벨
     public var axisLabelFont: UIFont = .systemFont(ofSize: 10)
     public var axisLabelColor: UIColor = .secondaryLabel
