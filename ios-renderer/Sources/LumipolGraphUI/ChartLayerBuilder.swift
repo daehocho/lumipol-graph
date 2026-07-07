@@ -2,7 +2,7 @@ import UIKit
 import LumipolGraph
 
 /// 코어 `LineChartLayout`(정규화 0~1)을 `ChartStyle`·`PlotArea`로 CALayer 트리에 조립한다.
-/// z-순서: 그리드 → 밴드 → 마커 → 고스트 → (그라데이션+main 라인) → 기준선 → 축 라벨.
+/// z-순서: 그리드 → 밴드 → 마커 → 고스트 → (그라데이션+main 라인) → 오버레이(점선, 축 라벨 없음) → 기준선 → 축 라벨.
 enum ChartLayerBuilder {
 
     static func build(
@@ -39,6 +39,11 @@ enum ChartLayerBuilder {
                 layers.append(gradientLayer(series, axis: axis, linePath: path, style: style, plotArea: plotArea))
             }
             layers.append(mainLineLayer(series, axis: axis, path: path, style: style))
+        }
+        for series in layout.series where series.role == .overlay {
+            let axis = axisBySeriesId[series.id] ?? .primary
+            guard let path = linePath(series.points, axis: axis, plotArea: plotArea) else { continue }
+            layers.append(overlayLineLayer(series, path: path, style: style))
         }
         for (index, refLine) in layout.refLines.enumerated() {
             layers.append(refLineLayer(refLine, index: index, style: style, plotArea: plotArea))
@@ -90,6 +95,21 @@ enum ChartLayerBuilder {
         layer.fillColor = nil
         layer.lineWidth = style.ghostLineWidth
         layer.lineDashPattern = style.ghostDashPattern
+        layer.lineJoin = .round
+        return layer
+    }
+
+    /// 코어가 자체 정규화한 오버레이 시리즈 — 축 라벨·그라데이션 없이 점선 라인만.
+    private static func overlayLineLayer(
+        _ series: SeriesLayout, path: UIBezierPath, style: ChartStyle
+    ) -> CAShapeLayer {
+        let layer = CAShapeLayer()
+        layer.name = "series.overlay.\(series.id)"
+        layer.path = path.cgPath
+        layer.strokeColor = style.overlayLineColor.cgColor
+        layer.fillColor = nil
+        layer.lineWidth = style.overlayLineWidth
+        layer.lineDashPattern = style.overlayLineDashPattern
         layer.lineJoin = .round
         return layer
     }
