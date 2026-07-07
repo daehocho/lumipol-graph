@@ -3,8 +3,8 @@ package com.lumipol.graph.model
 /** 시리즈가 붙는 Y축 선택 (이중 축 지원). */
 enum class Axis { PRIMARY, SECONDARY }
 
-/** 시리즈 역할 — 렌더링 스타일 힌트(주선 vs 흐린 고스트). */
-enum class SeriesRole { MAIN, GHOST }
+/** 시리즈 역할 — 렌더링 스타일 힌트(주선 vs 흐린 고스트 vs 축 없는 정규화 오버레이). */
+enum class SeriesRole { MAIN, GHOST, OVERLAY }
 
 data class Point(val x: Double, val y: Double)
 
