@@ -54,6 +54,38 @@ final class TouchMarkerTests: XCTestCase {
         XCTAssertEqual(result?.layer.name, "touch.marker")
     }
 
+    func testOverlaySeriesValueUsesRealValueAndOverlayAxis() {
+        // 원본 데이터: overlay 시리즈 실값 1500 (정규화 아님)
+        let overlayData = LineChartData(
+            series: [
+                TestFixtures.series(id: "pace", values: TestFixtures.paceValues, axis: .primary, role: .main),
+                Series(
+                    id: "o",
+                    points: [Point(x: 0, y: 1500), Point(x: 5, y: 1500)],
+                    axis: .primary, role: .overlay
+                ),
+            ],
+            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let overlayLayout = LineChartEngine.shared.layout(data: overlayData)
+        var seenOverlayAxis = false
+        let result = TouchMarker.make(atRawX: 0.0, context: TouchMarker.Context(
+            data: overlayData, layout: overlayLayout, style: .default, plotArea: plotArea,
+            formatter: { axis, value in
+                if axis == .yOverlay {
+                    seenOverlayAxis = true
+                    return "OV:\(Int(value))"
+                }
+                return TestFixtures.format(axis, value)
+            }
+        ))
+        XCTAssertEqual(result?.valuesBySeriesId["o"], "OV:1500")
+        XCTAssertTrue(seenOverlayAxis)
+        let names = result?.layer.sublayers?.compactMap(\.name) ?? []
+        XCTAssertFalse(names.contains("touch.dot.o"), "오버레이는 터치 점을 그리지 않음")
+    }
+
     func testReturnsNilWhenAxisScaleUnavailable() {
         // 축 tick이 없는 빈 레이아웃 → 역산 불능 → nil
         let emptyLayout = LineChartLayout(

@@ -295,6 +295,7 @@ __attribute__((swift_name("ChartAxis")))
 @property (class, readonly) LumipolGraphChartAxis *x __attribute__((swift_name("x")));
 @property (class, readonly) LumipolGraphChartAxis *yPrimary __attribute__((swift_name("yPrimary")));
 @property (class, readonly) LumipolGraphChartAxis *ySecondary __attribute__((swift_name("ySecondary")));
+@property (class, readonly) LumipolGraphChartAxis *yOverlay __attribute__((swift_name("yOverlay")));
 + (LumipolGraphKotlinArray<LumipolGraphChartAxis *> *)values __attribute__((swift_name("values()")));
 @property (class, readonly) NSArray<LumipolGraphChartAxis *> *entries __attribute__((swift_name("entries")));
 @end

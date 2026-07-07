@@ -1,7 +1,7 @@
 package com.lumipol.graph.model
 
-/** 출력 전용 축 식별(X + 두 Y축). */
-enum class ChartAxis { X, Y_PRIMARY, Y_SECONDARY }
+/** 출력 전용 축 식별(X + 두 Y축 + 오버레이(축 없음, 실값 표시용)). */
+enum class ChartAxis { X, Y_PRIMARY, Y_SECONDARY, Y_OVERLAY }
 
 data class NormalizedPoint(val x: Double, val y: Double) // 각 0.0~1.0
 data class SeriesLayout(val id: String, val role: SeriesRole, val points: List<NormalizedPoint>)
