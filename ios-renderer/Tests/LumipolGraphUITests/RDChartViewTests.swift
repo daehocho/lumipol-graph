@@ -121,10 +121,14 @@ final class RDChartViewTests: XCTestCase {
     private final class SpyScrubDelegate: RDChartScrubDelegate {
         var scrubbed: [[String: String]] = []
         var endCount = 0
+        var backgroundValues: [Double] = []
         func chartView(_ view: RDChartView, didScrubTo valuesBySeriesId: [String: String]) {
             scrubbed.append(valuesBySeriesId)
         }
         func chartViewDidEndScrub(_ view: RDChartView) { endCount += 1 }
+        func chartView(_ view: RDChartView, didScrubToBackgroundValue value: Double) {
+            backgroundValues.append(value)
+        }
     }
 
     func testShowTouchMarkerReportsValuesToDelegate() {
@@ -202,5 +206,65 @@ final class RDChartViewTests: XCTestCase {
         view.render(TestFixtures.paceOnly)
         view.layoutIfNeeded()
         XCTAssertFalse(chartLayerNames(of: view).contains("area.altitude"))
+    }
+
+    // MARK: - backgroundValue 선형 보간
+
+    func testBackgroundValueClampsToEndpoints() {
+        let points = [AreaPoint(x: 1, y: 10), AreaPoint(x: 3, y: 30)]
+        // 범위 밖(왼쪽/오른쪽)은 양 끝값으로 클램프
+        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 0), 10)
+        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 1), 10)  // 끝점 정확히
+        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 3), 30)  // 끝점 정확히
+        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 5), 30)
+    }
+
+    func testBackgroundValueInterpolatesMidpoint() {
+        let points = [AreaPoint(x: 0, y: 0), AreaPoint(x: 5, y: 100)]
+        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 2.5)!, 50, accuracy: 1e-9)
+        // 세 구간 중 두 번째 구간 내 보간
+        let multi = [AreaPoint(x: 0, y: 0), AreaPoint(x: 2, y: 20), AreaPoint(x: 4, y: 0)]
+        XCTAssertEqual(RDChartView.backgroundValue(multi, atX: 3)!, 10, accuracy: 1e-9)
+    }
+
+    func testBackgroundValueEmptyReturnsNil() {
+        XCTAssertNil(RDChartView.backgroundValue([], atX: 1))
+    }
+
+    func testBackgroundValueSinglePointReturnsThatY() {
+        let points = [AreaPoint(x: 2, y: 42)]
+        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 0), 42)
+        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 2), 42)
+        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 9), 42)
+    }
+
+    // MARK: - 배경 스크럽 델리게이트
+
+    func testScrubReportsBackgroundValueWhenAreaPresent() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(
+            TestFixtures.fullChart,
+            invertedAxes: [.primary],
+            labelFormatter: TestFixtures.format,
+            backgroundArea: [AreaPoint(x: 0, y: 0), AreaPoint(x: 5, y: 100)]
+        )
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 2.4)  // 근접점 스냅 x=2.5 → 보간값 50
+        XCTAssertEqual(spy.backgroundValues.last!, 50, accuracy: 1e-9)
+    }
+
+    func testScrubOmitsBackgroundValueWhenNoArea() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 2.4)
+        XCTAssertFalse(spy.scrubbed.isEmpty, "라인 값은 여전히 전달")
+        XCTAssertTrue(spy.backgroundValues.isEmpty, "backgroundArea 없으면 배경 콜백 없음")
     }
 }

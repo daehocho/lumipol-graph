@@ -7,6 +7,12 @@ public protocol RDChartScrubDelegate: AnyObject {
     func chartView(_ view: RDChartView, didScrubTo valuesBySeriesId: [String: String])
     /// 스크럽 종료(손 뗌·줌/팬 진입 등으로 마커가 사라질 때).
     func chartViewDidEndScrub(_ view: RDChartView)
+    /// 스크럽 근접점의 배경 area(예: 고도) 실값. backgroundArea가 있을 때만 호출.
+    func chartView(_ view: RDChartView, didScrubToBackgroundValue value: Double)
+}
+
+public extension RDChartScrubDelegate {
+    func chartView(_ view: RDChartView, didScrubToBackgroundValue value: Double) {}
 }
 
 /// KMP 코어 `LineChartData`를 받아 CAShapeLayer로 라인차트를 그리는 UIView.
@@ -199,6 +205,10 @@ public final class RDChartView: UIView {
         touchMarkerLayer = result.layer
         activeMarkerRawX = rawX
         scrubDelegate?.chartView(self, didScrubTo: result.valuesBySeriesId)
+        if let backgroundArea,
+           let value = Self.backgroundValue(backgroundArea, atX: result.snappedX) {
+            scrubDelegate?.chartView(self, didScrubToBackgroundValue: value)
+        }
     }
 
     /// 마커 레이어만 제거(델리게이트 통지 없음) — 내부 재빌드·재렌더용.
@@ -423,6 +433,22 @@ public final class RDChartView: UIView {
 
     static func defaultFormatter(_ axis: ChartAxis, _ value: Double) -> String {
         String(format: "%g", value)
+    }
+
+    /// 배경 area의 도메인 x 위치 y를 선형 보간. 범위 밖은 양 끝값으로 클램프.
+    static func backgroundValue(_ points: [AreaPoint], atX x: Double) -> Double? {
+        guard let first = points.first, let last = points.last else { return nil }
+        if x <= first.x { return first.y }
+        if x >= last.x { return last.y }
+        for i in 1..<points.count {
+            let p0 = points[i - 1], p1 = points[i]
+            if x <= p1.x {
+                let dx = p1.x - p0.x
+                let t = dx == 0 ? 0 : (x - p0.x) / dx
+                return p0.y + t * (p1.y - p0.y)
+            }
+        }
+        return last.y
     }
 }
 

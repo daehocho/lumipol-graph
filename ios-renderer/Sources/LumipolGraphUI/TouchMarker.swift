@@ -16,6 +16,8 @@ enum TouchMarker {
     struct Result {
         let layer: CALayer
         let valuesBySeriesId: [String: String]
+        /// 수직선 기준으로 스냅된 원본 도메인 x(첫 시리즈 근접점). 배경 area 보간에 사용.
+        let snappedX: Double
     }
 
     /// 원본 도메인 x 기준 마커. 표시 불가(플롯 없음·축 변환 불능·근접점 없음)면 nil.
@@ -87,7 +89,7 @@ enum TouchMarker {
             valuesBySeriesId[result.seriesId] = context.formatter(chartAxis, result.y)
         }
         guard !valuesBySeriesId.isEmpty else { return nil }
-        return Result(layer: container, valuesBySeriesId: valuesBySeriesId)
+        return Result(layer: container, valuesBySeriesId: valuesBySeriesId, snappedX: snappedX)
     }
 
     private static func ticks(for axis: ChartAxis, in layout: LineChartLayout) -> [AxisTick]? {
