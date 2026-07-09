@@ -1,6 +1,7 @@
 package com.lumipol.graph
 
 import com.lumipol.graph.model.*
+import com.lumipol.graph.query.interpolatedY as interpolatedYQuery
 import com.lumipol.graph.query.nearest as nearestQuery
 import com.lumipol.graph.scale.AxisDomain
 import com.lumipol.graph.scale.NiceScale
@@ -130,4 +131,7 @@ object LineChartEngine {
 
     /** [x]는 원시 데이터-도메인 단위(0..1 정규화 아님) — 렌더러는 터치 위치를 원시 x로 변환한 뒤 호출해야 한다. */
     fun nearest(data: LineChartData, x: Double): List<NearestResult> = nearestQuery(data, x)
+
+    /** 배경 area(고도 등) 스크럽 실값 — x 오름차순 [points]의 [x] 위치 y를 선형 보간(범위 밖 클램프). */
+    fun interpolatedY(points: List<Point>, x: Double): Double? = interpolatedYQuery(points, x)
 }
