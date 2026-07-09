@@ -67,3 +67,6 @@ data class PaceSeriesResult(
     val bestPaceSeconds: Double,    // 유효 최소, 없으면 0
     val validPaceCount: Int,
 )
+
+/** 존 표시용 bpm 경계. upper=null이면 상한 없음(최대존). */
+data class ZoneBpmRange(val lower: Int, val upper: Int?)
