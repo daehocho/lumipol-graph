@@ -183,6 +183,7 @@ __attribute__((swift_name("LineChartEngine")))
 + (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
 + (instancetype)lineChartEngine __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphLineChartEngine *shared __attribute__((swift_name("shared")));
+- (LumipolGraphDouble * _Nullable)interpolatedYPoints:(NSArray<LumipolGraphPoint *> *)points x:(double)x __attribute__((swift_name("interpolatedY(points:x:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data __attribute__((swift_name("layout(data:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("layout(data:xMin:xMax:)")));
 - (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x __attribute__((swift_name("nearest(data:x:)")));
@@ -745,6 +746,12 @@ __attribute__((swift_name("NiceScale")))
 @property (readonly) double niceMin __attribute__((swift_name("niceMin")));
 @property (readonly) double step __attribute__((swift_name("step")));
 @property (readonly) NSArray<LumipolGraphDouble *> *ticks __attribute__((swift_name("ticks")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("AreaInterpolationKt")))
+@interface LumipolGraphAreaInterpolationKt : LumipolGraphBase
++ (LumipolGraphDouble * _Nullable)interpolatedYPoints:(NSArray<LumipolGraphPoint *> *)points x:(double)x __attribute__((swift_name("interpolatedY(points:x:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))

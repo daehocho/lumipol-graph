@@ -179,6 +179,13 @@ lumipol-graph/                  ← 신규 독립 GitHub 리포 (KMP)
   공유 상수 `ZONE_LOWER_FRACTIONS`(50/60/70/80/90%)로 도넛·범례 경계 일치를 코어가 보장.
 - 최대심박 공식(220-나이/206-0.88×나이)은 러닝 도메인이라 앱 유지. 도넛 각도는 기존 DonutEngine.
 
+### 배경 area 스크럽 보간 이관 (0.9.0)
+- 배경 area(고도 실루엣) 스크럽 실값 보간(`query.interpolatedY`) 코어화 — iOS 렌더러
+  `RDChartView.backgroundValue`(이진 탐색 + 선형 보간·양끝 클램프)를 그대로 이관.
+  근접점 질의(`nearest`)와 같은 `query` 패키지로, 양 플랫폼 렌더러가 동일 보간을 공유.
+- 렌더러는 render 시 area 포인트를 코어 `Point`로 1회 변환·보관하고 스크럽(60~120Hz)마다
+  `LineChartEngine.interpolatedY`를 호출. 값의 단위 포맷("123m" 등)은 여전히 앱 책임.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 KMP코어 → iOS네이티브 렌더 **전체 파이프라인을 끝까지** 증명하는 최소 단위.

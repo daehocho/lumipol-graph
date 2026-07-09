@@ -90,6 +90,9 @@ public final class RDChartView: UIView {
     private var isScrubbing = false
     /// 페이스 라인 뒤 배경 고도 실루엣(장식). nil이면 그리지 않음.
     private var backgroundArea: [AreaPoint]?
+    /// backgroundArea의 코어 타입 변환본(스크럽 보간 질의용) — 스크럽은 60~120Hz로 호출되므로
+    /// 매번 재변환하지 않고 render 시 1회 생성한다.
+    private var backgroundAreaPoints: [Point]?
     /// 마지막 rebuildLayers 입력 식별자. bounds와 chartLayout 인스턴스가 그대로면
     /// 레이아웃 패스가 반복돼도 레이어 트리를 재구축하지 않는다(경로 재계산·라벨 재측정 방지).
     /// 스타일·반전·backgroundArea는 render()를 통해서만 바뀌고 그때마다 새 layout이 생성되므로 키에 불필요.
@@ -118,9 +121,10 @@ public final class RDChartView: UIView {
         removeTouchMarkerLayer()
         zoomState = nil
         self.data = data
-        // backgroundValue의 선형 탐색·클램프는 x 오름차순을 전제한다 — 호출자 순서에 기대지 않고
+        // 코어 interpolatedY의 이진 탐색·클램프는 x 오름차순을 전제한다 — 호출자 순서에 기대지 않고
         // 저장 시점에 정규화한다(실루엣 렌더는 순서 무관이라 비정렬 입력이 시각적으로 드러나지 않음).
         self.backgroundArea = backgroundArea?.sorted { $0.x < $1.x }
+        self.backgroundAreaPoints = self.backgroundArea?.map { Point(x: $0.x, y: $0.y) }
         self.style = style
         self.invertedAxes = invertedAxes
         self.labelFormatter = labelFormatter ?? RDChartView.defaultFormatter
@@ -246,9 +250,12 @@ public final class RDChartView: UIView {
         activeMarkerRawX = rawX
         guard notifyingDelegate else { return }
         scrubDelegate?.chartView(self, didScrubTo: result.valuesBySeriesId)
-        if let backgroundArea,
-           let value = Self.backgroundValue(backgroundArea, atX: result.snappedX) {
-            scrubDelegate?.chartView(self, didScrubToBackgroundValue: value)
+        // 배경 area 보간은 코어 질의(interpolatedY) — 양 플랫폼 렌더러가 동일 로직 공유 (0.9.0 이관).
+        if let backgroundAreaPoints,
+           let value = LineChartEngine.shared.interpolatedY(
+               points: backgroundAreaPoints, x: result.snappedX)
+        {
+            scrubDelegate?.chartView(self, didScrubToBackgroundValue: value.doubleValue)
         }
     }
 
@@ -497,25 +504,6 @@ public final class RDChartView: UIView {
 
     static func defaultFormatter(_ axis: ChartAxis, _ value: Double) -> String {
         String(format: "%g", value)
-    }
-
-    /// 배경 area의 도메인 x 위치 y를 선형 보간. 범위 밖은 양 끝값으로 클램프.
-    /// points는 x 오름차순 전제(render()가 저장 시 정렬) — 스크럽은 60~120Hz로 호출되므로
-    /// 수천 포인트 선형 탐색 대신 이진 탐색으로 브래킷 구간을 찾는다.
-    static func backgroundValue(_ points: [AreaPoint], atX x: Double) -> Double? {
-        guard let first = points.first, let last = points.last else { return nil }
-        if x <= first.x { return first.y }
-        if x >= last.x { return last.y }
-        // x <= points[i].x 를 만족하는 최소 i (선형 탐색과 동일한 구간 선택)
-        var low = 1, high = points.count - 1
-        while low < high {
-            let mid = (low + high) / 2
-            if x <= points[mid].x { high = mid } else { low = mid + 1 }
-        }
-        let p0 = points[low - 1], p1 = points[low]
-        let dx = p1.x - p0.x
-        let t = dx == 0 ? 0 : (x - p0.x) / dx
-        return p0.y + t * (p1.y - p0.y)
     }
 }
 

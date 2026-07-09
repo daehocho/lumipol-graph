@@ -274,49 +274,8 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertFalse(chartLayerNames(of: view).contains("area.altitude"))
     }
 
-    // MARK: - backgroundValue 선형 보간
-
-    func testBackgroundValueClampsToEndpoints() {
-        let points = [AreaPoint(x: 1, y: 10), AreaPoint(x: 3, y: 30)]
-        // 범위 밖(왼쪽/오른쪽)은 양 끝값으로 클램프
-        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 0), 10)
-        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 1), 10)  // 끝점 정확히
-        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 3), 30)  // 끝점 정확히
-        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 5), 30)
-    }
-
-    func testBackgroundValueInterpolatesMidpoint() {
-        let points = [AreaPoint(x: 0, y: 0), AreaPoint(x: 5, y: 100)]
-        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 2.5)!, 50, accuracy: 1e-9)
-        // 세 구간 중 두 번째 구간 내 보간
-        let multi = [AreaPoint(x: 0, y: 0), AreaPoint(x: 2, y: 20), AreaPoint(x: 4, y: 0)]
-        XCTAssertEqual(RDChartView.backgroundValue(multi, atX: 3)!, 10, accuracy: 1e-9)
-    }
-
-    func testBackgroundValueEmptyReturnsNil() {
-        XCTAssertNil(RDChartView.backgroundValue([], atX: 1))
-    }
-
-    func testBackgroundValueExactInteriorPointAndDuplicateX() {
-        // 내부 포인트 정확히 일치 + 같은 x가 연속(dx=0)인 경우 — 탐색 구현 교체 시 회귀 방지.
-        let points = [
-            AreaPoint(x: 0, y: 0), AreaPoint(x: 1, y: 10),
-            AreaPoint(x: 1, y: 20), AreaPoint(x: 2, y: 40),
-        ]
-        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 1)!, 10, accuracy: 1e-9)
-        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 1.5)!, 30, accuracy: 1e-9)
-        // 많은 포인트에서 각 구간 중앙값 검증
-        let many = (0...100).map { AreaPoint(x: Double($0), y: Double($0) * 2) }
-        XCTAssertEqual(RDChartView.backgroundValue(many, atX: 37.5)!, 75, accuracy: 1e-9)
-        XCTAssertEqual(RDChartView.backgroundValue(many, atX: 99)!, 198, accuracy: 1e-9)
-    }
-
-    func testBackgroundValueSinglePointReturnsThatY() {
-        let points = [AreaPoint(x: 2, y: 42)]
-        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 0), 42)
-        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 2), 42)
-        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 9), 42)
-    }
+    // 배경 area 보간(클램프·중복 x·빈 입력)의 단위 테스트는 0.9.0에서 코어로 이관 —
+    // core commonTest `AreaInterpolationTest` 참고. 여기는 델리게이트 통합 경로만 검증한다.
 
     // MARK: - 배경 스크럽 델리게이트
 
