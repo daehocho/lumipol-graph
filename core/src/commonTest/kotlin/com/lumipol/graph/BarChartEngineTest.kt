@@ -128,4 +128,32 @@ class BarChartEngineTest {
         assertTrue(layout.bars[0].isPartial)
         assertTrue(layout.bars[0].heightFraction in 0.0..1.0)
     }
+
+    // MARK: chooseTimeBucketSeconds
+
+    @Test
+    fun bucket_selection_picks_smallest_candidate_within_max_bars() {
+        // 12분(720s): 1분→12막대(>10), 2분→6막대(<=10) 선택 → 120s
+        assertEquals(120.0, BarChartEngine.chooseTimeBucketSeconds(720.0), 1e-9)
+    }
+
+    @Test
+    fun bucket_selection_one_minute_for_short_run() {
+        // 5분(300s): 1분→5막대(<=10) → 60s
+        assertEquals(60.0, BarChartEngine.chooseTimeBucketSeconds(300.0), 1e-9)
+    }
+
+    @Test
+    fun bucket_selection_exactly_ten_bars_boundary() {
+        // 20분(1200s): 1분→20막대(>10), 2분→10막대(<=10) → 120s
+        assertEquals(120.0, BarChartEngine.chooseTimeBucketSeconds(1200.0), 1e-9)
+        // 10분(600s): 1분→10막대(정확히 10, <=10) → 60s
+        assertEquals(60.0, BarChartEngine.chooseTimeBucketSeconds(600.0), 1e-9)
+    }
+
+    @Test
+    fun bucket_selection_falls_back_to_ten_minutes_for_very_long_run() {
+        // 2시간(7200s): 1→120,2→60,5→24,10→12막대 모두 >10 → 마지막 후보 10분 = 600s
+        assertEquals(600.0, BarChartEngine.chooseTimeBucketSeconds(7200.0), 1e-9)
+    }
 }

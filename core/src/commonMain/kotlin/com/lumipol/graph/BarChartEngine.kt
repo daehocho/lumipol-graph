@@ -3,6 +3,7 @@ package com.lumipol.graph
 import com.lumipol.graph.model.*
 import com.lumipol.graph.scale.AxisDomain
 import com.lumipol.graph.scale.niceScale
+import kotlin.math.ceil
 
 /**
  * 스플릿 막대 집계·레이아웃 엔진.
@@ -14,6 +15,20 @@ import com.lumipol.graph.scale.niceScale
 object BarChartEngine {
 
     private data class RawBar(val value: Double, val isPartial: Boolean)
+
+    // 시간모드 버킷 선택 정책(양 플랫폼 공유). 총 시간으로 막대가 MAX_BARS 이하가 되는 최소 후보(분).
+    private val BUCKET_MINUTE_CANDIDATES = listOf(1, 2, 5, 10)
+    private const val MAX_BARS = 10
+
+    /** 총 러닝 시간(초)으로 시간 버킷 크기(초)를 고른다. iOS bucketMinutes 규칙과 동일. */
+    fun chooseTimeBucketSeconds(runningSeconds: Double): Double {
+        val totalMinutes = runningSeconds / 60.0
+        for (n in BUCKET_MINUTE_CANDIDATES) {
+            val bars = ceil(totalMinutes / n).toInt()
+            if (bars <= MAX_BARS) return n * 60.0
+        }
+        return BUCKET_MINUTE_CANDIDATES.last() * 60.0
+    }
 
     fun layout(data: BarChartData): BarChartLayout {
         val unit = data.splitDistanceMeters
