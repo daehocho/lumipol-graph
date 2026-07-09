@@ -151,6 +151,7 @@ __attribute__((swift_name("BarChartEngine")))
 + (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
 + (instancetype)barChartEngine __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphBarChartEngine *shared __attribute__((swift_name("shared")));
+- (double)chooseTimeBucketSecondsRunningSeconds:(double)runningSeconds __attribute__((swift_name("chooseTimeBucketSeconds(runningSeconds:)")));
 - (LumipolGraphBarChartLayout *)layoutData:(LumipolGraphBarChartData *)data __attribute__((swift_name("layout(data:)")));
 @end
 
@@ -233,16 +234,19 @@ __attribute__((swift_name("AxisTicksLayout")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("BarChartData")))
 @interface LumipolGraphBarChartData : LumipolGraphBase
-- (instancetype)initWithSamples:(NSArray<LumipolGraphSplitSample *> *)samples splitDistanceMeters:(double)splitDistanceMeters targetPaceSecPerUnit:(LumipolGraphDouble * _Nullable)targetPaceSecPerUnit toleranceSecPerUnit:(double)toleranceSecPerUnit maxTicks:(int32_t)maxTicks __attribute__((swift_name("init(samples:splitDistanceMeters:targetPaceSecPerUnit:toleranceSecPerUnit:maxTicks:)"))) __attribute__((objc_designated_initializer));
-- (LumipolGraphBarChartData *)doCopySamples:(NSArray<LumipolGraphSplitSample *> *)samples splitDistanceMeters:(double)splitDistanceMeters targetPaceSecPerUnit:(LumipolGraphDouble * _Nullable)targetPaceSecPerUnit toleranceSecPerUnit:(double)toleranceSecPerUnit maxTicks:(int32_t)maxTicks __attribute__((swift_name("doCopy(samples:splitDistanceMeters:targetPaceSecPerUnit:toleranceSecPerUnit:maxTicks:)")));
+- (instancetype)initWithSamples:(NSArray<LumipolGraphSplitSample *> *)samples splitDistanceMeters:(double)splitDistanceMeters targetPaceSecPerUnit:(LumipolGraphDouble * _Nullable)targetPaceSecPerUnit toleranceSecPerUnit:(double)toleranceSecPerUnit maxTicks:(int32_t)maxTicks splitTimeSeconds:(LumipolGraphDouble * _Nullable)splitTimeSeconds totalDurationSeconds:(LumipolGraphDouble * _Nullable)totalDurationSeconds totalDistanceMeters:(LumipolGraphDouble * _Nullable)totalDistanceMeters __attribute__((swift_name("init(samples:splitDistanceMeters:targetPaceSecPerUnit:toleranceSecPerUnit:maxTicks:splitTimeSeconds:totalDurationSeconds:totalDistanceMeters:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphBarChartData *)doCopySamples:(NSArray<LumipolGraphSplitSample *> *)samples splitDistanceMeters:(double)splitDistanceMeters targetPaceSecPerUnit:(LumipolGraphDouble * _Nullable)targetPaceSecPerUnit toleranceSecPerUnit:(double)toleranceSecPerUnit maxTicks:(int32_t)maxTicks splitTimeSeconds:(LumipolGraphDouble * _Nullable)splitTimeSeconds totalDurationSeconds:(LumipolGraphDouble * _Nullable)totalDurationSeconds totalDistanceMeters:(LumipolGraphDouble * _Nullable)totalDistanceMeters __attribute__((swift_name("doCopy(samples:splitDistanceMeters:targetPaceSecPerUnit:toleranceSecPerUnit:maxTicks:splitTimeSeconds:totalDurationSeconds:totalDistanceMeters:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) int32_t maxTicks __attribute__((swift_name("maxTicks")));
 @property (readonly) NSArray<LumipolGraphSplitSample *> *samples __attribute__((swift_name("samples")));
 @property (readonly) double splitDistanceMeters __attribute__((swift_name("splitDistanceMeters")));
+@property (readonly) LumipolGraphDouble * _Nullable splitTimeSeconds __attribute__((swift_name("splitTimeSeconds")));
 @property (readonly) LumipolGraphDouble * _Nullable targetPaceSecPerUnit __attribute__((swift_name("targetPaceSecPerUnit")));
 @property (readonly) double toleranceSecPerUnit __attribute__((swift_name("toleranceSecPerUnit")));
+@property (readonly) LumipolGraphDouble * _Nullable totalDistanceMeters __attribute__((swift_name("totalDistanceMeters")));
+@property (readonly) LumipolGraphDouble * _Nullable totalDurationSeconds __attribute__((swift_name("totalDurationSeconds")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -274,12 +278,13 @@ __attribute__((swift_name("BarColorRole")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("BarLayout")))
 @interface LumipolGraphBarLayout : LumipolGraphBase
-- (instancetype)initWithIndex:(int32_t)index value:(double)value heightFraction:(double)heightFraction colorRole:(LumipolGraphBarColorRole *)colorRole isPartial:(BOOL)isPartial __attribute__((swift_name("init(index:value:heightFraction:colorRole:isPartial:)"))) __attribute__((objc_designated_initializer));
-- (LumipolGraphBarLayout *)doCopyIndex:(int32_t)index value:(double)value heightFraction:(double)heightFraction colorRole:(LumipolGraphBarColorRole *)colorRole isPartial:(BOOL)isPartial __attribute__((swift_name("doCopy(index:value:heightFraction:colorRole:isPartial:)")));
+- (instancetype)initWithIndex:(int32_t)index value:(double)value heightFraction:(double)heightFraction colorRole:(LumipolGraphBarColorRole *)colorRole isPartial:(BOOL)isPartial endMinutes:(LumipolGraphInt * _Nullable)endMinutes __attribute__((swift_name("init(index:value:heightFraction:colorRole:isPartial:endMinutes:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphBarLayout *)doCopyIndex:(int32_t)index value:(double)value heightFraction:(double)heightFraction colorRole:(LumipolGraphBarColorRole *)colorRole isPartial:(BOOL)isPartial endMinutes:(LumipolGraphInt * _Nullable)endMinutes __attribute__((swift_name("doCopy(index:value:heightFraction:colorRole:isPartial:endMinutes:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) LumipolGraphBarColorRole *colorRole __attribute__((swift_name("colorRole")));
+@property (readonly) LumipolGraphInt * _Nullable endMinutes __attribute__((swift_name("endMinutes")));
 @property (readonly) double heightFraction __attribute__((swift_name("heightFraction")));
 @property (readonly) int32_t index __attribute__((swift_name("index")));
 @property (readonly) BOOL isPartial __attribute__((swift_name("isPartial")));
