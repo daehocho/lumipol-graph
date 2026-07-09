@@ -86,6 +86,77 @@ final class TouchMarkerTests: XCTestCase {
         XCTAssertFalse(names.contains("touch.dot.o"), "오버레이는 터치 점을 그리지 않음")
     }
 
+    func testSnappedXPrefersMainSeriesWhenGhostListedFirst() {
+        // 시리즈 순서 계약이 없고 고스트는 성긴 샘플링일 수 있다 — 수직선/배경 보간의 기준인
+        // snappedX는 배열 첫 시리즈가 아니라 main 시리즈의 근접점을 따라야 한다.
+        let ghostFirst = LineChartData(
+            series: [
+                Series(
+                    id: "prev",
+                    points: [Point(x: 0, y: 6.0), Point(x: 2, y: 6.2)],  // 2km 간격 성긴 고스트
+                    axis: .primary, role: .ghost
+                ),
+                TestFixtures.series(id: "pace", values: TestFixtures.paceValues, axis: .primary, role: .main),
+            ],
+            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let ghostFirstLayout = LineChartEngine.shared.layout(data: ghostFirst)
+        let result = TouchMarker.make(atRawX: 1.3, context: TouchMarker.Context(
+            data: ghostFirst, layout: ghostFirstLayout, style: .default, plotArea: plotArea,
+            formatter: TestFixtures.format
+        ))
+        // main(0.5 간격) 근접점 = 1.5. 고스트 근접점(2.0)이 기준이 되면 안 된다.
+        XCTAssertEqual(result?.snappedX ?? -1, 1.5, accuracy: 1e-9)
+    }
+
+    func testOutOfWindowSeriesOmittedFromDotsAndValues() {
+        // 확대 창(3~5)에 포인트가 전혀 없는 고스트(0~2) — 근접점이 창 밖(x=2)으로 스냅되면
+        // 창 기준 y-도메인을 벗어난 위치에 점이 그려지고 값도 스크럽 위치인 양 전달된다.
+        // 창 밖 근접점은 점·값 모두 생략해야 한다.
+        let ghostShort = LineChartData(
+            series: [
+                TestFixtures.series(id: "pace", values: TestFixtures.paceValues, axis: .primary, role: .main),
+                Series(
+                    id: "prev",
+                    points: [Point(x: 0, y: 6.0), Point(x: 2, y: 6.2)],
+                    axis: .primary, role: .ghost
+                ),
+            ],
+            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let windowed = LineChartEngine.shared.layout(data: ghostShort, xMin: 3.0, xMax: 5.0)
+        let result = TouchMarker.make(atRawX: 4.0, context: TouchMarker.Context(
+            data: ghostShort, layout: windowed, style: .default, plotArea: plotArea,
+            formatter: TestFixtures.format
+        ))
+        XCTAssertNotNil(result)
+        XCTAssertNotNil(result?.valuesBySeriesId["pace"])
+        XCTAssertNil(result?.valuesBySeriesId["prev"], "창 밖 근접점 값은 전달하지 않음")
+        let names = result?.layer.sublayers?.compactMap(\.name) ?? []
+        XCTAssertFalse(names.contains("touch.dot.prev"), "창 밖 근접점에는 점을 그리지 않음")
+    }
+
+    func testDuplicateSeriesIdsDoNotCrash() {
+        // 코어 API는 시리즈 id 유일성을 강제하지 않는다 — 중복 id가 fatalError로
+        // 이어지지 않고 첫 시리즈 기준으로 마커를 만들어야 한다.
+        let dupData = LineChartData(
+            series: [
+                TestFixtures.series(id: "pace", values: TestFixtures.paceValues, axis: .primary, role: .main),
+                TestFixtures.series(id: "pace", values: TestFixtures.ghostPaceValues, axis: .primary, role: .ghost),
+            ],
+            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let dupLayout = LineChartEngine.shared.layout(data: dupData)
+        let result = TouchMarker.make(atRawX: 2.4, context: TouchMarker.Context(
+            data: dupData, layout: dupLayout, style: .default, plotArea: plotArea,
+            formatter: TestFixtures.format
+        ))
+        XCTAssertNotNil(result)
+    }
+
     func testReturnsNilWhenAxisScaleUnavailable() {
         // 축 tick이 없는 빈 레이아웃 → 역산 불능 → nil
         let emptyLayout = LineChartLayout(

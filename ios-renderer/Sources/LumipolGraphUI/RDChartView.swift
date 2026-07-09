@@ -65,7 +65,11 @@ public final class RDChartView: UIView {
     }
 
     private(set) var data: LineChartData?
-    private(set) var chartLayout: LineChartLayout?
+    private(set) var chartLayout: LineChartLayout? {
+        didSet { cachedXAxisScale = nil }
+    }
+    /// 현재 chartLayout의 X 스케일 캐시 — 스크럽(60~120Hz)마다 tick 탐색·재구성을 피한다.
+    private var cachedXAxisScale: AxisScale?
     private(set) var style: ChartStyle = .default
     private(set) var invertedAxes: Set<Axis> = []
     private(set) var labelFormatter: (ChartAxis, Double) -> String = RDChartView.defaultFormatter
@@ -86,6 +90,14 @@ public final class RDChartView: UIView {
     private var isScrubbing = false
     /// 페이스 라인 뒤 배경 고도 실루엣(장식). nil이면 그리지 않음.
     private var backgroundArea: [AreaPoint]?
+    /// 마지막 rebuildLayers 입력 식별자. bounds와 chartLayout 인스턴스가 그대로면
+    /// 레이아웃 패스가 반복돼도 레이어 트리를 재구축하지 않는다(경로 재계산·라벨 재측정 방지).
+    /// 스타일·반전·backgroundArea는 render()를 통해서만 바뀌고 그때마다 새 layout이 생성되므로 키에 불필요.
+    private struct RebuildKey: Equatable {
+        let bounds: CGRect
+        let layout: ObjectIdentifier
+    }
+    private var lastRebuildKey: RebuildKey?
 
     /// 차트를 그린다. 터치 질의를 위해 `data`를 보관한다.
     ///
@@ -94,6 +106,8 @@ public final class RDChartView: UIView {
     /// - Parameters:
     ///   - invertedAxes: 화면에서 뒤집을 Y축(예: 페이스 — 위=빠름). 코어 출력은 값-공간 그대로.
     ///   - labelFormatter: 축 tick 값 → 표시 문자열. 코어/렌더러는 단위를 모른다(앱 주입).
+    ///     주의: 오버레이 시리즈가 있으면 스크럽 시 `ChartAxis.yOverlay`(실값)로도 호출된다 —
+    ///     축 keyed 딕셔너리·강제 언래핑 포매터는 이 케이스를 반드시 처리할 것.
     public func render(
         _ data: LineChartData,
         style: ChartStyle = .default,
@@ -104,7 +118,9 @@ public final class RDChartView: UIView {
         removeTouchMarkerLayer()
         zoomState = nil
         self.data = data
-        self.backgroundArea = backgroundArea
+        // backgroundValue의 선형 탐색·클램프는 x 오름차순을 전제한다 — 호출자 순서에 기대지 않고
+        // 저장 시점에 정규화한다(실루엣 렌더는 순서 무관이라 비정렬 입력이 시각적으로 드러나지 않음).
+        self.backgroundArea = backgroundArea?.sorted { $0.x < $1.x }
         self.style = style
         self.invertedAxes = invertedAxes
         self.labelFormatter = labelFormatter ?? RDChartView.defaultFormatter
@@ -124,6 +140,13 @@ public final class RDChartView: UIView {
     }
 
     private func rebuildLayers() {
+        // 입력(bounds·layout)이 그대로면 조기 반환 — 상위 레이아웃 패스마다 트리를 재구축하지 않는다.
+        if let chartLayout,
+           lastRebuildKey == RebuildKey(bounds: bounds, layout: ObjectIdentifier(chartLayout)) {
+            return
+        }
+        lastRebuildKey = nil
+
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         defer { CATransaction.commit() }
@@ -167,9 +190,10 @@ public final class RDChartView: UIView {
             needsEntranceAnimation = false
         }
         if let markerRawX {
-            showTouchMarker(atX: markerRawX)
+            showTouchMarker(atX: markerRawX, notifyingDelegate: false)
         }
         updateClipMask()
+        lastRebuildKey = RebuildKey(bounds: bounds, layout: ObjectIdentifier(chartLayout))
     }
 
     private func animateMainLines() {
@@ -188,22 +212,39 @@ public final class RDChartView: UIView {
 
     /// 원본 도메인 x 위치에 근접점 마커(수직선+점)를 표시하고 값을 델리게이트로 전달한다.
     @objc public func showTouchMarker(atX rawX: Double) {
-        if let state = zoomState, state.isZoomed, !state.window.contains(rawX) {
-            return
+        showTouchMarker(atX: rawX, notifyingDelegate: true)
+    }
+
+    /// 마커 표시 공통 경로. `notifyingDelegate: false`는 레이아웃 패스의 마커 복원 전용 —
+    /// 사용자 입력이 없으므로 스크럽 콜백(햅틱/애널리틱스 부작용)을 재발화하지 않는다.
+    private func showTouchMarker(atX rawX: Double, notifyingDelegate: Bool) {
+        var rawX = rawX
+        if let state = zoomState, state.isZoomed {
+            // 창 끝 스크럽은 도메인 역산 반올림으로 상/하한을 수 ulp 벗어날 수 있다 —
+            // TouchMarker의 경계 처리와 동일하게 epsilon 이내는 창 안으로 클램프한다
+            // (엄격 비교 시 끝 스크럽이 침묵 드롭되고 이전 마커가 얼어붙음).
+            let epsilon = (state.window.upperBound - state.window.lowerBound) * 1e-9
+            guard rawX >= state.window.lowerBound - epsilon,
+                  rawX <= state.window.upperBound + epsilon else { return }
+            rawX = min(max(rawX, state.window.lowerBound), state.window.upperBound)
         }
         guard let data, let chartLayout, let plotArea = currentPlotArea else { return }
+        let hadMarker = touchMarkerLayer != nil
         removeTouchMarkerLayer()
         let context = TouchMarker.Context(
             data: data, layout: chartLayout, style: style,
             plotArea: plotArea, formatter: labelFormatter
         )
         guard let result = TouchMarker.make(atRawX: rawX, context: context) else {
-            scrubDelegate?.chartViewDidEndScrub(self)
+            // 표시 중이던 마커가 사라질 때만 종료 통지 — 마커가 없었으면
+            // didScrubTo 없는 endScrub(짝 깨진 콜백)를 만들지 않는다 (hideTouchMarker와 동일 계약).
+            if notifyingDelegate, hadMarker { scrubDelegate?.chartViewDidEndScrub(self) }
             return
         }
         layer.addSublayer(result.layer)
         touchMarkerLayer = result.layer
         activeMarkerRawX = rawX
+        guard notifyingDelegate else { return }
         scrubDelegate?.chartView(self, didScrubTo: result.valuesBySeriesId)
         if let backgroundArea,
            let value = Self.backgroundValue(backgroundArea, atX: result.snappedX) {
@@ -245,10 +286,8 @@ public final class RDChartView: UIView {
     /// 현재 표시 도메인(전체 layout의 X tick 양끝)으로 줌 상태를 초기화.
     /// zoomState가 nil일 때만 유효 — nil ⇒ 현재 layout이 전체 구간이라는 불변식.
     private func ensureZoomState() {
-        guard zoomState == nil, let chartLayout,
-              let xTicks = chartLayout.axisTicks.first(where: { $0.axis == .x })?.ticks,
-              let scale = AxisScale(ticks: xTicks)
-        else { return }
+        // zoomState==nil ⇒ 현재 layout이 전체 구간 (불변식) — xAxisScale()이 곧 전체 도메인 스케일.
+        guard zoomState == nil, let scale = xAxisScale() else { return }
         let lower = scale.value(atPosition: 0)
         let upper = scale.value(atPosition: 1)
         guard upper > lower else { return }
@@ -265,7 +304,12 @@ public final class RDChartView: UIView {
                 xMax: state.window.upperBound
             )
         } else {
-            zoomState = nil  // 1x 복귀 시 상태 제거 (ensureZoomState 불변식 유지)
+            // 1x 복귀 시 상태 제거 (ensureZoomState 불변식 유지).
+            // 단, 라이브 제스처 진행 중에는 유지 — 창이 잠깐 전체 구간을 지나가며
+            // isZoomed=false가 되어도 같은 제스처로 다시 확대할 수 있어야 한다.
+            if pinchStartWindow == nil, panStartWindow == nil {
+                zoomState = nil
+            }
             chartLayout = LineChartEngine.shared.layout(data: data)
         }
         needsEntranceAnimation = false
@@ -296,22 +340,37 @@ public final class RDChartView: UIView {
         guard isZoomEnabled, let plotArea = currentPlotArea, data != nil else { return }
         switch recognizer.state {
         case .began:
-            ensureZoomState()
-            hideTouchMarker()
-            pinchStartWindow = zoomState?.window
+            pinchBegan()
         case .changed:
-            guard let start = pinchStartWindow else { return }
             let anchor = plotArea.normalizedX(at: recognizer.location(in: self).x)
-            zoomState?.pinch(
-                from: start, cumulativeScale: Double(recognizer.scale),
-                anchor: anchor, maxScale: Double(maxZoomScale)
-            )
-            commitViewport()
+            pinchChanged(cumulativeScale: Double(recognizer.scale), anchor: anchor)
         case .ended, .cancelled:
-            pinchStartWindow = nil
+            pinchEnded()
         default:
             break
         }
+    }
+
+    // 핀치 제스처 단계별 시임 — recognizer 없이 단위 테스트 가능하도록 분리.
+    func pinchBegan() {
+        ensureZoomState()
+        hideTouchMarker()
+        pinchStartWindow = zoomState?.window
+    }
+
+    func pinchChanged(cumulativeScale: Double, anchor: Double) {
+        guard let start = pinchStartWindow else { return }
+        zoomState?.pinch(
+            from: start, cumulativeScale: cumulativeScale,
+            anchor: anchor, maxScale: Double(maxZoomScale)
+        )
+        commitViewport()
+    }
+
+    func pinchEnded() {
+        pinchStartWindow = nil
+        // 제스처가 1x에서 끝났으면 지연된 상태 정리 수행 (commitViewport가 제스처 중엔 유지).
+        if zoomState?.isZoomed != true { zoomState = nil }
     }
 
     @objc private func handleDoubleTap(_ recognizer: UITapGestureRecognizer) {
@@ -338,6 +397,8 @@ public final class RDChartView: UIView {
             commitViewport()
         case .ended, .cancelled:
             panStartWindow = nil
+            // 핀치와 동일 — 팬이 전체 구간에서 끝났으면 지연된 상태 정리.
+            if zoomState?.isZoomed != true { zoomState = nil }
         default:
             break
         }
@@ -395,7 +456,7 @@ public final class RDChartView: UIView {
         scrub(at: recognizer.location(in: self))
     }
 
-    /// 확대 상태에서 1.5초 롱프레스 후 드래그 = 스크럽(값 조회). 진입 시 햅틱, 스크럽 중 팬 잠금.
+    /// 확대 상태에서 0.5초 롱프레스 후 드래그 = 스크럽(값 조회). 진입 시 햅틱, 스크럽 중 팬 잠금.
     /// 100%에서도 발동하지만 기존 드래그 스크럽과 결과 동일해 무해.
     @objc private func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
         switch recognizer.state {
@@ -417,11 +478,14 @@ public final class RDChartView: UIView {
     }
 
     /// 현재 chartLayout의 X tick으로 도메인↔정규화 변환 스케일. tick 부족 시 nil.
+    /// chartLayout 교체 시까지 캐시된다.
     private func xAxisScale() -> AxisScale? {
+        if let cachedXAxisScale { return cachedXAxisScale }
         guard let xTicks = chartLayout?.axisTicks.first(where: { $0.axis == .x })?.ticks else {
             return nil
         }
-        return AxisScale(ticks: xTicks)
+        cachedXAxisScale = AxisScale(ticks: xTicks)
+        return cachedXAxisScale
     }
 
     /// 손가락 뷰 좌표 → 현재(창) 도메인 x로 환산해 스크럽 마커 표시. 롱프레스·비확대 스크럽 공용.
@@ -436,19 +500,22 @@ public final class RDChartView: UIView {
     }
 
     /// 배경 area의 도메인 x 위치 y를 선형 보간. 범위 밖은 양 끝값으로 클램프.
+    /// points는 x 오름차순 전제(render()가 저장 시 정렬) — 스크럽은 60~120Hz로 호출되므로
+    /// 수천 포인트 선형 탐색 대신 이진 탐색으로 브래킷 구간을 찾는다.
     static func backgroundValue(_ points: [AreaPoint], atX x: Double) -> Double? {
         guard let first = points.first, let last = points.last else { return nil }
         if x <= first.x { return first.y }
         if x >= last.x { return last.y }
-        for i in 1..<points.count {
-            let p0 = points[i - 1], p1 = points[i]
-            if x <= p1.x {
-                let dx = p1.x - p0.x
-                let t = dx == 0 ? 0 : (x - p0.x) / dx
-                return p0.y + t * (p1.y - p0.y)
-            }
+        // x <= points[i].x 를 만족하는 최소 i (선형 탐색과 동일한 구간 선택)
+        var low = 1, high = points.count - 1
+        while low < high {
+            let mid = (low + high) / 2
+            if x <= points[mid].x { high = mid } else { low = mid + 1 }
         }
-        return last.y
+        let p0 = points[low - 1], p1 = points[low]
+        let dx = p1.x - p0.x
+        let t = dx == 0 ? 0 : (x - p0.x) / dx
+        return p0.y + t * (p1.y - p0.y)
     }
 }
 

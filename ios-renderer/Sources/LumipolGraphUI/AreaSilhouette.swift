@@ -32,7 +32,10 @@ enum AreaSilhouette {
         let baseY = plotArea.rect.maxY
         let usableHeight = style.areaHeightFraction * plotArea.rect.height
         func pixel(_ index: Int) -> CGPoint {
-            let px = plotArea.x(xScale.position(ofValue: points[index].x))
+            // 시리즈 x-도메인보다 넓은 area 데이터는 정규화 위치가 0~1을 벗어난다 —
+            // 1x에서는 클립 마스크가 없으므로 좌표를 플롯 영역으로 클램프해 번짐을 막는다.
+            let nx = min(max(xScale.position(ofValue: points[index].x), 0), 1)
+            let px = plotArea.x(nx)
             let py = baseY - CGFloat(fractions[index]) * usableHeight
             return CGPoint(x: px, y: py)
         }

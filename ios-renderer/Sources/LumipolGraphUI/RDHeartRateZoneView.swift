@@ -76,15 +76,41 @@ public final class RDHeartRateZoneView: UIView {
     public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         zoneDelegate?.heartRateZoneView(self, didSelectSegmentAt: nil)
     }
+    /// 스크롤뷰 팬·시스템 제스처가 터치를 가로채면 touchesEnded 대신 이쪽이 온다 —
+    /// 해제(nil)를 보내지 않으면 호스트의 존 하이라이트가 고착된다.
+    public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        zoneDelegate?.heartRateZoneView(self, didSelectSegmentAt: nil)
+    }
 
     private func handleTouch(_ touch: UITouch?) {
-        guard let touch = touch, let layout = currentLayout, layout.total > 0 else { return }
-        let p = touch.location(in: self)
+        guard let touch = touch else { return }
+        zoneDelegate?.heartRateZoneView(self, didSelectSegmentAt: segmentIndex(at: touch.location(in: self)))
+    }
+
+    /// 터치 좌표 → **원본 `data.segments` 인덱스**. 매칭 없으면 nil.
+    /// DonutEngine은 value<=0 세그먼트를 레이아웃에서 제외하므로,
+    /// 레이아웃 인덱스를 그대로 내보내면 호출자 배열과 어긋난다 — 원본 인덱스로 복원해 전달.
+    func segmentIndex(at p: CGPoint) -> Int? {
+        guard let layout = currentLayout, layout.total > 0 else { return nil }
         let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        // 반경 검사: 링 스트로크 대역 밖(도넛 구멍·모서리)은 선택 없음 —
+        // 각도만으로는 모든 터치가 어떤 세그먼트에든 매칭돼 허위 선택이 된다.
+        let ring = style.donutRingWidth
+        let radius = (min(bounds.width, bounds.height) - ring) / 2
+        guard radius > 0 else { return nil }
+        let distance = hypot(p.x - center.x, p.y - center.y)
+        guard distance >= radius - ring / 2, distance <= radius + ring / 2 else { return nil }
         var angle = atan2(p.y - center.y, p.x - center.x) + .pi / 2  // 12시 기준
         if angle < 0 { angle += 2 * .pi }
         let frac = Double(angle / (2 * .pi))
-        let idx = layout.segments.firstIndex { frac >= $0.startFraction && frac < $0.startFraction + $0.sweepFraction }
-        zoneDelegate?.heartRateZoneView(self, didSelectSegmentAt: idx)
+        guard let layoutIndex = layout.segments.firstIndex(where: {
+            frac >= $0.startFraction && frac < $0.startFraction + $0.sweepFraction
+        }) else { return nil }
+        // 엔진과 동일한 필터 기준(value > 0)으로 원본 인덱스 테이블 구성.
+        let originalIndices = data.segments.enumerated()
+            .filter { $0.element.value > 0 }
+            .map(\.offset)
+        guard layoutIndex < originalIndices.count else { return nil }
+        return originalIndices[layoutIndex]
     }
 }

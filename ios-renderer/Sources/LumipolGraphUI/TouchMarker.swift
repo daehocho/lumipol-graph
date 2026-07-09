@@ -27,9 +27,17 @@ enum TouchMarker {
               let xScale = AxisScale(ticks: xTicks)
         else { return nil }
         let results = LineChartEngine.shared.nearest(data: context.data, x: rawX)
-        // 수직선 x는 첫 시리즈의 근접점 기준 — 계약상 시리즈별 근접 x가 다를 수 있으나
-        // 러닝 데이터는 공통 샘플링 x를 쓰므로 하나로 통일한다.
-        guard let snappedX = results.first?.x else { return nil }
+        // 코어 API가 시리즈 id 유일성을 강제하지 않으므로 중복 시 첫 시리즈 우선(fatalError 방지).
+        let axisBySeriesId = Dictionary(
+            context.data.series.map { ($0.id, $0.axis) }, uniquingKeysWith: { first, _ in first }
+        )
+        let roleBySeriesId = Dictionary(
+            context.data.series.map { ($0.id, $0.role) }, uniquingKeysWith: { first, _ in first }
+        )
+        // 수직선 x는 main 시리즈의 근접점 기준 — 시리즈 순서 계약이 없고 고스트/오버레이는
+        // 성긴 샘플링일 수 있어, 스냅 격자는 본 기록(main)을 따른다. main 없으면 첫 시리즈 폴백.
+        let snapSource = results.first { roleBySeriesId[$0.seriesId] == .main } ?? results.first
+        guard let snappedX = snapSource?.x else { return nil }
         // 스냅된 근접점이 현재 표시 도메인(창) 밖이면 마커를 만들지 않는다 —
         // 확대 창 경계 부근에서 창 밖 데이터로 스냅되는 것을 방지.
         // 단, 도메인 양끝 값은 부동소수점 반올림으로 0/1을 수 ulp 벗어날 수 있으므로
@@ -37,8 +45,6 @@ enum TouchMarker {
         let rawNx = xScale.position(ofValue: snappedX)
         guard rawNx >= -1e-9, rawNx <= 1 + 1e-9 else { return nil }
         let nx = min(max(rawNx, 0), 1)
-        let axisBySeriesId = Dictionary(uniqueKeysWithValues: context.data.series.map { ($0.id, $0.axis) })
-        let roleBySeriesId = Dictionary(uniqueKeysWithValues: context.data.series.map { ($0.id, $0.role) })
 
         let container = CALayer()
         container.name = "touch.marker"
@@ -56,6 +62,11 @@ enum TouchMarker {
 
         var valuesBySeriesId: [String: String] = [:]
         for result in results {
+            // 시리즈별 근접점이 현재 표시 도메인(창) 밖이면 점·값 모두 생략 —
+            // 창에 포인트가 없는 시리즈(예: 짧은 고스트)가 창 밖 값을 스크럽 위치인 양
+            // 보고하거나, 창 기준 y-도메인을 벗어난 위치에 점을 그리는 것을 방지.
+            let seriesNx = xScale.position(ofValue: result.x)
+            guard seriesNx >= -1e-9, seriesNx <= 1 + 1e-9 else { continue }
             if roleBySeriesId[result.seriesId] == .overlay {
                 // 오버레이: 축 없음 — 실값만 툴팁에 표시(터치 점은 생략).
                 valuesBySeriesId[result.seriesId] = context.formatter(.yOverlay, result.y)

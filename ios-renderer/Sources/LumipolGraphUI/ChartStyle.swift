@@ -68,12 +68,9 @@ public struct ChartStyle {
     // 플롯 여백 (좌우 = Y축 라벨, 상하 = 마커 라벨/X축 라벨)
     public var plotInsets: UIEdgeInsets = UIEdgeInsets(top: 16, left: 44, bottom: 20, right: 44)
 
-    // 터치 마커
+    // 터치 마커 (말풍선 스타일은 bubble 레이어 제거와 함께 삭제됨 — 값 표시는 스크럽 델리게이트가 담당)
     public var touchLineColor: UIColor = .label
     public var touchDotRadius: CGFloat = 4
-    public var bubbleBackgroundColor: UIColor = UIColor.label.withAlphaComponent(0.85)
-    public var bubbleTextColor: UIColor = .systemBackground
-    public var bubbleFont: UIFont = .systemFont(ofSize: 11, weight: .medium)
 
     public init() {}
 
