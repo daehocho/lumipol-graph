@@ -57,3 +57,13 @@ data class DonutChartLayout(
     val segments: List<DonutSegmentLayout>,
     val total: Double,
 )
+
+/** 페이스 전처리 결과 — 정제된 라인 포인트 + 통계 + 고도 실루엣. */
+data class PaceSeriesResult(
+    val pace: List<Point>,          // y = paceSeconds/60(분), 다운샘플·아웃라이어 컷 적용
+    val heart: List<Point>,         // 전 포인트, 결측 승계. 무데이터면 emptyList
+    val cadence: List<Point>,       // 전 포인트, 결측 승계. 무데이터면 emptyList
+    val altitudeArea: List<Point>?, // 다운샘플. 평지(≤0.5m) 또는 <2점이면 null
+    val bestPaceSeconds: Double,    // 유효 최소, 없으면 0
+    val validPaceCount: Int,
+)
