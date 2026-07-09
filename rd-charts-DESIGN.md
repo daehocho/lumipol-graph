@@ -174,6 +174,11 @@ lumipol-graph/                  ← 신규 독립 GitHub 리포 (KMP)
 - 멀티지표 선택/슬롯 규칙(`SeriesSelection`) 코어화 — 도메인 프리 정수 id. 앱이 지표↔id 매핑.
 - 앱은 포인트별 페이스 계산(RunPaceUtils·워치/GPS)·x 누적(단위)·LineChartData 조립만 유지.
 
+### 심박존 집계 이관 (0.8.0)
+- 심박존 집계(`HeartRateZoneEngine.calculate`)와 존 bpm 경계(`zoneBpmRanges`) 코어화 —
+  공유 상수 `ZONE_LOWER_FRACTIONS`(50/60/70/80/90%)로 도넛·범례 경계 일치를 코어가 보장.
+- 최대심박 공식(220-나이/206-0.88×나이)은 러닝 도메인이라 앱 유지. 도넛 각도는 기존 DonutEngine.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 KMP코어 → iOS네이티브 렌더 **전체 파이프라인을 끝까지** 증명하는 최소 단위.

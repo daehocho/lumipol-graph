@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphAxis, LumipolGraphAxisDomain, LumipolGraphAxisTick, LumipolGraphAxisTicksLayout, LumipolGraphBarChartData, LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarColorRole, LumipolGraphBarLayout, LumipolGraphChartAxis, LumipolGraphChartConfig, LumipolGraphDonutChartData, LumipolGraphDonutChartLayout, LumipolGraphDonutColorRole, LumipolGraphDonutEngine, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphKotlinArray<T>, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinEnumCompanion, LumipolGraphLineChartData, LumipolGraphLineChartEngine, LumipolGraphLineChartLayout, LumipolGraphMarker, LumipolGraphMarkerLayout, LumipolGraphNearestResult, LumipolGraphNiceScale, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesResult, LumipolGraphPoint, LumipolGraphRefBand, LumipolGraphRefBandLayout, LumipolGraphRefLine, LumipolGraphRefLineLayout, LumipolGraphSegmentStat, LumipolGraphSeries, LumipolGraphSeriesLayout, LumipolGraphSeriesRole, LumipolGraphSeriesSelection, LumipolGraphSeriesStat, LumipolGraphSplitSample, LumipolGraphStats;
+@class LumipolGraphAxis, LumipolGraphAxisDomain, LumipolGraphAxisTick, LumipolGraphAxisTicksLayout, LumipolGraphBarChartData, LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarColorRole, LumipolGraphBarLayout, LumipolGraphChartAxis, LumipolGraphChartConfig, LumipolGraphDonutChartData, LumipolGraphDonutChartLayout, LumipolGraphDonutColorRole, LumipolGraphDonutEngine, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphKotlinArray<T>, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinEnumCompanion, LumipolGraphLineChartData, LumipolGraphLineChartEngine, LumipolGraphLineChartLayout, LumipolGraphMarker, LumipolGraphMarkerLayout, LumipolGraphNearestResult, LumipolGraphNiceScale, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesResult, LumipolGraphPoint, LumipolGraphRefBand, LumipolGraphRefBandLayout, LumipolGraphRefLine, LumipolGraphRefLineLayout, LumipolGraphSegmentStat, LumipolGraphSeries, LumipolGraphSeriesLayout, LumipolGraphSeriesRole, LumipolGraphSeriesSelection, LumipolGraphSeriesStat, LumipolGraphSplitSample, LumipolGraphStats, LumipolGraphZoneBpmRange;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -163,6 +163,17 @@ __attribute__((swift_name("DonutEngine")))
 + (instancetype)donutEngine __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphDonutEngine *shared __attribute__((swift_name("shared")));
 - (LumipolGraphDonutChartLayout *)layoutData:(LumipolGraphDonutChartData *)data __attribute__((swift_name("layout(data:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("HeartRateZoneEngine")))
+@interface LumipolGraphHeartRateZoneEngine : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)heartRateZoneEngine __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphHeartRateZoneEngine *shared __attribute__((swift_name("shared")));
+- (NSArray<LumipolGraphDouble *> *)calculateSamples:(NSArray<LumipolGraphHeartRateZoneSample *> *)samples maxHeartRate:(int32_t)maxHeartRate __attribute__((swift_name("calculate(samples:maxHeartRate:)")));
+- (NSArray<LumipolGraphZoneBpmRange *> *)zoneBpmRangesMaxHeartRate:(int32_t)maxHeartRate __attribute__((swift_name("zoneBpmRanges(maxHeartRate:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -400,6 +411,18 @@ __attribute__((swift_name("DonutSegmentLayout")))
 @property (readonly) double startFraction __attribute__((swift_name("startFraction")));
 @property (readonly) double sweepFraction __attribute__((swift_name("sweepFraction")));
 @property (readonly) double value __attribute__((swift_name("value")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("HeartRateZoneSample")))
+@interface LumipolGraphHeartRateZoneSample : LumipolGraphBase
+- (instancetype)initWithHeartRate:(double)heartRate timeInterval:(double)timeInterval __attribute__((swift_name("init(heartRate:timeInterval:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphHeartRateZoneSample *)doCopyHeartRate:(double)heartRate timeInterval:(double)timeInterval __attribute__((swift_name("doCopy(heartRate:timeInterval:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) double heartRate __attribute__((swift_name("heartRate")));
+@property (readonly) double timeInterval __attribute__((swift_name("timeInterval")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -683,6 +706,18 @@ __attribute__((swift_name("Stats")))
 @property (readonly) NSArray<LumipolGraphSeriesStat *> *perSeries __attribute__((swift_name("perSeries")));
 @property (readonly) NSString * _Nullable segmentSeriesId __attribute__((swift_name("segmentSeriesId")));
 @property (readonly) NSArray<LumipolGraphSegmentStat *> *segments __attribute__((swift_name("segments")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ZoneBpmRange")))
+@interface LumipolGraphZoneBpmRange : LumipolGraphBase
+- (instancetype)initWithLower:(int32_t)lower upper:(LumipolGraphInt * _Nullable)upper __attribute__((swift_name("init(lower:upper:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphZoneBpmRange *)doCopyLower:(int32_t)lower upper:(LumipolGraphInt * _Nullable)upper __attribute__((swift_name("doCopy(lower:upper:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) int32_t lower __attribute__((swift_name("lower")));
+@property (readonly) LumipolGraphInt * _Nullable upper __attribute__((swift_name("upper")));
 @end
 
 __attribute__((objc_subclassing_restricted))
