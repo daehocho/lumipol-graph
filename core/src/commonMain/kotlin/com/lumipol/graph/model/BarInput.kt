@@ -18,4 +18,9 @@ data class BarChartData(
     val targetPaceSecPerUnit: Double? = null,
     val toleranceSecPerUnit: Double = 10.0,
     val maxTicks: Int = 5,
+    // 시간모드(신규): non-null이면 시간 버킷 집계. splitDistanceMeters는 페이스 단위로 유지.
+    val splitTimeSeconds: Double? = null,
+    // 시간모드 색 기준(런 평균) 계산용 런 총합. 둘 다 존재+총거리>0이면 ref로 사용.
+    val totalDurationSeconds: Double? = null,
+    val totalDistanceMeters: Double? = null,
 )

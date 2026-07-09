@@ -35,6 +35,7 @@ data class BarLayout(
     val heightFraction: Double,
     val colorRole: BarColorRole,
     val isPartial: Boolean,
+    val endMinutes: Int? = null, // 시간모드 버킷 끝 표시용 정수 분(반올림·최소1). 거리모드 null
 )
 
 data class BarChartLayout(

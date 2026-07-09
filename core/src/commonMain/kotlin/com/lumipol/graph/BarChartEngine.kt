@@ -4,6 +4,7 @@ import com.lumipol.graph.model.*
 import com.lumipol.graph.scale.AxisDomain
 import com.lumipol.graph.scale.niceScale
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 /**
  * 스플릿 막대 집계·레이아웃 엔진.
@@ -14,7 +15,7 @@ import kotlin.math.ceil
  */
 object BarChartEngine {
 
-    private data class RawBar(val value: Double, val isPartial: Boolean)
+    private data class RawBar(val value: Double, val isPartial: Boolean, val endMinutes: Int?)
 
     // 시간모드 버킷 선택 정책(양 플랫폼 공유). 총 시간으로 막대가 MAX_BARS 이하가 되는 최소 후보(분).
     private val BUCKET_MINUTE_CANDIDATES = listOf(1, 2, 5, 10)
@@ -34,38 +35,20 @@ object BarChartEngine {
         val unit = data.splitDistanceMeters
         require(unit > 0) { "splitDistanceMeters must be > 0" }
 
-        val raw = mutableListOf<RawBar>()
-        var accDist = 0.0
-        var accTime = 0.0
         var totalDist = 0.0
         var totalTime = 0.0
-
-        for (s in data.samples) {
-            val d = s.distanceMeters
-            val t = s.timeSeconds
-            if (d <= 0.0 || t <= 0.0 || d.isNaN() || t.isNaN() || d.isInfinite() || t.isInfinite()) continue
-            accDist += d; accTime += t
-            totalDist += d; totalTime += t
-            while (accDist >= unit) {
-                // 경계를 넘은 오버플로는 현재 샘플에 속하므로 그 rate(t/d)로 시간을 뗀다
-                val overflow = accDist - unit
-                val overflowTime = if (d > 0.0) overflow * (t / d) else 0.0
-                val barTime = accTime - overflowTime  // unit 구간에 해당하는 시간
-                // 정확히 unit 거리를 덮으므로 value(sec/unit) = barTime
-                raw.add(RawBar(barTime, isPartial = false))
-                accDist = overflow
-                accTime = overflowTime
-            }
-        }
-        if (accDist > 0.0 && accTime > 0.0) {
-            raw.add(RawBar(accTime / (accDist / unit), isPartial = true))
+        val raw = if (data.splitTimeSeconds != null) {
+            aggregateByTime(data, unit) { d, t -> totalDist += d; totalTime += t }
+        } else {
+            aggregateByDistance(data, unit) { d, t -> totalDist += d; totalTime += t }
         }
 
-        if (raw.isEmpty()) {
-            return BarChartLayout(emptyList(), emptyList(), null)
-        }
+        if (raw.isEmpty()) return BarChartLayout(emptyList(), emptyList(), null)
 
-        val ref = data.targetPaceSecPerUnit ?: (totalTime / (totalDist / unit))
+        // 색 기준(ref): 명시 목표 → 런 총합 평균 → 필터 샘플 합 평균.
+        val ref = data.targetPaceSecPerUnit
+            ?: runTotalsRef(data, unit)
+            ?: (totalTime / (totalDist / unit))
         val tol = data.toleranceSecPerUnit
 
         val ys = raw.map { it.value } + ref
@@ -78,9 +61,67 @@ object BarChartEngine {
                 b.value > ref + tol -> BarColorRole.SLOWER
                 else -> BarColorRole.ON_TARGET
             }
-            BarLayout(idx, b.value, dom.normalize(b.value), role, b.isPartial)
+            BarLayout(idx, b.value, dom.normalize(b.value), role, b.isPartial, b.endMinutes)
         }
         val yTicks = ns.ticks.map { AxisTick(it, dom.normalize(it)) }
         return BarChartLayout(bars, yTicks, dom.normalize(ref))
+    }
+
+    // 런 총합 기반 색 기준(총거리>0일 때만). iOS 시간모드가 넘기던 runningTime/(sumDistance/unit).
+    private fun runTotalsRef(data: BarChartData, unit: Double): Double? {
+        val dur = data.totalDurationSeconds ?: return null
+        val dist = data.totalDistanceMeters ?: return null
+        return if (dist > 0.0) dur / (dist / unit) else null
+    }
+
+    // 거리 버킷 집계(기존 로직, endMinutes=null).
+    private inline fun aggregateByDistance(
+        data: BarChartData, unit: Double, onValid: (Double, Double) -> Unit,
+    ): List<RawBar> {
+        val raw = mutableListOf<RawBar>()
+        var accDist = 0.0
+        var accTime = 0.0
+        for (s in data.samples) {
+            val d = s.distanceMeters; val t = s.timeSeconds
+            if (d <= 0.0 || t <= 0.0 || d.isNaN() || t.isNaN() || d.isInfinite() || t.isInfinite()) continue
+            accDist += d; accTime += t; onValid(d, t)
+            while (accDist >= unit) {
+                val overflow = accDist - unit
+                val overflowTime = if (d > 0.0) overflow * (t / d) else 0.0
+                val barTime = accTime - overflowTime
+                raw.add(RawBar(barTime, isPartial = false, endMinutes = null))
+                accDist = overflow; accTime = overflowTime
+            }
+        }
+        if (accDist > 0.0 && accTime > 0.0) {
+            raw.add(RawBar(accTime / (accDist / unit), isPartial = true, endMinutes = null))
+        }
+        return raw
+    }
+
+    // 시간 버킷 집계. 버킷 경계에서 오버플로를 나누지 않고(현행 iOS와 동일) 통째 flush.
+    // endMinutes = max(1, round(누적경과초/60)) — 누적 경과는 버킷 간 리셋하지 않는다.
+    private fun aggregateByTime(
+        data: BarChartData, unit: Double, onValid: (Double, Double) -> Unit,
+    ): List<RawBar> {
+        val bucket = data.splitTimeSeconds!!
+        val raw = mutableListOf<RawBar>()
+        var accDist = 0.0
+        var accTime = 0.0
+        var elapsed = 0.0
+        fun endMin() = maxOf(1, (elapsed / 60.0).roundToInt())
+        for (s in data.samples) {
+            val d = s.distanceMeters; val t = s.timeSeconds
+            if (d <= 0.0 || t <= 0.0 || d.isNaN() || t.isNaN() || d.isInfinite() || t.isInfinite()) continue
+            accDist += d; accTime += t; elapsed += t; onValid(d, t)
+            if (accTime >= bucket) {
+                raw.add(RawBar(accTime / (accDist / unit), isPartial = false, endMinutes = endMin()))
+                accDist = 0.0; accTime = 0.0
+            }
+        }
+        if (accDist > 0.0 && accTime > 0.0) {
+            raw.add(RawBar(accTime / (accDist / unit), isPartial = true, endMinutes = endMin()))
+        }
+        return raw
     }
 }
