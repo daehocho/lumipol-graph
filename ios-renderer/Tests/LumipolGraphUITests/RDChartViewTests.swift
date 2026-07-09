@@ -79,11 +79,35 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertFalse(animated.isEmpty)
         XCTAssertTrue(animated.allSatisfy { $0.animation(forKey: "strokeEnd") != nil })
 
-        view.setNeedsLayout()
+        // bounds 변경 → 실제 리빌드가 일어나는 레이아웃 패스에서도 애니메이션은 재실행되지 않는다.
+        view.frame = CGRect(x: 0, y: 0, width: 400, height: 300)
         view.layoutIfNeeded()
         let relaidOut = mainLineLayers(of: view)
         XCTAssertFalse(relaidOut.isEmpty)
         XCTAssertTrue(relaidOut.allSatisfy { $0.animation(forKey: "strokeEnd") == nil })
+    }
+
+    func testNoOpLayoutPassReusesExistingLayers() {
+        // bounds도 데이터도 변하지 않은 레이아웃 패스(스크롤뷰 임베드·형제 제약 변경 등)는
+        // CALayer 트리 전체 파괴·재생성(경로 재계산 + 라벨 재측정)을 반복하면 안 된다.
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.paceAndHeartRate)
+        view.layoutIfNeeded()
+        let gridBefore = allChartLayers(of: view).first { $0.name == "grid" }
+        XCTAssertNotNil(gridBefore)
+
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+        let gridAfter = allChartLayers(of: view).first { $0.name == "grid" }
+        XCTAssertTrue(gridBefore === gridAfter, "변경 없는 패스는 기존 레이어를 재사용")
+
+        // bounds가 바뀌면 실제 리빌드 (회귀 방지)
+        view.frame = CGRect(x: 0, y: 0, width: 400, height: 300)
+        view.layoutIfNeeded()
+        let gridResized = allChartLayers(of: view).first { $0.name == "grid" }
+        XCTAssertNotNil(gridResized)
+        XCTAssertFalse(gridBefore === gridResized, "bounds 변경 시에는 재구축")
     }
 
     func testPlotContentIsGroupedUnderContentContainerAndLabelsStayAtRoot() {
@@ -144,6 +168,31 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertEqual(spy.endCount, 0, "표시 중에는 종료 콜백 없음")
     }
 
+    func testRelayoutRestoresMarkerWithoutRefiringScrubDelegate() {
+        // 마커 표시 중 레이아웃 패스(회전·리사이즈·상위 레이아웃)가 돌면 마커는 복원하되,
+        // 사용자 입력이 없으므로 스크럽 콜백(햅틱/애널리틱스 부작용)을 재발화하면 안 된다.
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(
+            TestFixtures.fullChart,
+            invertedAxes: [.primary],
+            labelFormatter: TestFixtures.format,
+            backgroundArea: [AreaPoint(x: 0, y: 0), AreaPoint(x: 5, y: 100)]
+        )
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 2.4)
+        XCTAssertEqual(spy.scrubbed.count, 1)
+        XCTAssertEqual(spy.backgroundValues.count, 1)
+
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+        XCTAssertTrue((view.layer.sublayers ?? []).contains { $0.name == "touch.marker" }, "마커는 복원")
+        XCTAssertEqual(spy.scrubbed.count, 1, "레이아웃 패스는 didScrubTo를 재발화하지 않음")
+        XCTAssertEqual(spy.backgroundValues.count, 1, "레이아웃 패스는 배경 값 콜백을 재발화하지 않음")
+    }
+
     func testHideTouchMarkerReportsEndOnceWhenShown() {
         let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
         view.isAnimationEnabled = false
@@ -154,6 +203,23 @@ final class RDChartViewTests: XCTestCase {
         view.showTouchMarker(atX: 2.4)
         view.hideTouchMarker()
         XCTAssertEqual(spy.endCount, 1)
+    }
+
+    func testNoEndScrubWhenMarkerCannotBeMadeAndNothingWasShowing() {
+        // 확대 창 경계 부근 탭: rawX는 창 안이지만 근접점이 창 밖으로 스냅돼 마커 생성이 실패하는 경우 —
+        // 애초에 표시 중인 마커가 없었다면 didScrubTo 없는 endScrub(짝 깨진 콜백)를 보내면 안 된다.
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.isZoomEnabled = true
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        view.zoom(toXRange: 1.2 ... 2.8)
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 2.79)  // 창 안이지만 근접점은 3.0(창 밖)으로 스냅
+        XCTAssertEqual(spy.scrubbed.count, 0)
+        XCTAssertEqual(spy.endCount, 0, "표시된 마커가 없으면 종료 콜백도 없음")
     }
 
     func testHideTouchMarkerNoEndWhenNothingShown() {
@@ -231,6 +297,20 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertNil(RDChartView.backgroundValue([], atX: 1))
     }
 
+    func testBackgroundValueExactInteriorPointAndDuplicateX() {
+        // 내부 포인트 정확히 일치 + 같은 x가 연속(dx=0)인 경우 — 탐색 구현 교체 시 회귀 방지.
+        let points = [
+            AreaPoint(x: 0, y: 0), AreaPoint(x: 1, y: 10),
+            AreaPoint(x: 1, y: 20), AreaPoint(x: 2, y: 40),
+        ]
+        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 1)!, 10, accuracy: 1e-9)
+        XCTAssertEqual(RDChartView.backgroundValue(points, atX: 1.5)!, 30, accuracy: 1e-9)
+        // 많은 포인트에서 각 구간 중앙값 검증
+        let many = (0...100).map { AreaPoint(x: Double($0), y: Double($0) * 2) }
+        XCTAssertEqual(RDChartView.backgroundValue(many, atX: 37.5)!, 75, accuracy: 1e-9)
+        XCTAssertEqual(RDChartView.backgroundValue(many, atX: 99)!, 198, accuracy: 1e-9)
+    }
+
     func testBackgroundValueSinglePointReturnsThatY() {
         let points = [AreaPoint(x: 2, y: 42)]
         XCTAssertEqual(RDChartView.backgroundValue(points, atX: 0), 42)
@@ -248,6 +328,24 @@ final class RDChartViewTests: XCTestCase {
             invertedAxes: [.primary],
             labelFormatter: TestFixtures.format,
             backgroundArea: [AreaPoint(x: 0, y: 0), AreaPoint(x: 5, y: 100)]
+        )
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 2.4)  // 근접점 스냅 x=2.5 → 보간값 50
+        XCTAssertEqual(spy.backgroundValues.last!, 50, accuracy: 1e-9)
+    }
+
+    func testScrubReportsCorrectBackgroundValueWhenAreaPointsUnsorted() {
+        // 호출자가 x 내림차순(최신 우선)으로 전달해도 실루엣은 똑같이 그려져 시각적 단서가 없다 —
+        // 델리게이트 값도 정렬 순서와 무관하게 올바라야 한다.
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(
+            TestFixtures.fullChart,
+            invertedAxes: [.primary],
+            labelFormatter: TestFixtures.format,
+            backgroundArea: [AreaPoint(x: 5, y: 100), AreaPoint(x: 0, y: 0)]  // 내림차순
         )
         view.layoutIfNeeded()
         let spy = SpyScrubDelegate()

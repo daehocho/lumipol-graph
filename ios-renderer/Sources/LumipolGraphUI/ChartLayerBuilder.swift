@@ -13,7 +13,8 @@ enum ChartLayerBuilder {
         formatter: (ChartAxis, Double) -> String
     ) -> [CALayer] {
         guard plotArea.isRenderable else { return [] }
-        let axisBySeriesId = Dictionary(uniqueKeysWithValues: data.series.map { ($0.id, $0.axis) })
+        // 코어 API가 시리즈 id 유일성을 강제하지 않으므로 중복 시 첫 시리즈 우선(fatalError 방지).
+        let axisBySeriesId = Dictionary(data.series.map { ($0.id, $0.axis) }, uniquingKeysWith: { first, _ in first })
         var layers: [CALayer] = []
 
         if let gridColor = style.gridLineColor,
@@ -55,26 +56,27 @@ enum ChartLayerBuilder {
 
     // MARK: - Series
 
-    private static func linePath(_ points: [NormalizedPoint], axis: Axis, plotArea: PlotArea) -> UIBezierPath? {
+    /// 공통 폴리라인 빌더 — 좌표 매핑만 다른 라인 경로들의 단일 구현(2점 미만이면 nil).
+    private static func polylinePath(
+        _ points: [NormalizedPoint], map: (NormalizedPoint) -> CGPoint
+    ) -> UIBezierPath? {
         guard points.count >= 2 else { return nil }
         let path = UIBezierPath()
-        path.move(to: plotArea.point(points[0], axis: axis))
+        path.move(to: map(points[0]))
         for point in points.dropFirst() {
-            path.addLine(to: plotArea.point(point, axis: axis))
+            path.addLine(to: map(point))
         }
         return path
+    }
+
+    private static func linePath(_ points: [NormalizedPoint], axis: Axis, plotArea: PlotArea) -> UIBezierPath? {
+        polylinePath(points) { plotArea.point($0, axis: axis) }
     }
 
     /// 오버레이 전용 라인 경로 — 코어가 이미 정규화한 값이라 호스트 축의 `invertedAxes`를 무시하고
     /// 항상 "값이 클수록 위"로 그린다(`PlotArea.pointIgnoringInversion` 참고).
     private static func overlayLinePath(_ points: [NormalizedPoint], plotArea: PlotArea) -> UIBezierPath? {
-        guard points.count >= 2 else { return nil }
-        let path = UIBezierPath()
-        path.move(to: plotArea.pointIgnoringInversion(points[0]))
-        for point in points.dropFirst() {
-            path.addLine(to: plotArea.pointIgnoringInversion(point))
-        }
-        return path
+        polylinePath(points) { plotArea.pointIgnoringInversion($0) }
     }
 
     private static func lineColor(for axis: Axis, style: ChartStyle) -> UIColor {

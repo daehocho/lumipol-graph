@@ -37,6 +37,18 @@ final class AreaSilhouetteTests: XCTestCase {
         XCTAssertEqual(layer?.fillColor, style.areaFillColor.cgColor)
     }
 
+    func testLayerClampsPointsOutsideXDomainToPlotRect() {
+        // 시리즈 x-도메인(0~10)보다 넓은 고도 데이터(-5~15) — 1x에서는 클립 마스크가 없으므로
+        // 실루엣이 플롯 밖(축 라벨 영역)으로 번지지 않게 좌표 자체를 플롯 영역으로 클램프해야 한다.
+        let layer = AreaSilhouette.layer(
+            points: [AreaPoint(x: -5, y: 0), AreaPoint(x: 5, y: 10), AreaPoint(x: 15, y: 0)],
+            xScale: xScale, plotArea: plot, style: .default
+        )
+        let box = layer!.path!.boundingBox
+        XCTAssertGreaterThanOrEqual(box.minX, plot.rect.minX)
+        XCTAssertLessThanOrEqual(box.maxX, plot.rect.maxX)
+    }
+
     func testLayerNilForFewerThanTwoPoints() {
         XCTAssertNil(AreaSilhouette.layer(
             points: [AreaPoint(x: 0, y: 5)], xScale: xScale, plotArea: plot, style: .default

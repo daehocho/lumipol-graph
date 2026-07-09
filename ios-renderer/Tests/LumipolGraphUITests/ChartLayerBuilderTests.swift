@@ -46,6 +46,24 @@ final class ChartLayerBuilderTests: XCTestCase {
         layers.first { $0.name == name }
     }
 
+    func testDuplicateSeriesIdsDoNotCrash() {
+        // 코어 API는 시리즈 id 유일성을 강제하지 않는다 — 호출자 실수가 fatalError로
+        // 이어지면 안 되고, 먼저 온 시리즈의 축 정보로 렌더를 계속해야 한다.
+        let dupData = LineChartData(
+            series: [
+                Series(id: "pace", points: [], axis: .primary, role: .main),
+                Series(id: "pace", points: [], axis: .secondary, role: .ghost),
+            ],
+            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let layers = ChartLayerBuilder.build(
+            layout: layout, data: dupData, style: .default, plotArea: plotArea,
+            formatter: { _, value in "\(value)" }
+        )
+        XCTAssertFalse(layers.isEmpty)
+    }
+
     /// CGPath의 move/line 포인트를 순서대로 추출(테스트 전용 — 곡선 세그먼트는 이 스위트에서 쓰지 않음).
     private func pathPoints(_ path: CGPath) -> [CGPoint] {
         var points: [CGPoint] = []
