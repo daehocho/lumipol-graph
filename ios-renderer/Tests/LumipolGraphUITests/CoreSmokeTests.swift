@@ -31,7 +31,10 @@ final class CoreSmokeTests: XCTestCase {
             splitDistanceMeters: 1000,
             targetPaceSecPerUnit: nil,
             toleranceSecPerUnit: 10,
-            maxTicks: 5
+            maxTicks: 5,
+            splitTimeSeconds: nil,
+            totalDurationSeconds: nil,
+            totalDistanceMeters: nil
         )
         let layout = BarChartEngine.shared.layout(data: data)
         XCTAssertEqual(layout.bars.count, 1)
@@ -58,5 +61,16 @@ final class CoreSmokeTests: XCTestCase {
             role: .overlay
         )
         XCTAssertEqual(s.role, SeriesRole.overlay)
+    }
+
+    func testInterpolatedYExposed() {
+        // 0.9.0 이관 계약 확인 — stale xcframework면 컴파일 실패.
+        let points = [Point(x: 0, y: 0), Point(x: 5, y: 100)]
+        let mid = LineChartEngine.shared.interpolatedY(points: points, x: 2.5)
+        XCTAssertEqual(mid!.doubleValue, 50, accuracy: 1e-9)
+        XCTAssertEqual(
+            LineChartEngine.shared.interpolatedY(points: points, x: -1)!.doubleValue, 0,
+            "범위 밖은 끝값 클램프")
+        XCTAssertNil(LineChartEngine.shared.interpolatedY(points: [], x: 1))
     }
 }

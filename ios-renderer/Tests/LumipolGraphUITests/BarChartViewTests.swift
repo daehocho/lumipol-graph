@@ -10,7 +10,8 @@ final class BarChartViewTests: XCTestCase {
                 value: 300.0,
                 heightFraction: 0.3 + 0.1 * Double(i),
                 colorRole: .onTarget,
-                isPartial: i == barCount - 1
+                isPartial: i == barCount - 1,
+                endMinutes: nil
             )
         }
         let ticks = [AxisTick(value: 300, position: 0.2), AxisTick(value: 360, position: 0.8)]
@@ -40,9 +41,9 @@ final class BarChartViewTests: XCTestCase {
         var style = ChartStyle.default
         style.barColors = [.faster: .red, .onTarget: .green, .slower: .blue]
         let bars = [
-            BarLayout(index: Int32(0), value: 250, heightFraction: 0.8, colorRole: .faster, isPartial: false),
-            BarLayout(index: Int32(1), value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false),
-            BarLayout(index: Int32(2), value: 350, heightFraction: 0.3, colorRole: .slower, isPartial: true),
+            BarLayout(index: Int32(0), value: 250, heightFraction: 0.8, colorRole: .faster, isPartial: false, endMinutes: nil),
+            BarLayout(index: Int32(1), value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil),
+            BarLayout(index: Int32(2), value: 350, heightFraction: 0.3, colorRole: .slower, isPartial: true, endMinutes: nil),
         ]
         let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
@@ -83,7 +84,7 @@ final class BarChartViewTests: XCTestCase {
     func testYLabelFormatterIsApplied() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
         let layout = BarChartLayout(
-            bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false)],
+            bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil)],
             yTicks: [AxisTick(value: 300, position: 0.5)],
             referenceLinePosition: nil
         )
@@ -99,8 +100,8 @@ final class BarChartViewTests: XCTestCase {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
         let layout = BarChartLayout(
             bars: [
-                BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false),
-                BarLayout(index: 1, value: 310, heightFraction: 0.6, colorRole: .slower, isPartial: false),
+                BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil),
+                BarLayout(index: 1, value: 310, heightFraction: 0.6, colorRole: .slower, isPartial: false, endMinutes: nil),
             ],
             yTicks: [], referenceLinePosition: nil
         )
@@ -114,7 +115,7 @@ final class BarChartViewTests: XCTestCase {
     func testXAxisLabelsHiddenWhenFlagOff() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
         let layout = BarChartLayout(
-            bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false)],
+            bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil)],
             yTicks: [], referenceLinePosition: nil
         )
         var style = ChartStyle.default
