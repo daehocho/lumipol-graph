@@ -18,3 +18,4 @@ dependencyResolutionManagement {
 rootProject.name = "lumipol-graph"
 include(":core")
 include(":android-renderer")
+include(":samples:android")
