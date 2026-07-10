@@ -26,4 +26,26 @@ class NearestTest {
         val d = LineChartData(series = listOf(Series("empty", emptyList())))
         assertEquals(0, nearest(d, 1.0).size)
     }
+
+    @Test
+    fun windowed_nearest_only_considers_points_inside_window() {
+        // 창 [0, 5], 점 4.4(안)·5.3(밖): 전역 최근접은 5.3이지만 창 안 4.4가 답이어야 한다.
+        val d = LineChartData(
+            series = listOf(Series("pace", listOf(Point(0.0, 6.0), Point(4.4, 5.5), Point(5.3, 5.2)))),
+        )
+        val r = nearest(d, 5.0, xMin = 0.0, xMax = 5.0)
+        assertEquals(listOf(NearestResult("pace", 4.4, 5.5)), r)
+    }
+
+    @Test
+    fun windowed_nearest_skips_series_with_no_points_in_window() {
+        val d = LineChartData(
+            series = listOf(
+                Series("pace", listOf(Point(4.0, 5.5))),
+                Series("prev", listOf(Point(6.0, 6.2))),
+            ),
+        )
+        val r = nearest(d, 4.5, xMin = 0.0, xMax = 5.0)
+        assertEquals(listOf(NearestResult("pace", 4.0, 5.5)), r)
+    }
 }

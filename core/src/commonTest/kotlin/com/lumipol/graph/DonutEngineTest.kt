@@ -54,6 +54,16 @@ class DonutEngineTest {
     }
 
     @Test
+    fun layout_carries_source_index_of_original_segments() {
+        // value<=0 필터로 레이아웃 인덱스가 원본과 어긋나도, 각 조각이 원본 인덱스를 직접 들고 있어
+        // 렌더러 히트테스트가 필터 규칙을 복제하지 않아도 된다.
+        val layout = DonutEngine.layout(
+            DonutChartData(listOf(seg(0.0), seg(30.0, DonutColorRole.ZONE2), seg(70.0, DonutColorRole.ZONE3)))
+        )
+        assertEquals(listOf(1, 2), layout.segments.map { it.sourceIndex })
+    }
+
+    @Test
     fun fractions_are_in_unit_range() {
         val layout = DonutEngine.layout(
             DonutChartData(listOf(seg(10.0), seg(20.0, DonutColorRole.ZONE2), seg(70.0, DonutColorRole.ZONE3)))

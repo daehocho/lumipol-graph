@@ -44,12 +44,17 @@ data class BarChartLayout(
     val referenceLinePosition: Double?,
 )
 
-/** 도넛 한 조각. fraction은 0.0~1.0(12시 0, 시계방향). value=원본 크기. */
+/**
+ * 도넛 한 조각. fraction은 0.0~1.0(12시 0, 시계방향). value=원본 크기.
+ * [sourceIndex]는 **원본 `DonutChartData.segments` 인덱스** — 엔진이 value<=0을 필터하므로
+ * 레이아웃 인덱스와 어긋날 수 있고, 렌더러 히트테스트는 이 값을 그대로 보고해야 한다.
+ */
 data class DonutSegmentLayout(
     val startFraction: Double,
     val sweepFraction: Double,
     val value: Double,
     val colorRole: DonutColorRole,
+    val sourceIndex: Int = -1,
 )
 
 /** total=세그먼트 value 합(0이면 무데이터). */
