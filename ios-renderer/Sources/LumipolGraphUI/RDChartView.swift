@@ -133,16 +133,10 @@ public final class RDChartView: UIView {
         setNeedsLayout()
     }
 
-    /// 전체 구간(1x) layout. 시리즈가 없고 배경 area만 있으면 코어 layout의 X 도메인이
-    /// 기본값 0~1로 붕괴해 실루엣·축·스크럽 좌표계가 전부 어긋난다 — area의 x범위로
-    /// 창(windowed) layout을 만들어 좌표계를 데이터 범위에 맞춘다(코어는 area를 모르므로 렌더러 책임).
+    /// 전체 구간(1x) layout. 시리즈 없이 배경 area만 있으면 X 도메인이 area x범위여야 하는데,
+    /// 그 규칙은 플랫폼 중립이라 코어 area-인식 오버로드가 책임진다(양 렌더러 공유).
     private func makeFullLayout(data: LineChartData) -> LineChartLayout {
-        if data.series.isEmpty, let area = backgroundArea,
-           let first = area.first, let last = area.last, last.x > first.x
-        {
-            return LineChartEngine.shared.layout(data: data, xMin: first.x, xMax: last.x)
-        }
-        return LineChartEngine.shared.layout(data: data)
+        LineChartEngine.shared.layout(data: data, backgroundArea: backgroundAreaPoints)
     }
 
     /// ObjC 진입점 — 기본 스타일·반전 없음·기본 포매터.

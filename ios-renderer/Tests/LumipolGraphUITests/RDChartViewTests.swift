@@ -206,18 +206,18 @@ final class RDChartViewTests: XCTestCase {
     }
 
     func testNoEndScrubWhenMarkerCannotBeMadeAndNothingWasShowing() {
-        // 확대 창 경계 부근 탭: rawX는 창 안이지만 근접점이 창 밖으로 스냅돼 마커 생성이 실패하는 경우 —
+        // 창 안에 스냅할 점이 없어 마커 생성이 실패하는 경우(포인트 간격 0.5 사이 갭으로 줌) —
         // 애초에 표시 중인 마커가 없었다면 didScrubTo 없는 endScrub(짝 깨진 콜백)를 보내면 안 된다.
         let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
         view.isAnimationEnabled = false
         view.isZoomEnabled = true
         view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
         view.layoutIfNeeded()
-        view.zoom(toXRange: 1.2 ... 2.8)
+        view.zoom(toXRange: 1.6 ... 1.9)
         view.layoutIfNeeded()
         let spy = SpyScrubDelegate()
         view.scrubDelegate = spy
-        view.showTouchMarker(atX: 2.79)  // 창 안이지만 근접점은 3.0(창 밖)으로 스냅
+        view.showTouchMarker(atX: 1.7)  // 창 안에 스냅할 점 없음(갭 줌)
         XCTAssertEqual(spy.scrubbed.count, 0)
         XCTAssertEqual(spy.endCount, 0, "표시된 마커가 없으면 종료 콜백도 없음")
     }
@@ -391,11 +391,11 @@ final class RDChartViewTests: XCTestCase {
             backgroundArea: [AreaPoint(x: 0, y: 0), AreaPoint(x: 5, y: 100)]
         )
         view.layoutIfNeeded()
-        view.zoom(toXRange: 1.2 ... 2.8)
+        view.zoom(toXRange: 1.6 ... 1.9)
         view.layoutIfNeeded()
         let spy = SpyScrubDelegate()
         view.scrubDelegate = spy
-        view.showTouchMarker(atX: 2.79)  // 창 안이지만 근접점은 3.0(창 밖)으로 스냅
+        view.showTouchMarker(atX: 1.7)  // 창 안에 스냅할 점 없음(갭 줌)
         XCTAssertEqual(spy.scrubbed.count, 0)
         XCTAssertTrue(spy.backgroundValues.isEmpty)
     }
