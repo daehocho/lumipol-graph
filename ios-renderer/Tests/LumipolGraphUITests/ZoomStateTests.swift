@@ -53,6 +53,18 @@ final class ZoomStateTests: XCTestCase {
         XCTAssertEqual(state.window.upperBound, 10.0, accuracy: 1e-9)
     }
 
+    func testFullZoomOutRestoresExactFullDomainDespiteFloatRounding() {
+        // start + (end - start)가 end와 1 ulp 어긋나는 실수 도메인 —
+        // 완전 줌아웃 후에도 window가 fullDomain과 정확히 같아야 스크럽이 복구된다.
+        let fullDomain = 21.730886...195.28034191195613
+        var state = ZoomState(fullDomain: fullDomain)
+        state.pinch(from: state.window, cumulativeScale: 4.0, anchor: 0.7, maxScale: 10.0)
+        XCTAssertTrue(state.isZoomed)
+        state.pinch(from: state.window, cumulativeScale: 0.1, anchor: 0.3, maxScale: 10.0)
+        XCTAssertEqual(state.window, fullDomain)
+        XCTAssertFalse(state.isZoomed)
+    }
+
     func testSetWindowClampsToFullDomain() {
         var state = makeState()
         state.setWindow(8...13)
