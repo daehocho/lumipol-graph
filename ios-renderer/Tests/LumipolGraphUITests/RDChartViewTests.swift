@@ -324,4 +324,99 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertFalse(spy.scrubbed.isEmpty, "라인 값은 여전히 전달")
         XCTAssertTrue(spy.backgroundValues.isEmpty, "backgroundArea 없으면 배경 콜백 없음")
     }
+
+    // MARK: - 배경 area 단독 (시리즈 없음 — 선택 라인 지표에 데이터가 없는 기록)
+
+    func testBackgroundOnlyScrubShowsMarkerAndReportsInterpolatedValue() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(
+            TestFixtures.emptySeries,
+            backgroundArea: [AreaPoint(x: 0, y: 0), AreaPoint(x: 10, y: 100)]
+        )
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        // x=5가 보간값 50이 되려면 x 도메인이 area 범위(0~10)여야 한다 —
+        // 기본 layout은 시리즈가 없으면 도메인이 0~1로 붕괴하므로 이 단언이 도메인 처리까지 검증.
+        view.showTouchMarker(atX: 5)
+        XCTAssertTrue((view.layer.sublayers ?? []).contains { $0.name == "touch.marker" })
+        XCTAssertEqual(spy.scrubbed.count, 1)
+        XCTAssertEqual(spy.scrubbed.last, [:], "라인 시리즈가 없으니 시리즈 값은 빈 딕셔너리")
+        XCTAssertEqual(spy.backgroundValues.last!, 50, accuracy: 1e-9)
+        view.hideTouchMarker()
+        XCTAssertEqual(spy.endCount, 1)
+    }
+
+    func testBackgroundOnlyScrubFollowsRawXWithoutSnapping() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(
+            TestFixtures.emptySeries,
+            backgroundArea: [AreaPoint(x: 0, y: 0), AreaPoint(x: 10, y: 100)]
+        )
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 2.5)  // 스냅 격자(시리즈 포인트)가 없으므로 연속 보간
+        XCTAssertEqual(spy.backgroundValues.last!, 25, accuracy: 1e-9)
+        view.showTouchMarker(atX: 9.9)
+        XCTAssertEqual(spy.backgroundValues.last!, 99, accuracy: 1e-9)
+    }
+
+    func testBackgroundOnlyWithoutAreaMakesNoMarker() {
+        // 시리즈도 area도 없으면 기존대로 아무 마커·콜백 없음.
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.emptySeries)
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 0.5)
+        XCTAssertFalse((view.layer.sublayers ?? []).contains { $0.name == "touch.marker" })
+        XCTAssertEqual(spy.scrubbed.count, 0)
+        XCTAssertTrue(spy.backgroundValues.isEmpty)
+    }
+
+    func testSeriesSnapFailureDoesNotFallBackToBackgroundMarker() {
+        // 시리즈가 있는 차트에서 확대 창 경계 스냅 실패 시, area가 있어도
+        // 배경 단독 마커로 폴백하지 않는다(스냅 계약 유지 — 기존 무마커 동작 보존).
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.isZoomEnabled = true
+        view.render(
+            TestFixtures.fullChart,
+            invertedAxes: [.primary],
+            labelFormatter: TestFixtures.format,
+            backgroundArea: [AreaPoint(x: 0, y: 0), AreaPoint(x: 5, y: 100)]
+        )
+        view.layoutIfNeeded()
+        view.zoom(toXRange: 1.2 ... 2.8)
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 2.79)  // 창 안이지만 근접점은 3.0(창 밖)으로 스냅
+        XCTAssertEqual(spy.scrubbed.count, 0)
+        XCTAssertTrue(spy.backgroundValues.isEmpty)
+    }
+
+    func testBackgroundOnlyZoomResetKeepsAreaXDomain() {
+        // 줌 해제(1x 복귀)의 layout 재계산 경로도 area 도메인을 유지해야 한다.
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.isZoomEnabled = true
+        view.render(
+            TestFixtures.emptySeries,
+            backgroundArea: [AreaPoint(x: 0, y: 0), AreaPoint(x: 10, y: 100)]
+        )
+        view.layoutIfNeeded()
+        view.zoom(toXRange: 2.0 ... 6.0)
+        view.layoutIfNeeded()
+        view.resetZoom()
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 5)
+        XCTAssertEqual(spy.backgroundValues.last!, 50, accuracy: 1e-9)
+    }
 }

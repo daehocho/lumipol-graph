@@ -128,9 +128,21 @@ public final class RDChartView: UIView {
         self.style = style
         self.invertedAxes = invertedAxes
         self.labelFormatter = labelFormatter ?? RDChartView.defaultFormatter
-        self.chartLayout = LineChartEngine.shared.layout(data: data)
+        self.chartLayout = makeFullLayout(data: data)
         needsEntranceAnimation = isAnimationEnabled
         setNeedsLayout()
+    }
+
+    /// 전체 구간(1x) layout. 시리즈가 없고 배경 area만 있으면 코어 layout의 X 도메인이
+    /// 기본값 0~1로 붕괴해 실루엣·축·스크럽 좌표계가 전부 어긋난다 — area의 x범위로
+    /// 창(windowed) layout을 만들어 좌표계를 데이터 범위에 맞춘다(코어는 area를 모르므로 렌더러 책임).
+    private func makeFullLayout(data: LineChartData) -> LineChartLayout {
+        if data.series.isEmpty, let area = backgroundArea,
+           let first = area.first, let last = area.last, last.x > first.x
+        {
+            return LineChartEngine.shared.layout(data: data, xMin: first.x, xMax: last.x)
+        }
+        return LineChartEngine.shared.layout(data: data)
     }
 
     /// ObjC 진입점 — 기본 스타일·반전 없음·기본 포매터.
@@ -239,7 +251,17 @@ public final class RDChartView: UIView {
             data: data, layout: chartLayout, style: style,
             plotArea: plotArea, formatter: labelFormatter
         )
-        guard let result = TouchMarker.make(atRawX: rawX, context: context) else {
+        // 시리즈가 없는 차트(배경 area 단독)는 근접점 스냅이 불가능하므로 전용 마커로 폴백.
+        // 시리즈가 있으면 area가 있어도 스냅 계약 유지(스냅 실패 시 무마커 — 기존 동작).
+        let made: TouchMarker.Result?
+        if data.series.isEmpty {
+            made = backgroundAreaPoints?.isEmpty == false
+                ? TouchMarker.makeBackgroundOnly(atRawX: rawX, context: context)
+                : nil
+        } else {
+            made = TouchMarker.make(atRawX: rawX, context: context)
+        }
+        guard let result = made else {
             // 표시 중이던 마커가 사라질 때만 종료 통지 — 마커가 없었으면
             // didScrubTo 없는 endScrub(짝 깨진 콜백)를 만들지 않는다 (hideTouchMarker와 동일 계약).
             if notifyingDelegate, hadMarker { scrubDelegate?.chartViewDidEndScrub(self) }
@@ -317,7 +339,7 @@ public final class RDChartView: UIView {
             if pinchStartWindow == nil, panStartWindow == nil {
                 zoomState = nil
             }
-            chartLayout = LineChartEngine.shared.layout(data: data)
+            chartLayout = makeFullLayout(data: data)
         }
         needsEntranceAnimation = false
         setNeedsLayout()
