@@ -185,8 +185,10 @@ __attribute__((swift_name("LineChartEngine")))
 @property (class, readonly, getter=shared) LumipolGraphLineChartEngine *shared __attribute__((swift_name("shared")));
 - (LumipolGraphDouble * _Nullable)interpolatedYPoints:(NSArray<LumipolGraphPoint *> *)points x:(double)x __attribute__((swift_name("interpolatedY(points:x:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data __attribute__((swift_name("layout(data:)")));
+- (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data backgroundArea:(NSArray<LumipolGraphPoint *> * _Nullable)backgroundArea __attribute__((swift_name("layout(data:backgroundArea:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("layout(data:xMin:xMax:)")));
 - (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x __attribute__((swift_name("nearest(data:x:)")));
+- (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("nearest(data:x:xMin:xMax:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -403,12 +405,13 @@ __attribute__((swift_name("DonutSegment")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("DonutSegmentLayout")))
 @interface LumipolGraphDonutSegmentLayout : LumipolGraphBase
-- (instancetype)initWithStartFraction:(double)startFraction sweepFraction:(double)sweepFraction value:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole __attribute__((swift_name("init(startFraction:sweepFraction:value:colorRole:)"))) __attribute__((objc_designated_initializer));
-- (LumipolGraphDonutSegmentLayout *)doCopyStartFraction:(double)startFraction sweepFraction:(double)sweepFraction value:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole __attribute__((swift_name("doCopy(startFraction:sweepFraction:value:colorRole:)")));
+- (instancetype)initWithStartFraction:(double)startFraction sweepFraction:(double)sweepFraction value:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole sourceIndex:(int32_t)sourceIndex __attribute__((swift_name("init(startFraction:sweepFraction:value:colorRole:sourceIndex:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphDonutSegmentLayout *)doCopyStartFraction:(double)startFraction sweepFraction:(double)sweepFraction value:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole sourceIndex:(int32_t)sourceIndex __attribute__((swift_name("doCopy(startFraction:sweepFraction:value:colorRole:sourceIndex:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) LumipolGraphDonutColorRole *colorRole __attribute__((swift_name("colorRole")));
+@property (readonly) int32_t sourceIndex __attribute__((swift_name("sourceIndex")));
 @property (readonly) double startFraction __attribute__((swift_name("startFraction")));
 @property (readonly) double sweepFraction __attribute__((swift_name("sweepFraction")));
 @property (readonly) double value __attribute__((swift_name("value")));
@@ -761,9 +764,16 @@ __attribute__((swift_name("AxisDomainKt")))
 @end
 
 __attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("HeightFractionsKt")))
+@interface LumipolGraphHeightFractionsKt : LumipolGraphBase
++ (NSArray<LumipolGraphDouble *> *)heightFractionsValues:(NSArray<LumipolGraphDouble *> *)values __attribute__((swift_name("heightFractions(values:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("NearestKt")))
 @interface LumipolGraphNearestKt : LumipolGraphBase
 + (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x __attribute__((swift_name("nearest(data:x:)")));
++ (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("nearest(data:x:xMin:xMax:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))

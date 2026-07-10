@@ -103,14 +103,11 @@ public final class RDHeartRateZoneView: UIView {
         var angle = atan2(p.y - center.y, p.x - center.x) + .pi / 2  // 12시 기준
         if angle < 0 { angle += 2 * .pi }
         let frac = Double(angle / (2 * .pi))
-        guard let layoutIndex = layout.segments.firstIndex(where: {
+        guard let segment = layout.segments.first(where: {
             frac >= $0.startFraction && frac < $0.startFraction + $0.sweepFraction
         }) else { return nil }
-        // 엔진과 동일한 필터 기준(value > 0)으로 원본 인덱스 테이블 구성.
-        let originalIndices = data.segments.enumerated()
-            .filter { $0.element.value > 0 }
-            .map(\.offset)
-        guard layoutIndex < originalIndices.count else { return nil }
-        return originalIndices[layoutIndex]
+        // 코어가 실어준 원본 인덱스를 그대로 보고 — value<=0 필터 규칙을 렌더러가 복제하지 않음
+        // (엔진 규칙 변경에 자동 추종).
+        return segment.sourceIndex >= 0 ? Int(segment.sourceIndex) : nil
     }
 }

@@ -45,7 +45,13 @@ enum TouchMarker {
               let xTicks = ticks(for: .x, in: context.layout),
               let xScale = AxisScale(ticks: xTicks)
         else { return nil }
-        let results = LineChartEngine.shared.nearest(data: context.data, x: rawX)
+        // 창 안 점만 근접 후보로 — 창 밖 전역 최근접점이 스냅 소스가 되면 창 안 이웃이 있어도
+        // 마커 전체가 nil로 떨어진다(줌 가장자리). 경계는 epsilon만큼 관대하게.
+        let results = LineChartEngine.shared.nearest(
+            data: context.data, x: rawX,
+            xMin: xScale.value(atPosition: -1e-9),
+            xMax: xScale.value(atPosition: 1 + 1e-9)
+        )
         // 코어 API가 시리즈 id 유일성을 강제하지 않으므로 중복 시 첫 시리즈 우선(fatalError 방지).
         let axisBySeriesId = Dictionary(
             context.data.series.map { ($0.id, $0.axis) }, uniquingKeysWith: { first, _ in first }

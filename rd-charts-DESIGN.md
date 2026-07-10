@@ -115,6 +115,7 @@ LineChartLayout(
              )
 )
 query(x) -> [ (seriesId, nearest (x, y)) ]        // 터치 마커용. 주의: 입력 x는 원본 도메인 값(정규화 0~1 아님) — 렌더러가 터치→원본 x 변환 후 호출
+query(x, xMin, xMax) -> [ … ]                     // 창 인식판(0.10.0) — 줌 상태 스크럽은 표시 창 안 점만 후보로(창 밖 전역 최근접이 창 안 이웃을 가리는 것 방지)
 ```
 
 > **불변식(축-출력 일관성)**: 출력 요소(시리즈·기준선·밴드)가 걸린 모든 축은 반드시 `axisTicks`에 대응 항목을 가진다 — 렌더러가 기준선을 그릴 축을 항상 찾을 수 있게. (기준선/밴드 값이 `yValues`에 포함되어 도메인·tick이 생성되므로 구조적으로 보장됨.)
@@ -193,6 +194,21 @@ lumipol-graph/                  ← 신규 독립 GitHub 리포 (KMP)
   배경 보간값 콜백을 발화. 시리즈가 있으면 기존 스냅 계약 유지(스냅 실패 시 무마커).
 - 시리즈가 없으면 코어 layout의 X 도메인이 기본 0~1로 붕괴해 실루엣·축·스크럽
   좌표계가 어긋난다 — area x범위로 창(windowed) layout을 만들어 보정(1x·줌 해제 공통).
+
+### 창 인식 근접점·도넛 원본 인덱스·area 인식 layout 코어화 (0.10.0, 코어)
+고강도 코드리뷰(2026-07-11) 후속 — 렌더러가 복제하던 플랫폼 중립 규칙 4건을 코어로 이관,
+iOS/Android 렌더러 모두 마이그레이션 완료.
+- `query.nearest(data, x, xMin, xMax)`: 표시 창 안 점만 고려하는 근접 질의. 줌 가장자리에서
+  창 밖 전역 최근접점이 스냅 소스가 되어 창 안 이웃이 있어도 마커가 침묵 드롭되던 버그의
+  공통 수정(양 렌더러 TouchMarker가 이 오버로드 사용).
+- `DonutSegmentLayout.sourceIndex`: 원본 `segments` 인덱스를 레이아웃이 직접 운반 —
+  렌더러 히트테스트가 엔진의 value<=0 필터 규칙을 복제하지 않는다(규칙 변경 자동 추종).
+- `LineChartEngine.layout(data, backgroundArea)`: 위 0.10.0 렌더러 보정(area x범위 X 도메인)의
+  코어 이관 — 시리즈 없는 area 단독 기록의 좌표계 책임을 코어가 진다.
+- `query.heightFractions(values)`: 실루엣 높이 min~max 정규화 코어화(interpolatedY와 같은 사유).
+  축퇴(전부 동일) 시 **모두 0(평지)** — `AxisDomain.normalize`(0.5)와 다른 의도된 의미론.
+- 동시 반영: 양 플랫폼 ZoomState의 완전 줌아웃 ulp 스냅(부동소수 재구성이 fullDomain과 1 ulp
+  어긋나 isZoomed가 영영 true로 남던 버그) 수정.
   코어는 area를 모르므로(렌더러 장식) 렌더러 책임, 코어 변경 없음(xcframework 재빌드 불필요).
 
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)

@@ -13,12 +13,11 @@ public struct AreaPoint {
 
 /// 페이스 라인 뒤에 깔리는 고도 실루엣(장식). 축·스크럽과 무관한 순수 프레젠테이션 레이어.
 enum AreaSilhouette {
-    /// 값들을 자체 min~max로 0~1 정규화. 빈 배열→빈 배열, 단일/전부 동일→모두 0(평지, 0으로 나눔 방지).
+    /// 값들을 자체 min~max로 0~1 정규화 — 코어 질의(`heightFractions`)에 위임(interpolatedY와
+    /// 같은 이관 사유: 플랫폼 중립 수학). 축퇴(전부 동일) 시 모두 0(평지) 의미론 유지.
     static func heightFractions(_ values: [Double]) -> [Double] {
-        guard let lo = values.min(), let hi = values.max() else { return [] }
-        let span = hi - lo
-        guard span > 0 else { return values.map { _ in 0 } }
-        return values.map { ($0 - lo) / span }
+        HeightFractionsKt.heightFractions(values: values.map { KotlinDouble(value: $0) })
+            .map(\.doubleValue)
     }
 
     /// 도메인 area 포인트 → 실루엣 CAShapeLayer. 2점 미만이거나 렌더 불가 플롯이면 nil.

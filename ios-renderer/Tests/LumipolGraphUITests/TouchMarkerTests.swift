@@ -86,6 +86,29 @@ final class TouchMarkerTests: XCTestCase {
         XCTAssertFalse(names.contains("touch.dot.o"), "오버레이는 터치 점을 그리지 않음")
     }
 
+    func testZoomedEdgeSnapsToInWindowPointWhenGlobalNearestIsOutsideWindow() {
+        // 창 [0,5], main에 4.4(안)·5.3(밖): 오른쪽 끝 스크럽(rawX=5)의 전역 최근접은 5.3이지만
+        // 창 밖이라며 마커 전체를 버리면 안 되고, 창 안 4.4에 스냅해야 한다(창 인식 nearest).
+        let d = LineChartData(
+            series: [
+                Series(
+                    id: "pace",
+                    points: [Point(x: 0.0, y: 6.0), Point(x: 4.4, y: 5.5), Point(x: 5.3, y: 5.2)],
+                    axis: .primary, role: .main
+                ),
+            ],
+            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let windowed = LineChartEngine.shared.layout(data: d, xMin: 0.0, xMax: 5.0)
+        let result = TouchMarker.make(atRawX: 5.0, context: TouchMarker.Context(
+            data: d, layout: windowed, style: .default, plotArea: plotArea,
+            formatter: TestFixtures.format
+        ))
+        XCTAssertNotNil(result, "창 안 점이 있으면 마커가 표시되어야 함")
+        XCTAssertEqual(result?.snappedX ?? -1, 4.4, accuracy: 1e-9)
+    }
+
     func testSnappedXPrefersMainSeriesWhenGhostListedFirst() {
         // 시리즈 순서 계약이 없고 고스트는 성긴 샘플링일 수 있다 — 수직선/배경 보간의 기준인
         // snappedX는 배열 첫 시리즈가 아니라 main 시리즈의 근접점을 따라야 한다.
