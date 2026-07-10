@@ -51,6 +51,12 @@ struct ZoomState: Equatable {
     mutating func reset() { window = fullDomain }
 
     private mutating func place(lower: Double, span: Double) {
+        // 전체 폭이면 fullDomain을 그대로 사용 — lower+(upper-lower) 재구성은 1 ulp 어긋날 수
+        // 있어 isZoomed(정확한 동등성)가 영영 true로 남고 스크럽이 팬으로 오라우팅된다.
+        if span >= fullSpan {
+            window = fullDomain
+            return
+        }
         let clamped = min(max(lower, fullDomain.lowerBound), fullDomain.upperBound - span)
         window = clamped...(clamped + span)
     }
