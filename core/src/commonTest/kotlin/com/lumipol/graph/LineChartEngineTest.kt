@@ -19,6 +19,26 @@ class LineChartEngineTest {
     )
 
     @Test
+    fun area_only_layout_uses_area_x_range_as_domain() {
+        // 시리즈 없이 배경 area만 있는 기록 — X 도메인이 0~1로 붕괴하지 않고 area x범위를 써야 한다.
+        // (플랫폼 중립 규칙: 각 렌더러가 도메인을 역산하는 대신 코어가 책임진다.)
+        val empty = LineChartData(series = emptyList(), config = ChartConfig(segmentCount = 0, maxTicks = 5))
+        val area = listOf(Point(0.0, 10.0), Point(4.0, 40.0), Point(10.0, 20.0))
+        val layout = LineChartEngine.layout(empty, backgroundArea = area)
+        val xTicks = layout.axisTicks.first { it.axis == ChartAxis.X }.ticks
+        assertEquals(0.0, xTicks.first().value, 1e-9)
+        assertEquals(10.0, xTicks.last().value, 1e-9)
+    }
+
+    @Test
+    fun area_only_layout_falls_back_to_plain_layout_when_area_degenerate() {
+        val empty = LineChartData(series = emptyList(), config = ChartConfig(segmentCount = 0, maxTicks = 5))
+        // 점 1개(도메인 폭 0) → 일반 layout과 동일하게 폴백(크래시 금지).
+        val layout = LineChartEngine.layout(empty, backgroundArea = listOf(Point(3.0, 1.0)))
+        assertEquals(LineChartEngine.layout(empty), layout)
+    }
+
+    @Test
     fun produces_layout_for_every_series() {
         val layout = LineChartEngine.layout(data)
         assertEquals(3, layout.series.size)

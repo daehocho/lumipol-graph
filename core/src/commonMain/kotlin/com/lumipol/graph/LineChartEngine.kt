@@ -24,6 +24,21 @@ object LineChartEngine {
         return layout(data, xDom, xTicks, windowed = false)
     }
 
+    /**
+     * 시리즈 없이 배경 area(고도 등)만 있는 기록의 layout — X 도메인을 area x범위로 잡는다.
+     * (시리즈가 없으면 [layout]의 X 도메인이 0~1로 붕괴해 렌더러 좌표계가 어긋난다 — 플랫폼 중립
+     * 규칙이므로 코어가 책임진다.) [backgroundArea]는 **x 오름차순** 전제. 시리즈가 있거나 area가
+     * 퇴화(2점 미만·폭 0)면 일반 [layout]으로 폴백.
+     */
+    fun layout(data: LineChartData, backgroundArea: List<Point>?): LineChartLayout {
+        if (data.series.isEmpty() && backgroundArea != null && backgroundArea.size >= 2) {
+            val first = backgroundArea.first()
+            val last = backgroundArea.last()
+            if (last.x > first.x) return layout(data, first.x, last.x)
+        }
+        return layout(data)
+    }
+
     /** [xMin, xMax] 구간만 보이는 viewport layout — X 도메인은 구간 그대로,
      *  Y 도메인·tick은 보이는 값 기준으로 재계산. 확대/팬 커밋 시 렌더러가 호출한다. */
     fun layout(data: LineChartData, xMin: Double, xMax: Double): LineChartLayout {
@@ -131,6 +146,10 @@ object LineChartEngine {
 
     /** [x]는 원시 데이터-도메인 단위(0..1 정규화 아님) — 렌더러는 터치 위치를 원시 x로 변환한 뒤 호출해야 한다. */
     fun nearest(data: LineChartData, x: Double): List<NearestResult> = nearestQuery(data, x)
+
+    /** 표시 창 [xMin, xMax] 안 점만 고려하는 근접 질의 — 줌 상태 스크럽용. */
+    fun nearest(data: LineChartData, x: Double, xMin: Double, xMax: Double): List<NearestResult> =
+        nearestQuery(data, x, xMin, xMax)
 
     /** 배경 area(고도 등) 스크럽 실값 — x 오름차순 [points]의 [x] 위치 y를 선형 보간(범위 밖 클램프). */
     fun interpolatedY(points: List<Point>, x: Double): Double? = interpolatedYQuery(points, x)
