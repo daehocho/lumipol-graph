@@ -20,6 +20,25 @@ enum TouchMarker {
         let snappedX: Double
     }
 
+    /// 시리즈 없는 차트(배경 area 단독)용 마커 — 스냅 격자(시리즈 포인트)가 없으므로
+    /// rawX를 그대로 수직선 위치로 쓴다(연속 스크럽). 시리즈 값이 없어 valuesBySeriesId는 빈 딕셔너리.
+    static func makeBackgroundOnly(atRawX rawX: Double, context: Context) -> Result? {
+        guard context.plotArea.isRenderable,
+              let xTicks = ticks(for: .x, in: context.layout),
+              let xScale = AxisScale(ticks: xTicks)
+        else { return nil }
+        let rawNx = xScale.position(ofValue: rawX)
+        guard rawNx >= -1e-9, rawNx <= 1 + 1e-9 else { return nil }
+        let nx = min(max(rawNx, 0), 1)
+        let container = CALayer()
+        container.name = "touch.marker"
+        container.addSublayer(verticalLine(atNx: nx, context: context))
+        return Result(
+            layer: container, valuesBySeriesId: [:],
+            snappedX: xScale.value(atPosition: nx)
+        )
+    }
+
     /// 원본 도메인 x 기준 마커. 표시 불가(플롯 없음·축 변환 불능·근접점 없음)면 nil.
     static func make(atRawX rawX: Double, context: Context) -> Result? {
         guard context.plotArea.isRenderable,
@@ -48,17 +67,7 @@ enum TouchMarker {
 
         let container = CALayer()
         container.name = "touch.marker"
-
-        let lineX = context.plotArea.x(nx)
-        let line = CAShapeLayer()
-        line.name = "touch.line"
-        let linePath = UIBezierPath()
-        linePath.move(to: CGPoint(x: lineX, y: context.plotArea.rect.minY))
-        linePath.addLine(to: CGPoint(x: lineX, y: context.plotArea.rect.maxY))
-        line.path = linePath.cgPath
-        line.strokeColor = context.style.touchLineColor.cgColor
-        line.lineWidth = 1
-        container.addSublayer(line)
+        container.addSublayer(verticalLine(atNx: nx, context: context))
 
         var valuesBySeriesId: [String: String] = [:]
         for result in results {
@@ -101,6 +110,19 @@ enum TouchMarker {
         }
         guard !valuesBySeriesId.isEmpty else { return nil }
         return Result(layer: container, valuesBySeriesId: valuesBySeriesId, snappedX: snappedX)
+    }
+
+    private static func verticalLine(atNx nx: Double, context: Context) -> CAShapeLayer {
+        let lineX = context.plotArea.x(nx)
+        let line = CAShapeLayer()
+        line.name = "touch.line"
+        let linePath = UIBezierPath()
+        linePath.move(to: CGPoint(x: lineX, y: context.plotArea.rect.minY))
+        linePath.addLine(to: CGPoint(x: lineX, y: context.plotArea.rect.maxY))
+        line.path = linePath.cgPath
+        line.strokeColor = context.style.touchLineColor.cgColor
+        line.lineWidth = 1
+        return line
     }
 
     private static func ticks(for axis: ChartAxis, in layout: LineChartLayout) -> [AxisTick]? {

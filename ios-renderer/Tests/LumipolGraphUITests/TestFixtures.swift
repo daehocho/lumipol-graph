@@ -52,6 +52,14 @@ enum TestFixtures {
         )
     }
 
+    /// ⑤ 시리즈 없음 — 선택 라인 지표에 데이터가 없고 배경 area(고도)만 있는 기록.
+    static var emptySeries: LineChartData {
+        LineChartData(
+            series: [], referenceLines: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+    }
+
     /// 페이스 mm'ss", 심박 정수, X는 km — 앱 포매터 주입 규약(스펙 결정 #5)의 테스트 구현.
     static func format(_ axis: ChartAxis, _ value: Double) -> String {
         if axis == .yPrimary {
