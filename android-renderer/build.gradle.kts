@@ -29,6 +29,16 @@ android {
     }
 }
 
+// release 유닛테스트 변형 비활성 — Robolectric 테스트 액티비티 매니페스트(compose-ui-test-manifest)가
+// debugImplementation으로만 공급되어 testReleaseUnitTest가 ComponentActivity 미해석으로 실패한다
+// (robolectric#4736, 렌더러 결함 아님). 유닛테스트는 debug 변형 1회로 충분하며, 이렇게 해야
+// `:android-renderer:test` 집계가 인프라 실패로 오염되지 않는다(CI 신호 보존).
+androidComponents {
+    beforeVariants(selector().withBuildType("release")) { variant ->
+        variant.enableUnitTest = false
+    }
+}
+
 kotlin {
     jvmToolchain(17)
 }

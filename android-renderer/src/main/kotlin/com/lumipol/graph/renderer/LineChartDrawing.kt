@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.lumipol.graph.model.Axis
 import com.lumipol.graph.model.ChartAxis
@@ -99,7 +101,8 @@ internal data class AreaFillLayer(
     val color: Color,
 ) : LineChartLayer
 
-/** 정렬·앵커를 가진 텍스트(축/마커/기준선 라벨). 실제 위치는 측정 후 draw 시 확정. */
+/** 정렬·앵커를 가진 텍스트(축/마커/기준선 라벨). 실제 위치는 측정 후 draw 시 확정.
+ *  폰트 패밀리/웨이트는 [ChartStyle.axisLabelFontFamily]/[ChartStyle.axisLabelFontWeight] 주입(null=시스템 기본). */
 internal data class TextLayer(
     override val name: String,
     val text: String,
@@ -109,6 +112,8 @@ internal data class TextLayer(
     val vAlign: VAlign,
     val color: Color,
     val fontSizeSp: Float,
+    val fontFamily: FontFamily? = null,
+    val fontWeight: FontWeight? = null,
 ) : LineChartLayer
 
 /** 컨테이너(마커·기준선·축라벨 묶음). iOS 컨테이너 CALayer 대응. */
@@ -312,6 +317,8 @@ private fun markerLayer(
                 vAlign = VAlign.ABOVE,
                 color = style.axisLabelColor,
                 fontSizeSp = style.axisLabelFontSize,
+                fontFamily = style.axisLabelFontFamily,
+                fontWeight = style.axisLabelFontWeight,
             ),
         )
     }
@@ -371,6 +378,8 @@ private fun refLineLayer(
                 vAlign = VAlign.ABOVE,
                 color = style.refLineColor, // iOS: 기준선 라벨은 refLineColor
                 fontSizeSp = style.axisLabelFontSize,
+                fontFamily = style.axisLabelFontFamily,
+                fontWeight = style.axisLabelFontWeight,
             ),
         )
     }
@@ -396,6 +405,8 @@ private fun axisLabelsLayer(
                 vAlign = VAlign.BELOW,
                 color = style.axisLabelColor,
                 fontSizeSp = style.axisLabelFontSize,
+                fontFamily = style.axisLabelFontFamily,
+                fontWeight = style.axisLabelFontWeight,
             )
             ChartAxis.Y_PRIMARY -> TextLayer(
                 name = "axisLabels.yPrimary.$i",
@@ -406,6 +417,8 @@ private fun axisLabelsLayer(
                 vAlign = VAlign.CENTER,
                 color = style.axisLabelColor,
                 fontSizeSp = style.axisLabelFontSize,
+                fontFamily = style.axisLabelFontFamily,
+                fontWeight = style.axisLabelFontWeight,
             )
             else -> TextLayer( // Y_SECONDARY (및 방어적 기본)
                 name = "axisLabels.ySecondary.$i",
@@ -416,6 +429,8 @@ private fun axisLabelsLayer(
                 vAlign = VAlign.CENTER,
                 color = style.axisLabelColor,
                 fontSizeSp = style.axisLabelFontSize,
+                fontFamily = style.axisLabelFontFamily,
+                fontWeight = style.axisLabelFontWeight,
             )
         }
     }
@@ -429,25 +444,28 @@ private fun axisName(axis: ChartAxis): String = when (axis) {
 }
 
 // =====================================================================================
-// DrawScope 렌더 — 순수 모델 → 픽셀. z-순서: 배경 area → 1~8(clipRect) → 축라벨(clip 밖).
+// DrawScope 렌더 — 순수 모델 → 픽셀. z-순서: 배경 area → 1~8(확대 시 clipRect) → 축라벨(clip 밖).
 // =====================================================================================
 
 /**
  * [buildLineChartLayers] 결과를 그린다. arch 결정: 시리즈/그리드/밴드/마커/기준선(1~8)은
- * `clipRect(plot)` 안에서, **축 라벨은 clip 밖**(플롯 여백에 라벨이 보이게). 배경 area 실루엣은
- * 최하단(그리드 아래). 터치 마커는 상위(배치3 [drawTouchMarker])가 별도로 그린다.
+ * 확대 시 `clipRect(plot)` 안에서, **축 라벨은 clip 밖**(플롯 여백에 라벨이 보이게). 배경 area
+ * 실루엣은 최하단(그리드 아래). 터치 마커는 상위(배치3 [drawTouchMarker])가 별도로 그린다.
+ *
+ * ### 클립은 확대([isZoomed]) 상태에서만 (QA Minor-5 대응)
+ * iOS([RDChartView.updateClipMask])와 동일하게 두 경우로 나눈다: **비확대(1x) 시 무클립**
+ * (`mask=nil`) — 플롯 가장자리 포인트의 라인 캡(선폭/2)과 x=0/1 마커 선 반폭이 경계 밖으로
+ * 자연스럽게 그려진다. **확대 시** `CGRect(x: plot.minX, y: 0, width: plot.width,
+ * height: plot.maxY)` 마스크와 동치인 clipRect — 창 밖으로 이어지는 이웃 포인트 선을 가린다.
  *
  * ### 클립 top을 뷰 상단(0f)까지 여는 이유 (QA Major-1 대응)
- * iOS([RDChartView.updateClipMask])는 클립을 두 경우로 나눈다: **비확대 시 무클립**(`mask=nil`),
- * **확대 시** 마스크를 `CGRect(x: plot.minX, y: 0, width: plot.width, height: plot.maxY)`로 —
- * 즉 좌우는 플롯 경계로 닫되 **top은 뷰 상단(y=0)까지 열어** 플롯 상단 여백에 그리는 구간(km) 마커
- * 라벨([markerLayer]의 `anchorY = plot.minY - gap`)이 잘리지 않게 한다("마스크 위쪽을 뷰 상단까지
- * 열어 구간 마커 라벨은 잘리지 않게 한다" — iOS 주석). 여기서 `top=0f` 단일 클립은 iOS 확대 마스크와
- * 기하가 정확히 동치이고, 비확대에서도 모든 콘텐츠가 이미 `[plot.minX, plot.maxX] × (…, plot.maxY]`
- * 안에 들어오므로(경계 밖 유일 요소인 상단 라벨은 top=0으로 보존됨) 무클립과 시각적으로 동등하다.
+ * 확대 마스크의 좌우는 플롯 경계로 닫되 **top은 뷰 상단(y=0)까지 열어** 플롯 상단 여백에 그리는
+ * 구간(km) 마커 라벨([markerLayer]의 `anchorY = plot.minY - gap`)이 잘리지 않게 한다("마스크
+ * 위쪽을 뷰 상단까지 열어 구간 마커 라벨은 잘리지 않게 한다" — iOS 주석).
  * (이전 `top = plot.minY`는 상단 여백의 마커/기준선 라벨을 전부 잘라 화면에서 사라지게 했다.)
  *
  * @param entranceProgress main 시리즈 등장 애니(0~1). PathMeasure로 길이비율만큼 잘라 그린다.
+ * @param isZoomed 현재 확대(줌 창) 상태인가 — true일 때만 플롯 클립 적용(iOS updateClipMask parity).
  */
 internal fun DrawScope.drawLineChart(
     layout: LineChartLayout,
@@ -458,12 +476,13 @@ internal fun DrawScope.drawLineChart(
     measurer: TextMeasurer,
     background: AreaFillLayer? = null,
     entranceProgress: Float = 1f,
+    isZoomed: Boolean = false,
 ) {
     if (!plot.isRenderable) return
     // 마커/기준선 폭·라벨 여백 등 스타일 밖 상수도 dp→px 환산(DrawScope.density; style은 이미 스케일됨).
     val layers = buildLineChartLayers(layout, data, style, plot, formatter, density)
     val (axisLabels, clipped) = layers.partition { it.name.startsWith("axisLabels.") }
-    drawPartitionedLayers(plot, background, clipped, axisLabels, measurer, entranceProgress, cache = null)
+    drawPartitionedLayers(plot, background, clipped, axisLabels, measurer, entranceProgress, cache = null, isZoomed)
 }
 
 /**
@@ -480,10 +499,11 @@ internal fun DrawScope.drawCachedLineChart(
     measurer: TextMeasurer,
     sortedArea: List<com.lumipol.graph.model.Point>? = null,
     entranceProgress: Float = 1f,
+    isZoomed: Boolean = false,
 ) {
     if (!plot.isRenderable) return
     cache.update(layout, data, style, plot, formatter, density, sortedArea)
-    drawPartitionedLayers(plot, cache.background, cache.clipped, cache.axisLabels, measurer, entranceProgress, cache)
+    drawPartitionedLayers(plot, cache.background, cache.clipped, cache.axisLabels, measurer, entranceProgress, cache, isZoomed)
 }
 
 private fun DrawScope.drawPartitionedLayers(
@@ -494,15 +514,25 @@ private fun DrawScope.drawPartitionedLayers(
     measurer: TextMeasurer,
     entranceProgress: Float,
     cache: LineChartDrawCache?,
+    isZoomed: Boolean,
 ) {
-    clipRect(
-        left = plot.minX.toFloat(),
-        top = 0f, // 뷰 상단까지 열어 상단 여백의 마커/기준선 라벨 보존 (iOS 확대 마스크 y=0과 동치)
-        right = plot.maxX.toFloat(),
-        bottom = plot.maxY.toFloat(),
-    ) {
+    val plotContent: DrawScope.() -> Unit = {
         background?.let { render(it, measurer, entranceProgress, cache) }
         clipped.forEach { render(it, measurer, entranceProgress, cache) }
+    }
+    if (isZoomed) {
+        // 확대 시에만 클립 — 창 밖으로 이어지는 이웃 포인트 선을 가린다(iOS updateClipMask parity).
+        clipRect(
+            left = plot.minX.toFloat(),
+            top = 0f, // 뷰 상단까지 열어 상단 여백의 마커/기준선 라벨 보존 (iOS 확대 마스크 y=0과 동치)
+            right = plot.maxX.toFloat(),
+            bottom = plot.maxY.toFloat(),
+        ) {
+            plotContent()
+        }
+    } else {
+        // 비확대(1x)는 무클립(iOS mask=nil) — 가장자리 라인 캡(선폭/2)이 경계 밖으로 그려진다.
+        plotContent()
     }
     axisLabels.forEach { render(it, measurer, entranceProgress, cache) }
 }
@@ -515,7 +545,7 @@ private fun DrawScope.drawPartitionedLayers(
 internal class LineChartDrawCache {
     private var key: List<Any?>? = null
 
-    /** clip 안에 그리는 레이어(시리즈/그리드/밴드/마커/기준선). */
+    /** 확대 시 clip 안에 그리는 레이어(시리즈/그리드/밴드/마커/기준선). */
     var clipped: List<LineChartLayer> = emptyList()
         private set
 
@@ -667,9 +697,15 @@ internal fun DrawScope.drawAlignedText(measurer: TextMeasurer, label: TextLayer)
         label.fontSizeSp
     }
     // tnum: 숫자 폭 고정 → 줌으로 tick 값이 바뀔 때 라벨이 좌우로 떨리지 않음(UX Minor-2).
+    // 패밀리/웨이트는 ChartStyle 주입값(null=시스템 기본) — iOS axisLabelFont(UIFont) 대응.
     val result = measurer.measure(
         label.text,
-        style = TextStyle(fontSize = effectiveSp.sp, fontFeatureSettings = "tnum"),
+        style = TextStyle(
+            fontSize = effectiveSp.sp,
+            fontFamily = label.fontFamily,
+            fontWeight = label.fontWeight,
+            fontFeatureSettings = "tnum",
+        ),
     )
     val w = result.size.width.toFloat()
     val h = result.size.height.toFloat()

@@ -18,8 +18,9 @@ class LineChartZoomController {
     /**
      * 줌 요청 봉투 — 일부러 equals를 정의하지 않는다(항등성 비교). 같은 구간이라도 [zoomTo]
      * 호출마다 새 인스턴스가 되어 스냅샷 변경으로 관측된다(값으로 저장하면 재요청이 무시됨).
+     * [range]가 null이면 전체 구간 복귀([reset]) 요청.
      */
-    internal class Request(val range: ClosedFloatingPointRange<Double>)
+    internal class Request(val range: ClosedFloatingPointRange<Double>?)
 
     /** 마지막 줌 요청. 요청 없음 = null. RDLineChart가 관측한다. */
     internal var request by mutableStateOf<Request?>(null)
@@ -28,5 +29,13 @@ class LineChartZoomController {
     /** [range] 구간으로 확대 요청. 같은 구간을 다시 요청해도 매번 적용된다. */
     fun zoomTo(range: ClosedRange<Double>) {
         request = Request(range.start..range.endInclusive)
+    }
+
+    /**
+     * 전체 구간으로 명시 복귀 요청(iOS `resetZoom`). 이미 전체 구간이면 무시된다 —
+     * `zoomTo(전체구간)`의 창 클램프 → null 정규화 경로와 동일한 최종 상태(zoom = null)에 도달한다.
+     */
+    fun reset() {
+        request = Request(null)
     }
 }
