@@ -292,6 +292,31 @@ class LineChartDrawingTest {
     }
 
     @Test
+    fun axisLabelFontFamilyAndWeightPropagateToAllLabelLayers() {
+        // QA Minor-6: iOS axisLabelFont(UIFont — 패밀리/웨이트 주입 가능)는 축·마커·기준선 라벨 전부에
+        // 쓰인다. Android도 ChartStyle 주입 폰트가 모든 라벨 TextLayer에 실려야 한다(기본 null=시스템).
+        val customStyle = style.copy(
+            axisLabelFontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+            axisLabelFontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+        )
+        val layers = build(style = customStyle)
+        val labels = listOf(
+            (layers.named("axisLabels.x") as ContainerLayer).children.filterIsInstance<TextLayer>().first(),
+            (layers.named("marker.0") as ContainerLayer).children.filterIsInstance<TextLayer>().first(),
+            (layers.named("refLine.0") as ContainerLayer).children.filterIsInstance<TextLayer>().first(),
+        )
+        labels.forEach { label ->
+            assertEquals(androidx.compose.ui.text.font.FontFamily.Monospace, label.fontFamily, label.name)
+            assertEquals(androidx.compose.ui.text.font.FontWeight.Bold, label.fontWeight, label.name)
+        }
+        // 기본 스타일은 시스템 폰트(null) — 주입 전 동작 보존.
+        val defaultLabel = (build().named("axisLabels.x") as ContainerLayer)
+            .children.filterIsInstance<TextLayer>().first()
+        assertNull(defaultLabel.fontFamily)
+        assertNull(defaultLabel.fontWeight)
+    }
+
+    @Test
     fun seriesWithFewerThanTwoPointsIsSkipped() {
         val single = LineChartLayout(
             series = listOf(SeriesLayout("one", SeriesRole.MAIN, listOf(NormalizedPoint(0.5, 0.5)))),

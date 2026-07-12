@@ -94,6 +94,54 @@ class LineChartRenderTest {
     }
 
     @Test
+    fun plotClipAppliesOnlyWhenZoomed() {
+        // QA Minor-5 / iOS updateClipMask parity: 비확대(1x)는 무클립(mask=nil) — 플롯 가장자리
+        // 포인트의 라인 캡(선폭/2)이 플롯 좌우 경계 밖으로 그려진다. 확대 시에만 좌우 클립으로
+        // 창 밖 이웃 선을 가린다. 축 라벨은 항상 클립 밖(플롯 하단 여백)에 렌더된다.
+        val plot = PlotArea(200.0, 200.0, Insets(top = 10f, left = 40f, bottom = 20f, right = 40f))
+        val layout = LineChartLayout(
+            series = listOf(
+                SeriesLayout("pace", SeriesRole.MAIN, listOf(NormalizedPoint(0.0, 0.5), NormalizedPoint(1.0, 0.5))),
+            ),
+            axisTicks = listOf(AxisTicksLayout(ChartAxis.X, listOf(AxisTick(0.0, 0.0), AxisTick(5.0, 1.0)))),
+            refLines = emptyList(),
+            refBands = emptyList(),
+            markers = emptyList(),
+            stats = Stats(emptyList(), emptyList(), null),
+        )
+        val data = LineChartData(
+            series = listOf(Series("pace", emptyList(), Axis.PRIMARY, SeriesRole.MAIN)),
+            config = ChartConfig(segmentCount = 0, maxTicks = 5),
+        )
+        // 두꺼운 라인(8px, 라운드 캡 반경 4px)으로 경계 밖 번짐을 픽셀로 관찰 가능하게 한다.
+        val thick = style.copy(lineWidth = 8f, gradientMaxAlpha = 0f, gridLineColor = null)
+        val lineY = (plot.minY + plot.height / 2).toInt() // y = 10 + 85 = 95
+        val outsideX = plot.minX.toInt() - 3              // 좌측 경계 밖(캡 반경 안)
+        val insideX = plot.minX.toInt() + 5
+
+        val unzoomed = renderToPixels(200, 200) {
+            drawLineChart(layout, data, thick, plot, { _, v -> "$v" }, measurer)
+        }
+        assertTrue(unzoomed[insideX, lineY].alpha > 0f, "플롯 안 라인은 항상 그려져야 한다")
+        assertTrue(unzoomed[outsideX, lineY].alpha > 0f, "비확대(1x)는 무클립 — 라인 캡이 경계 밖에 그려져야 한다")
+
+        val zoomed = renderToPixels(200, 200) {
+            drawLineChart(layout, data, thick, plot, { _, v -> "$v" }, measurer, isZoomed = true)
+        }
+        assertTrue(zoomed[insideX, lineY].alpha > 0f, "확대 시에도 플롯 안 라인은 그려져야 한다")
+        assertTrue(zoomed[outsideX, lineY].alpha == 0f, "확대 시 플롯 좌우 경계 밖은 클립되어야 한다")
+
+        // 축 라벨(플롯 하단 여백)은 클립 밖 — 확대 상태에서도 렌더되어야 한다.
+        var labelPainted = 0
+        for (y in plot.maxY.toInt() + 1 until 200) {
+            for (x in 0 until 200) {
+                if (zoomed[x, y].alpha > 0f) labelPainted++
+            }
+        }
+        assertTrue(labelPainted > 0, "확대 시에도 축 라벨은 클립되지 않아야 한다")
+    }
+
+    @Test
     fun rectLayerWithCornerRadiusRoundsCorners() {
         // 40x40 사각형에 반지름 20(=반폭) → 실질적으로 원. 바운딩박스 모서리는 투명(둥긂), 중앙은 채워짐.
         val rounded = RectLayer(

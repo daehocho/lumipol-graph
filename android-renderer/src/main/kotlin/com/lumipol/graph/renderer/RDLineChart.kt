@@ -14,29 +14,51 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.IntSize
 import com.lumipol.graph.model.Axis
 import com.lumipol.graph.model.ChartAxis
 import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.Point
+import java.util.Locale
 
 /** 라인 등장 애니 지속시간(ms) — Material Emphasized(iOS strokeEnd 0.6s). */
 private const val ENTRANCE_DURATION_MS = 600
 
-/** 기본 축 라벨 포매터(iOS `defaultFormatter` = `%g`). 앱이 단위를 주입하지 않으면 사용. */
+/**
+ * 기본 축 라벨 포매터(iOS `defaultFormatter` = `String(format: "%g", value)`와 동일 출력).
+ * 유효숫자 6자리, 트레일링 0 제거, C `%g` 규칙의 소수/지수 표기 전환(지수 < -4 또는 ≥ 6이면 지수 표기 —
+ * 예: 1234567.89 → "1.23457e+06"). Kotlin/Java `%g`는 트레일링 0을 유지하므로 포맷 후 직접 정리한다.
+ * 앱이 단위 포매터를 주입하지 않으면 사용.
+ */
 fun defaultLineChartFormatter(axis: ChartAxis, value: Double): String {
-    // %g에 가장 근접: 불필요한 소수점 제거.
-    val rounded = value.toLong()
-    return if (value == rounded.toDouble()) rounded.toString() else value.toString()
+    // C %g의 nan/inf 표기(iOS 동일) — Java는 "NaN"/"Infinity"라 별도 처리.
+    if (value.isNaN()) return "nan"
+    if (value.isInfinite()) return if (value > 0) "inf" else "-inf"
+    // Locale 고정 — 소수점 문자가 기기 지역 설정을 타지 않는다(iOS %g도 C 로케일 표기).
+    val formatted = String.format(Locale.ROOT, "%g", value)
+    val exponent = formatted.indexOf('e')
+    return if (exponent >= 0) {
+        trimTrailingZeros(formatted.substring(0, exponent)) + formatted.substring(exponent)
+    } else {
+        trimTrailingZeros(formatted)
+    }
 }
+
+/** `"5.00000"` → `"5"`, `"1.230000"` → `"1.23"`. 소수점이 없으면 그대로(C %g의 0 제거 규칙). */
+private fun trimTrailingZeros(text: String): String =
+    if ('.' in text) text.trimEnd('0').trimEnd('.') else text
 
 /**
  * 페이스/심박 라인차트. 스크럽(터치 마커+콜백)·핀치 줌·확대 팬·배경 area·등장 애니를 지원한다.
@@ -51,8 +73,12 @@ fun defaultLineChartFormatter(axis: ChartAxis, value: Double): String {
  *   [isZoomEnabled]일 때 값이 바뀌면 해당 구간으로 확대한다(제스처 줌과 병행; null은 "요청 없음"이라
  *   자동 리셋하지 않음 — 전체 복귀는 [isZoomEnabled]=false 또는 더블탭/핀치 아웃 경로).
  *   선언형 경로라 **같은 값 재지정은 무시**된다 — 같은 구간 재요청이 필요하면 [zoomController]를 사용.
- * @param zoomController 명령형 줌 요청 핸들([LineChartZoomController.zoomTo]) — 같은 구간
- *   재요청도 매번 적용된다(iOS `zoom(toXRange:)` 재호출 parity).
+ * @param zoomController 명령형 줌 요청 핸들([LineChartZoomController.zoomTo]/
+ *   [LineChartZoomController.reset]) — 같은 구간 재요청도 매번 적용된다(iOS `zoom(toXRange:)`/
+ *   `resetZoom` 재호출 parity).
+ * @param markerController 명령형 터치 마커 핸들([LineChartMarkerController.show]/
+ *   [LineChartMarkerController.hide]) — iOS `showTouchMarker(atX:)`/`hideTouchMarker()` 대응.
+ *   show는 제스처 스크럽과 동일 경로로 콜백을 발화한다(패리티 규칙은 [LineChartMarkerController] 참조).
  * @param animateEntrance main 라인 등장 애니(첫 layout 1회). 스냅샷/테스트에선 false.
  * @param onScrub 스크럽 근접점 값(seriesId→포맷문자열). @param onScrubBackground 배경 area 보간 실값.
  * @param onScrubEnd 스크럽 종료(마커가 표시 중이었을 때만). 짝맞춤 불변식은 [LineChartInteraction] 참조.
@@ -69,6 +95,7 @@ fun RDLineChart(
     maxZoomScale: Float = 10f,
     zoomXRange: ClosedRange<Double>? = null,
     zoomController: LineChartZoomController? = null,
+    markerController: LineChartMarkerController? = null,
     animateEntrance: Boolean = true,
     onScrub: OnScrub? = null,
     onScrubBackground: OnScrubBackground? = null,
@@ -103,9 +130,18 @@ fun RDLineChart(
         if (isZoomEnabled) zoomXRange?.let { interaction.zoomToRange(it.start..it.endInclusive) }
     }
     // 명령형 줌 요청 — 같은 구간 재요청도 매번 적용(iOS zoom(toXRange:) 재호출 parity).
+    // range == null은 명시 리셋(iOS resetZoom) — 전체 구간 zoomTo의 클램프→null 정규화와 같은 상태.
+    // 키에 interaction을 넣지 않는다: 데이터 갱신으로 interaction이 재생성될 때 스테일 요청 봉투가
+    // 재적용되면 안 된다 — iOS render()는 zoomState를 초기화하고 이전 zoom(toXRange:)을 기억하지 않는다
+    // (선언형 zoomXRange는 "원하는 상태"라서 예외 — 위 이펙트는 데이터 갱신 후에도 재적용 유지).
     val zoomRequest = zoomController?.request
-    LaunchedEffect(interaction, isZoomEnabled, zoomRequest) {
-        if (isZoomEnabled) zoomRequest?.let { interaction.zoomToRange(it.range) }
+    LaunchedEffect(isZoomEnabled, zoomRequest) {
+        if (isZoomEnabled) {
+            zoomRequest?.let { req ->
+                val range = req.range
+                if (range != null) interaction.zoomToRange(range) else interaction.resetZoom()
+            }
+        }
     }
 
     // 줌 창 → layout 파생(iOS commitViewport/makeFullLayout). zoom은 관측 state라 창 변경 시 재계산.
@@ -137,8 +173,34 @@ fun RDLineChart(
         }
     }
 
+    // 명령형 마커 요청(iOS showTouchMarker/hideTouchMarker). 마커 조립엔 플롯(캔버스 크기)이 필요하므로
+    // onSizeChanged로 크기를 추적하고, 배치 전(크기 0) 요청은 조용히 무시한다(iOS currentPlotArea==nil 가드).
+    // 같은 x 재요청도 봉투 항등성으로 매번 발화한다. 표시 후 relayout 복원은 activeMarkerRawX 파생이 담당.
+    // 키는 markerRequest만: 데이터 갱신으로 interaction이 재생성돼도 스테일 show 요청이 재적용되어
+    // onScrub이 재발화되면 안 된다 — iOS render()는 마커를 **무통지** 제거하고 이전 show를 기억하지 않는다.
+    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+    val markerRequest = markerController?.request
+    LaunchedEffect(markerRequest) {
+        val request = markerRequest ?: return@LaunchedEffect
+        val rawX = request.rawX
+        if (rawX == null) {
+            interaction.endScrub()
+        } else {
+            buildPlot(canvasSize.width.toDouble(), canvasSize.height.toDouble())?.let { plot ->
+                val ctx = TouchMarkerContext(
+                    data, interaction.layoutForCurrentWindow(), scaledStyle, plot,
+                    { axis, value -> currentFormatter(axis, value) }, density,
+                    axisBySeriesId = interaction.axisBySeriesId,
+                    roleBySeriesId = interaction.roleBySeriesId,
+                )
+                interaction.scrubTo(rawX, ctx, notify = true)
+            }
+        }
+    }
+
     Canvas(
         modifier
+            .onSizeChanged { canvasSize = it }
             .semantics { contentDescription = description }
             .pointerInput(interaction, isZoomEnabled, scaledStyle) {
                 lineChartGestures(
@@ -168,6 +230,8 @@ fun RDLineChart(
             measurer = measurer,
             sortedArea = sortedArea,
             entranceProgress = progress.value,
+            // 확대 상태에서만 플롯 클립(iOS updateClipMask parity) — 1x는 무클립으로 가장자리 캡 보존.
+            isZoomed = interaction.zoom?.isZoomed == true,
         )
 
         // 터치 마커는 활성 rawX에서 매 프레임 재파생 → relayout(회전/리사이즈) 생존, 콜백 무발화.

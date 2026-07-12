@@ -3,6 +3,8 @@ package com.lumipol.graph.renderer
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import com.lumipol.graph.model.BarColorRole
 import com.lumipol.graph.model.DonutColorRole
 
@@ -84,8 +86,11 @@ data class ChartStyle(
     val donutRingWidth: Float = 28f,
     val donutEmptyColor: Color,
 
-    // 축 라벨 (iOS `UIFont.systemFont(ofSize:10)` → sp 크기만 보관, TextStyle 조립은 배치2)
+    // 축 라벨 (iOS `axisLabelFont: UIFont` → 크기·패밀리·웨이트로 분해 보관, TextStyle 조립은 draw 경계.
+    // 모든 라벨 TextLayer(축/마커/기준선/바)가 공유한다 — iOS도 전부 axisLabelFont 단일 폰트.)
     val axisLabelFontSize: Float = 10f,
+    val axisLabelFontFamily: FontFamily? = null, // null = 시스템 기본(iOS systemFont 대응)
+    val axisLabelFontWeight: FontWeight? = null, // null = 기본 웨이트(regular)
     val axisLabelColor: Color,
 
     // 플롯 여백

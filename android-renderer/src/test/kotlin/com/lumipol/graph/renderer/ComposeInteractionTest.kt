@@ -397,4 +397,172 @@ class ComposeInteractionTest {
         rule.waitForIdle()
         assertTrue(scrubbed.isEmpty(), "세로 우세 드래그는 스크럽하지 않고 부모 스크롤에 양보해야 함")
     }
+
+    @Test
+    fun markerControllerShowFiresScrubAndHideFiresEndOnce() {
+        // iOS showTouchMarker(atX:)/hideTouchMarker() parity: show는 근접점 값 콜백 발화,
+        // 같은 x 재요청도 매번 발화(봉투 항등성), hide는 표시 중이었을 때만 onScrubEnd 1회.
+        val scrubbed = mutableListOf<Map<String, String>>()
+        var ended = 0
+        val controller = LineChartMarkerController()
+        rule.setContent {
+            RDLineChart(
+                data = TestFixtures.paceOnly,
+                modifier = Modifier.size(width = 360.dp, height = 280.dp),
+                invertedAxes = setOf(Axis.PRIMARY),
+                labelFormatter = TestFixtures::format,
+                animateEntrance = false,
+                markerController = controller,
+                onScrub = { scrubbed.add(it) },
+                onScrubEnd = { ended++ },
+            )
+        }
+        rule.waitForIdle()
+        controller.show(2.5)
+        rule.waitForIdle()
+        assertEquals("5'30\"", scrubbed.lastOrNull()?.get("pace"), "show(2.5)는 x=2.5 근접점 값을 통지해야 함")
+        assertEquals(0, ended, "show만으로 종료 통지가 나가면 안 됨")
+        controller.show(2.5) // 같은 x 재요청 — iOS 재호출과 동일하게 매번 발화.
+        rule.waitForIdle()
+        assertEquals(2, scrubbed.size, "같은 x 재요청도 콜백을 다시 발화해야 함")
+        controller.hide()
+        rule.waitForIdle()
+        assertEquals(1, ended, "hide는 표시 중이던 마커에 onScrubEnd 1회")
+        controller.hide() // 마커 없는 hide — 짝 깨진 종료 통지 금지.
+        rule.waitForIdle()
+        assertEquals(1, ended, "마커가 없으면 hide는 무통지여야 함")
+    }
+
+    @Test
+    fun markerShowRequestIsNotReappliedAfterDataUpdate() {
+        // QA r2 Minor: 데이터 갱신으로 interaction이 재생성돼도 이전 show 요청 봉투가 재적용되어
+        // onScrub이 재발화되면 안 된다 — iOS render()는 마커를 **무통지** 제거하고 이전 show를
+        // 기억하지 않는다(onScrubEnd도 미발화). 갱신 후 새 show는 정상 동작해야 한다.
+        val scrubbed = mutableListOf<Map<String, String>>()
+        var ended = 0
+        var gen by mutableStateOf(0)
+        val controller = LineChartMarkerController()
+        rule.setContent {
+            RDLineChart(
+                data = if (gen == 0) TestFixtures.paceOnly else TestFixtures.paceAndHeartRate,
+                modifier = Modifier.size(width = 360.dp, height = 280.dp),
+                invertedAxes = setOf(Axis.PRIMARY),
+                labelFormatter = TestFixtures::format,
+                animateEntrance = false,
+                markerController = controller,
+                onScrub = { scrubbed.add(it) },
+                onScrubEnd = { ended++ },
+            )
+        }
+        rule.waitForIdle()
+        controller.show(2.5)
+        rule.waitForIdle()
+        assertEquals(1, scrubbed.size, "show는 1회 통지")
+        gen = 1 // 데이터 갱신 → interaction 재생성(마커 무통지 소멸).
+        rule.waitForIdle()
+        assertEquals(1, scrubbed.size, "데이터 갱신이 이전 show 요청을 재적용해 onScrub을 재발화하면 안 됨")
+        assertEquals(0, ended, "마커 무통지 제거 — onScrubEnd도 미발화(iOS render() parity)")
+        controller.show(1.0) // 갱신 후 새 요청은 정상 동작.
+        rule.waitForIdle()
+        assertEquals(2, scrubbed.size, "데이터 갱신 후 새 show 요청은 적용되어야 함")
+    }
+
+    @Test
+    fun zoomRequestIsNotReappliedAfterDataUpdate() {
+        // 명령형 줌 요청도 마커와 동일 규칙 — iOS render()는 zoomState를 초기화하고 이전
+        // zoom(toXRange:)을 기억하지 않는다. 관찰: 갱신 후 중앙 탭이 전체 구간 중앙 x=2.5("5'30\"")
+        // 값을 통지해야 한다(스테일 [3,4] 재적용 시 창 중앙 x=3.5 → "5'27\"").
+        val scrubbed = mutableListOf<Map<String, String>>()
+        var gen by mutableStateOf(0)
+        val controller = LineChartZoomController()
+        var densityV = 1f
+        rule.setContent {
+            densityV = androidx.compose.ui.platform.LocalDensity.current.density
+            RDLineChart(
+                data = if (gen == 0) TestFixtures.paceOnly else TestFixtures.paceAndHeartRate,
+                modifier = Modifier.size(width = 360.dp, height = 280.dp),
+                invertedAxes = setOf(Axis.PRIMARY),
+                labelFormatter = TestFixtures::format,
+                animateEntrance = false,
+                isZoomEnabled = true,
+                zoomController = controller,
+                onScrub = { scrubbed.add(it) },
+            )
+        }
+        rule.waitForIdle()
+        controller.zoomTo(3.0..4.0)
+        rule.waitForIdle()
+        gen = 1 // 데이터 갱신 → 줌 초기화(iOS render() parity), 스테일 요청 재적용 금지.
+        rule.waitForIdle()
+        rule.onRoot().performTouchInput {
+            val plotWidth = width - 88f * densityV
+            down(Offset(44f * densityV + plotWidth / 2f, height * 0.5f))
+            advanceEventTime(700) // 더블탭 대기 창 경과 → 단일탭 스크럽 확정
+            up()
+        }
+        rule.waitForIdle()
+        assertEquals("5'30\"", scrubbed.lastOrNull()?.get("pace"), "데이터 갱신 후 창은 전체 구간(중앙 x=2.5)이어야 함")
+    }
+
+    @Test
+    fun markerControllerShowOutsideZoomWindowIsIgnored() {
+        // iOS showTouchMarker parity: 확대 창 밖 x는 무시(마커·콜백 없음), 창 안 x는 표시.
+        val scrubbed = mutableListOf<Map<String, String>>()
+        val controller = LineChartMarkerController()
+        rule.setContent {
+            RDLineChart(
+                data = TestFixtures.paceOnly,
+                modifier = Modifier.size(width = 360.dp, height = 280.dp),
+                invertedAxes = setOf(Axis.PRIMARY),
+                labelFormatter = TestFixtures::format,
+                animateEntrance = false,
+                isZoomEnabled = true,
+                zoomXRange = 2.0..3.0,
+                markerController = controller,
+                onScrub = { scrubbed.add(it) },
+            )
+        }
+        rule.waitForIdle()
+        controller.show(4.5) // 창 [2,3] 밖.
+        rule.waitForIdle()
+        assertTrue(scrubbed.isEmpty(), "확대 창 밖 show는 무시되어야 함")
+        controller.show(3.0) // 창 상한(경계) — epsilon 클램프로 표시되어야 함.
+        rule.waitForIdle()
+        assertEquals("5'21\"", scrubbed.lastOrNull()?.get("pace"), "창 경계 show는 클램프되어 표시(x=3.0, pace 5.35)")
+    }
+
+    @Test
+    fun zoomControllerResetRestoresFullWindow() {
+        // iOS resetZoom parity: [3,4] 줌 후 reset() → 전체 구간 복귀. 복귀 검증은 플롯 중앙 탭
+        // 스크럽 값으로 관찰 — 줌 유지 시 창 중앙 x=3.5("5'27\""), 복귀 시 전체 중앙 x=2.5("5'30\"").
+        val scrubbed = mutableListOf<Map<String, String>>()
+        val controller = LineChartZoomController()
+        var densityV = 1f
+        rule.setContent {
+            densityV = androidx.compose.ui.platform.LocalDensity.current.density
+            RDLineChart(
+                data = TestFixtures.paceOnly,
+                modifier = Modifier.size(width = 360.dp, height = 280.dp),
+                invertedAxes = setOf(Axis.PRIMARY),
+                labelFormatter = TestFixtures::format,
+                animateEntrance = false,
+                isZoomEnabled = true,
+                zoomController = controller,
+                onScrub = { scrubbed.add(it) },
+            )
+        }
+        rule.waitForIdle()
+        controller.zoomTo(3.0..4.0)
+        rule.waitForIdle()
+        controller.reset()
+        rule.waitForIdle()
+        rule.onRoot().performTouchInput {
+            val plotWidth = width - 88f * densityV
+            down(Offset(44f * densityV + plotWidth / 2f, height * 0.5f))
+            advanceEventTime(700) // 더블탭 대기 창 경과 → 단일탭 스크럽 확정
+            up()
+        }
+        rule.waitForIdle()
+        assertEquals("5'30\"", scrubbed.lastOrNull()?.get("pace"), "reset 후 플롯 중앙은 전체 구간 중앙 x=2.5여야 함")
+    }
 }

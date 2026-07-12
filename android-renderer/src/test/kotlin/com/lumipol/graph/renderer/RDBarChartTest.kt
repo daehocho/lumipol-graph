@@ -51,6 +51,23 @@ class RDBarChartTest {
     }
 
     @Test
+    fun axisLabelFontFamilyAndWeightPropagateToBarLabels() {
+        // QA Minor-6: 바 차트 라벨(y축·막대 위·x축)도 ChartStyle 주입 폰트를 실어야 한다(iOS
+        // RDBarChartView가 style.axisLabelFont를 그대로 쓰는 것과 동일).
+        val custom = style.copy(
+            axisLabelFontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+            axisLabelFontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+        )
+        val layers = build(sampleLayout(2), style = custom, barLabels = listOf("a", "b"), xAxisLabels = listOf("1", "2"))
+        val labels = layers.filterIsInstance<TextLayer>()
+        assertTrue(labels.isNotEmpty())
+        labels.forEach { label ->
+            assertEquals(androidx.compose.ui.text.font.FontFamily.Monospace, label.fontFamily, label.name)
+            assertEquals(androidx.compose.ui.text.font.FontWeight.Medium, label.fontWeight, label.name)
+        }
+    }
+
+    @Test
     fun barWidthRatioAndPartialAlphaAreConfigurableViaStyle() {
         // 슬롯 대비 막대 폭 비율·부분 스플릿 알파는 하드코딩이 아니라 ChartStyle 소유(iOS 스타일과
         // 한 곳에서 동기화). ratio=1.0이면 막대 폭 == 슬롯 폭.

@@ -120,6 +120,8 @@ internal fun buildBarChartLayers(
                     vAlign = VAlign.CENTER,
                     color = style.axisLabelColor,
                     fontSizeSp = style.axisLabelFontSize,
+                    fontFamily = style.axisLabelFontFamily,
+                    fontWeight = style.axisLabelFontWeight,
                 ),
             )
         }
@@ -157,6 +159,8 @@ internal fun buildBarChartLayers(
                     vAlign = VAlign.ABOVE,
                     color = style.axisLabelColor,
                     fontSizeSp = style.axisLabelFontSize,
+                    fontFamily = style.axisLabelFontFamily,
+                    fontWeight = style.axisLabelFontWeight,
                 ),
             )
         }
@@ -172,6 +176,8 @@ internal fun buildBarChartLayers(
                         vAlign = VAlign.BELOW,
                         color = style.axisLabelColor,
                         fontSizeSp = style.axisLabelFontSize,
+                        fontFamily = style.axisLabelFontFamily,
+                        fontWeight = style.axisLabelFontWeight,
                     ),
                 )
             }
