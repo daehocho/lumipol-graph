@@ -87,6 +87,37 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertTrue(relaidOut.allSatisfy { $0.animation(forKey: "strokeEnd") == nil })
     }
 
+    func testReRenderDoesNotReplayEntranceAnimation() {
+        // 등장 애니메이션은 뷰 수명당 1회(최초 render) — 스트리밍 데이터 갱신마다
+        // 라인이 0%부터 다시 그려지면 안 된다 (Android RDLineChart와 동일 계약).
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.render(TestFixtures.paceOnly) // isAnimationEnabled 기본값 true
+        view.layoutIfNeeded()
+        XCTAssertTrue(mainLineLayers(of: view).allSatisfy { $0.animation(forKey: "strokeEnd") != nil })
+
+        view.render(TestFixtures.paceAndHeartRate) // 데이터 갱신 재렌더
+        view.layoutIfNeeded()
+        let reRendered = mainLineLayers(of: view)
+        XCTAssertFalse(reRendered.isEmpty)
+        XCTAssertTrue(
+            reRendered.allSatisfy { $0.animation(forKey: "strokeEnd") == nil },
+            "데이터 갱신 재렌더는 등장 애니메이션을 재생하지 않음"
+        )
+    }
+
+    func testEnablingAnimationAfterFirstRenderDoesNotAnimate() {
+        // 최초 render가 애니 비활성이었으면 이후 활성화해도 재생 없음 —
+        // Android(컴포지션 시점 animateEntrance 고정)와 동일 의미론.
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.paceOnly)
+        view.layoutIfNeeded()
+        view.isAnimationEnabled = true
+        view.render(TestFixtures.paceAndHeartRate)
+        view.layoutIfNeeded()
+        XCTAssertTrue(mainLineLayers(of: view).allSatisfy { $0.animation(forKey: "strokeEnd") == nil })
+    }
+
     func testNoOpLayoutPassReusesExistingLayers() {
         // bounds도 데이터도 변하지 않은 레이아웃 패스(스크롤뷰 임베드·형제 제약 변경 등)는
         // CALayer 트리 전체 파괴·재생성(경로 재계산 + 라벨 재측정)을 반복하면 안 된다.
@@ -191,6 +222,25 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertTrue((view.layer.sublayers ?? []).contains { $0.name == "touch.marker" }, "마커는 복원")
         XCTAssertEqual(spy.scrubbed.count, 1, "레이아웃 패스는 didScrubTo를 재발화하지 않음")
         XCTAssertEqual(spy.backgroundValues.count, 1, "레이아웃 패스는 배경 값 콜백을 재발화하지 않음")
+    }
+
+    func testRenderWhileMarkerShownNotifiesScrubEndOnce() {
+        // 스크럽(마커 표시) 중 데이터 갱신 — didScrubTo가 발화된 상태에서 마커가 사라지므로
+        // 종료를 1회 통지해 콜백 짝을 보존한다 (Android 제스처 경로 endScrub와 동일 계약).
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        view.showTouchMarker(atX: 2.4)
+        view.render(TestFixtures.paceOnly)
+        XCTAssertEqual(spy.endCount, 1, "표시 중이던 마커가 재렌더로 사라지면 종료 통지")
+
+        // 마커가 없을 때의 재렌더는 종료를 통지하지 않는다 (짝 깨진 콜백 금지).
+        view.layoutIfNeeded()
+        view.render(TestFixtures.paceAndHeartRate)
+        XCTAssertEqual(spy.endCount, 1, "마커 없는 재렌더는 종료 통지 없음")
     }
 
     func testHideTouchMarkerReportsEndOnceWhenShown() {
