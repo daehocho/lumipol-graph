@@ -20,7 +20,9 @@ public extension RDChartScrubDelegate {
 @objc(RDChartView)
 public final class RDChartView: UIView {
 
-    /// main 라인 등장 애니메이션(strokeEnd 0→1). 스냅샷/테스트에서는 끈다.
+    /// main 라인 등장 애니메이션(strokeEnd 0→1) — 뷰 수명당 1회, 최초 render에서만.
+    /// 데이터 갱신(스트리밍) 재렌더마다 재생하면 라인이 매번 0%부터 다시 그려진다
+    /// (Android RDLineChart와 동일 계약). 스냅샷/테스트에서는 끈다.
     @objc public var isAnimationEnabled: Bool = true
 
     /// 스크럽 값 소비자. 미설정 시 값 전달 없음(기존 동작).
@@ -82,6 +84,9 @@ public final class RDChartView: UIView {
     private var touchMarkerLayer: CALayer?
     private var activeMarkerRawX: Double?
     private var needsEntranceAnimation = false
+    /// 최초 render 여부 — 등장 애니메이션은 최초 render에서만 무장한다.
+    /// 최초가 애니 비활성이었으면 이후 활성화해도 재생 없음(Android 컴포지션 시점 고정과 동일 의미론).
+    private var isFirstRender = true
     /// 확대 팬 진행 중 기준 창(제스처 시작 시점). 매 프레임 이 창에 누적 이동량을 적용해 재렌더.
     private var panStartWindow: ClosedRange<Double>?
     /// 라이브 핀치 진행 중 기준 창(제스처 시작 시점). 매 프레임 누적 배율을 적용해 재렌더.
@@ -118,7 +123,9 @@ public final class RDChartView: UIView {
         labelFormatter: ((ChartAxis, Double) -> String)? = nil,
         backgroundArea: [AreaPoint]? = nil
     ) {
-        removeTouchMarkerLayer()
+        // 스크럽(마커 표시) 중 데이터 갱신 — didScrubTo가 발화된 상태이므로 무통지 제거 대신
+        // 종료를 1회 통지해 콜백 짝을 보존한다 (Android 제스처 경로 endScrub와 동일 계약).
+        hideTouchMarker()
         zoomState = nil
         self.data = data
         // 코어 interpolatedY의 이진 탐색·클램프는 x 오름차순을 전제한다 — 호출자 순서에 기대지 않고
@@ -129,7 +136,8 @@ public final class RDChartView: UIView {
         self.invertedAxes = invertedAxes
         self.labelFormatter = labelFormatter ?? RDChartView.defaultFormatter
         self.chartLayout = makeFullLayout(data: data)
-        needsEntranceAnimation = isAnimationEnabled
+        needsEntranceAnimation = isAnimationEnabled && isFirstRender
+        isFirstRender = false
         setNeedsLayout()
     }
 
