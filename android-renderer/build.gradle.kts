@@ -5,8 +5,8 @@ plugins {
     id("maven-publish")
 }
 
-group = "com.lumipol.graph"
-version = "0.10.0"
+group = "com.github.daehocho.lumipol-graph"
+version = "0.11.0"
 
 android {
     namespace = "com.lumipol.graph.renderer"
