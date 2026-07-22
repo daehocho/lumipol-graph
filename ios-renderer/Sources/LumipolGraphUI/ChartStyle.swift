@@ -50,6 +50,10 @@ public struct ChartStyle {
     public var barReferenceLineColor: UIColor = UIColor.label.withAlphaComponent(0.6)
     public var barMinHeight: CGFloat = 2   // 가장 빠른(짧은) 막대도 최소 가시 높이
     public var barDimOpacity: Float = 0.35   // 롱프레스 선택 시 미선택 막대 흐림 배율
+    public var barSelectionLineColor: UIColor = UIColor.label.withAlphaComponent(0.55)
+    public var barCalloutBackgroundColor: UIColor = .label
+    public var barCalloutTextColor: UIColor = .systemBackground
+    public var barCalloutFont: UIFont = .systemFont(ofSize: 12, weight: .semibold)
 
     // 심박존 도넛
     public var donutColors: [DonutColorRole: UIColor] = [
