@@ -10,6 +10,7 @@ public final class RDBarChartView: UIView {
 
     public var style: ChartStyle = .default
     public private(set) var barLayers: [CALayer] = []
+    public private(set) var selectedIndex: Int?
 
     private var layout: BarChartLayout?
     private var barLabels: [String]?
@@ -131,6 +132,28 @@ public final class RDBarChartView: UIView {
             line.lineDashPattern = style.refLineDashPattern
             contentLayer.addSublayer(line)
         }
+
+        applySelection()   // 레이아웃 재패스 중 선택 상태 유지
+    }
+
+    /// 롱프레스 선택 갱신. 값이 같으면 무시(중복 렌더 방지).
+    func selectBar(at index: Int?) {
+        guard selectedIndex != index else { return }
+        selectedIndex = index
+        applySelection()
+    }
+
+    /// 선택 상태를 기존 막대 레이어에 반영(재생성 없이 opacity만). 오버레이는 Task 4에서 추가.
+    private func applySelection() {
+        guard let layout = layout, barLayers.count == layout.bars.count else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)   // 드래그 중 opacity 애니메이션 지연 방지
+        for (i, layer) in barLayers.enumerated() {
+            let base: Float = layout.bars[i].isPartial ? 0.6 : 1.0
+            let dim = selectedIndex == nil || selectedIndex == i
+            layer.opacity = dim ? base : base * style.barDimOpacity
+        }
+        CATransaction.commit()
     }
 
     /// 플롯 내 x(뷰 좌표)를 균등 슬롯 막대 인덱스로 변환. 경계 밖은 0..<count로 클램프.

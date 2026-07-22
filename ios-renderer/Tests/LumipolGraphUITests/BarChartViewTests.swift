@@ -147,6 +147,28 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertFalse(view.allTextLayerStrings.contains("1"))
     }
 
+    func testDimsUnselectedBars() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        view.render(sampleLayout(barCount: 4))   // barLabels 없이도 dim은 동작
+        view.selectBar(at: 1)
+        XCTAssertEqual(view.selectedIndex, 1)
+        XCTAssertEqual(view.barLayers[1].opacity, 1.0, accuracy: 0.001)      // 선택 막대 = 기본
+        XCTAssertLessThan(view.barLayers[0].opacity, 1.0)                    // 미선택 dim
+        XCTAssertEqual(view.barLayers[0].opacity, Float(0.35), accuracy: 0.001)
+        // 부분 막대(마지막)는 기본 0.6 → dim 시 0.6*0.35
+        XCTAssertEqual(view.barLayers[3].opacity, Float(0.6 * 0.35), accuracy: 0.001)
+    }
+
+    func testDeselectRestoresOpacity() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        view.render(sampleLayout(barCount: 4))
+        view.selectBar(at: 1)
+        view.selectBar(at: nil)
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(view.barLayers[0].opacity, 1.0, accuracy: 0.001)
+        XCTAssertEqual(view.barLayers[3].opacity, 0.6, accuracy: 0.001)     // 부분 막대 원복
+    }
+
     func testBarIndexAtXMapsSlotsAndClamps() {
         // plotMinX=0, plotWidth=100, count=5 → slot=20
         XCTAssertEqual(RDBarChartView.barIndex(atX: 10, plotMinX: 0, plotWidth: 100, count: 5), 0)
