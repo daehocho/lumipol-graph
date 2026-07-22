@@ -49,6 +49,7 @@ public struct ChartStyle {
     public var barShowXAxisLabels: Bool = true   // false면 x축 하단 라벨(xAxisLabels) 숨김
     public var barReferenceLineColor: UIColor = UIColor.label.withAlphaComponent(0.6)
     public var barMinHeight: CGFloat = 2   // 가장 빠른(짧은) 막대도 최소 가시 높이
+    public var barDimOpacity: Float = 0.35   // 롱프레스 선택 시 미선택 막대 흐림 배율
 
     // 심박존 도넛
     public var donutColors: [DonutColorRole: UIColor] = [
