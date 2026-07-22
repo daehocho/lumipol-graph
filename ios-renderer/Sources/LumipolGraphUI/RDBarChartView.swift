@@ -11,6 +11,7 @@ public final class RDBarChartView: UIView {
     public var style: ChartStyle = .default
     public private(set) var barLayers: [CALayer] = []
     public private(set) var selectedIndex: Int?
+    private var selectionLayers: [CALayer] = []
 
     private var layout: BarChartLayout?
     private var barLabels: [String]?
@@ -143,17 +144,67 @@ public final class RDBarChartView: UIView {
         applySelection()
     }
 
-    /// 선택 상태를 기존 막대 레이어에 반영(재생성 없이 opacity만). 오버레이는 Task 4에서 추가.
+    /// 선택 상태를 기존 막대 레이어에 반영(재생성 없이 opacity만) + 가이드선/말풍선 오버레이 교체.
     private func applySelection() {
         guard let layout = layout, barLayers.count == layout.bars.count else { return }
         CATransaction.begin()
-        CATransaction.setDisableActions(true)   // 드래그 중 opacity 애니메이션 지연 방지
+        CATransaction.setDisableActions(true)   // 드래그 중 애니메이션 지연 방지
+        defer { CATransaction.commit() }
+
         for (i, layer) in barLayers.enumerated() {
             let base: Float = layout.bars[i].isPartial ? 0.6 : 1.0
             let dim = selectedIndex == nil || selectedIndex == i
             layer.opacity = dim ? base : base * style.barDimOpacity
         }
-        CATransaction.commit()
+
+        selectionLayers.forEach { $0.removeFromSuperlayer() }
+        selectionLayers = []
+        guard let sel = selectedIndex, sel < barLayers.count else { return }
+
+        let plot = bounds.inset(by: style.plotInsets)
+        let barFrame = barLayers[sel].frame
+
+        // 수직 가이드선(막대 중앙, 플롯 상단~하단)
+        let guide = CAShapeLayer()
+        guide.name = "bar.selection.line"
+        let gp = UIBezierPath()
+        gp.move(to: CGPoint(x: barFrame.midX, y: plot.minY))
+        gp.addLine(to: CGPoint(x: barFrame.midX, y: plot.maxY))
+        guide.path = gp.cgPath
+        guide.strokeColor = style.barSelectionLineColor.cgColor
+        guide.lineWidth = 1
+        contentLayer.addSublayer(guide)
+        selectionLayers.append(guide)
+
+        // 말풍선(페이스만) — barLabels 있을 때만
+        if let labels = barLabels, sel < labels.count {
+            let text = ChartLayerBuilder.textLayer(
+                labels[sel], font: style.barCalloutFont, color: style.barCalloutTextColor)
+            let padH: CGFloat = 8, padV: CGFloat = 4, gap: CGFloat = 6
+            let tSize = text.frame.size
+            let bw = tSize.width + padH * 2
+            let bh = tSize.height + padV * 2
+            var bx = barFrame.midX - bw / 2
+            bx = min(max(bx, plot.minX), plot.maxX - bw)   // 좌우 클램프
+            var by = barFrame.minY - gap - bh
+            if by < plot.minY { by = plot.minY }           // 상단 부족 시 클램프
+            let bubbleRect = CGRect(x: bx, y: by, width: bw, height: bh)
+
+            let bubble = CAShapeLayer()
+            bubble.name = "bar.selection.bubble"
+            bubble.frame = bubbleRect
+            bubble.path = UIBezierPath(
+                roundedRect: CGRect(origin: .zero, size: bubbleRect.size), cornerRadius: 6
+            ).cgPath
+            bubble.fillColor = style.barCalloutBackgroundColor.cgColor
+            contentLayer.addSublayer(bubble)
+            selectionLayers.append(bubble)
+
+            text.frame = CGRect(
+                x: bx + padH, y: by + padV, width: tSize.width, height: tSize.height)
+            contentLayer.addSublayer(text)
+            selectionLayers.append(text)
+        }
     }
 
     /// 플롯 내 x(뷰 좌표)를 균등 슬롯 막대 인덱스로 변환. 경계 밖은 0..<count로 클램프.

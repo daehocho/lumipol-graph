@@ -185,6 +185,53 @@ final class BarChartViewTests: XCTestCase {
         // count==1
         XCTAssertEqual(RDBarChartView.barIndex(atX: 999, plotMinX: 0, plotWidth: 100, count: 1), 0)
     }
+
+    // 오버레이 안의 가이드선(CAShapeLayer, name=bar.selection.line) 존재 여부.
+    private func hasSelectionGuide(_ view: RDBarChartView) -> Bool {
+        (view.layer.sublayers ?? [])
+            .flatMap { $0.sublayers ?? [] }
+            .contains { $0.name == "bar.selection.line" }
+    }
+
+    func testSelectionShowsGuideAndCallout() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = false
+        view.render(sampleLayout(barCount: 4), style: style,
+                    barLabels: ["4'50\"", "5'00\"", "5'10\"", "5'20\""], xAxisLabels: nil, yLabelFormatter: nil)
+        view.selectBar(at: 2)
+        XCTAssertTrue(hasSelectionGuide(view), "수직 가이드선")
+        XCTAssertTrue(view.allTextLayerStrings.contains("5'10\""), "말풍선 페이스 = barLabels[2]")
+    }
+
+    func testDeselectRemovesOverlay() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = false
+        view.render(sampleLayout(barCount: 4), style: style,
+                    barLabels: ["4'50\"", "5'00\"", "5'10\"", "5'20\""], xAxisLabels: nil, yLabelFormatter: nil)
+        view.selectBar(at: 2)
+        view.selectBar(at: nil)
+        XCTAssertFalse(hasSelectionGuide(view))
+        XCTAssertTrue(view.allTextLayerStrings.isEmpty, "말풍선 텍스트 제거")
+    }
+
+    // 말풍선이 플롯 좌우 경계를 넘지 않도록 클램프(끝 막대 선택).
+    func testCalloutClampedWithinPlot() throws {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = false
+        view.render(sampleLayout(barCount: 4), style: style,
+                    barLabels: ["4'50\"", "5'00\"", "5'10\"", "5'20\""], xAxisLabels: nil, yLabelFormatter: nil)
+        view.selectBar(at: 3)   // 맨 오른쪽
+        let plot = view.bounds.inset(by: style.plotInsets)
+        let bubble = (view.layer.sublayers ?? [])
+            .flatMap { $0.sublayers ?? [] }
+            .first { $0.name == "bar.selection.bubble" }
+        let f = try XCTUnwrap(bubble).frame
+        XCTAssertLessThanOrEqual(f.maxX, plot.maxX + 0.5)
+        XCTAssertGreaterThanOrEqual(f.minX, plot.minX - 0.5)
+    }
 }
 
 extension RDBarChartView {
