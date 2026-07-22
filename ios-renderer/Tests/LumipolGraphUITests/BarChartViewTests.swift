@@ -169,6 +169,23 @@ final class BarChartViewTests: XCTestCase {
         view.layoutIfNeeded()
         XCTAssertFalse(view.allTextLayerStrings.contains("1"))
     }
+
+    func testBarIndexAtXMapsSlotsAndClamps() {
+        // plotMinX=0, plotWidth=100, count=5 → slot=20
+        XCTAssertEqual(RDBarChartView.barIndex(atX: 10, plotMinX: 0, plotWidth: 100, count: 5), 0)
+        XCTAssertEqual(RDBarChartView.barIndex(atX: 25, plotMinX: 0, plotWidth: 100, count: 5), 1)
+        XCTAssertEqual(RDBarChartView.barIndex(atX: 99, plotMinX: 0, plotWidth: 100, count: 5), 4)
+        // 경계 밖 → 클램프
+        XCTAssertEqual(RDBarChartView.barIndex(atX: -50, plotMinX: 0, plotWidth: 100, count: 5), 0)
+        XCTAssertEqual(RDBarChartView.barIndex(atX: 500, plotMinX: 0, plotWidth: 100, count: 5), 4)
+        // plotMinX 오프셋
+        XCTAssertEqual(RDBarChartView.barIndex(atX: 45, plotMinX: 40, plotWidth: 100, count: 5), 0)
+        // 축퇴 입력
+        XCTAssertNil(RDBarChartView.barIndex(atX: 10, plotMinX: 0, plotWidth: 100, count: 0))
+        XCTAssertNil(RDBarChartView.barIndex(atX: 10, plotMinX: 0, plotWidth: 0, count: 5))
+        // count==1
+        XCTAssertEqual(RDBarChartView.barIndex(atX: 999, plotMinX: 0, plotWidth: 100, count: 1), 0)
+    }
 }
 
 extension RDBarChartView {
