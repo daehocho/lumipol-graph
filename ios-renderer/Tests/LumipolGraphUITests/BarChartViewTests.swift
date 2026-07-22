@@ -112,6 +112,38 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertTrue(strings.contains("2"))
     }
 
+    // 장거리(42km≈43스플릿) 라벨 겹침: 슬롯보다 넓은 라벨은 stride로 솎아낸다.
+    func testBarLabelsThinnedWhenTooNarrow() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        let labels = Array(repeating: "5'30\"", count: 20)
+        view.render(sampleLayout(barCount: 20), style: .default, barLabels: labels,
+                    xAxisLabels: nil, yLabelFormatter: nil)
+        view.layoutIfNeeded()
+        let shown = view.allTextLayerStrings.filter { $0 == "5'30\"" }.count
+        XCTAssertLessThan(shown, 20, "겹침 방지 솎아내기 기대")
+        XCTAssertGreaterThan(shown, 0)
+    }
+
+    func testBarLabelsAllShownWhenTheyFit() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 600, height: 200))
+        let labels = Array(repeating: "1", count: 4)
+        view.render(sampleLayout(barCount: 4), style: .default, barLabels: labels,
+                    xAxisLabels: nil, yLabelFormatter: nil)
+        view.layoutIfNeeded()
+        XCTAssertEqual(view.allTextLayerStrings.filter { $0 == "1" }.count, 4)
+    }
+
+    func testXAxisLabelsThinnedWhenTooNarrow() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        let x = Array(repeating: "5'30\"", count: 20)
+        view.render(sampleLayout(barCount: 20), style: .default, barLabels: nil,
+                    xAxisLabels: x, yLabelFormatter: nil)
+        view.layoutIfNeeded()
+        let shown = view.allTextLayerStrings.filter { $0 == "5'30\"" }.count
+        XCTAssertLessThan(shown, 20)
+        XCTAssertGreaterThan(shown, 0)
+    }
+
     func testXAxisLabelsHiddenWhenFlagOff() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
         let layout = BarChartLayout(

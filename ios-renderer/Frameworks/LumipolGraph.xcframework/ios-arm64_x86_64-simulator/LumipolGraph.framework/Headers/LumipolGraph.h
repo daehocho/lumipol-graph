@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphAxis, LumipolGraphAxisDomain, LumipolGraphAxisTick, LumipolGraphAxisTicksLayout, LumipolGraphBarChartData, LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarColorRole, LumipolGraphBarLayout, LumipolGraphChartAxis, LumipolGraphChartConfig, LumipolGraphDonutChartData, LumipolGraphDonutChartLayout, LumipolGraphDonutColorRole, LumipolGraphDonutEngine, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphKotlinArray<T>, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinEnumCompanion, LumipolGraphLineChartData, LumipolGraphLineChartEngine, LumipolGraphLineChartLayout, LumipolGraphMarker, LumipolGraphMarkerLayout, LumipolGraphNearestResult, LumipolGraphNiceScale, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesResult, LumipolGraphPoint, LumipolGraphRefBand, LumipolGraphRefBandLayout, LumipolGraphRefLine, LumipolGraphRefLineLayout, LumipolGraphSegmentStat, LumipolGraphSeries, LumipolGraphSeriesLayout, LumipolGraphSeriesRole, LumipolGraphSeriesSelection, LumipolGraphSeriesStat, LumipolGraphSplitSample, LumipolGraphStats, LumipolGraphZoneBpmRange;
+@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphSeriesSelection, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphAxis, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefLine, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefLineLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSegmentStat, LumipolGraphSeriesRole, LumipolGraphSeriesStat, LumipolGraphAxisDomain, LumipolGraphNiceScale;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -767,6 +767,12 @@ __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("HeightFractionsKt")))
 @interface LumipolGraphHeightFractionsKt : LumipolGraphBase
 + (NSArray<LumipolGraphDouble *> *)heightFractionsValues:(NSArray<LumipolGraphDouble *> *)values __attribute__((swift_name("heightFractions(values:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("LabelThinningKt")))
+@interface LumipolGraphLabelThinningKt : LumipolGraphBase
++ (int32_t)labelStrideCount:(int32_t)count plotWidthPx:(double)plotWidthPx labelWidthPx:(double)labelWidthPx gapPx:(double)gapPx __attribute__((swift_name("labelStride(count:plotWidthPx:labelWidthPx:gapPx:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))
