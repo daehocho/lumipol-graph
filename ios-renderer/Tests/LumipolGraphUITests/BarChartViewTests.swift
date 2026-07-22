@@ -112,38 +112,15 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertTrue(strings.contains("2"))
     }
 
-    // 장거리(42km≈43스플릿) 라벨 겹침: 슬롯보다 넓은 라벨은 stride로 솎아낸다.
-    func testBarLabelsThinnedWhenTooNarrow() {
-        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
-        let labels = Array(repeating: "5'30\"", count: 20)
-        view.render(sampleLayout(barCount: 20), style: .default, barLabels: labels,
-                    xAxisLabels: nil, yLabelFormatter: nil)
+    // 정적 막대 라벨 제거: barLabels를 줘도 막대 위 텍스트는 그리지 않는다(값은 롱프레스 말풍선으로).
+    func testBarLabelsNotDrawnStatically() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = false
+        view.render(sampleLayout(barCount: 3), style: style,
+                    barLabels: ["4'50\"", "5'00\"", "5'10\""], xAxisLabels: nil, yLabelFormatter: nil)
         view.layoutIfNeeded()
-        let shown = view.allTextLayerStrings.filter { $0 == "5'30\"" }.count
-        XCTAssertLessThan(shown, 20, "겹침 방지 솎아내기 기대")
-        XCTAssertGreaterThan(shown, 0)
-    }
-
-    // 리뷰 #1: 솎아내도 첫·마지막(피니시) 라벨은 항상 표시.
-    func testAlwaysShowsFirstAndLastBarLabel() {
-        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
-        let labels = (0..<20).map { "\($0)'30\"" }
-        view.render(sampleLayout(barCount: 20), style: .default, barLabels: labels,
-                    xAxisLabels: nil, yLabelFormatter: nil)
-        view.layoutIfNeeded()
-        let strings = view.allTextLayerStrings
-        XCTAssertTrue(strings.contains("0'30\""), "첫 라벨 표시")
-        XCTAssertTrue(strings.contains("19'30\""), "마지막(피니시) 라벨 표시")
-        XCTAssertLessThan(strings.filter { $0.hasSuffix("'30\"") }.count, 20, "여전히 솎아냄")
-    }
-
-    func testBarLabelsAllShownWhenTheyFit() {
-        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 600, height: 200))
-        let labels = Array(repeating: "1", count: 4)
-        view.render(sampleLayout(barCount: 4), style: .default, barLabels: labels,
-                    xAxisLabels: nil, yLabelFormatter: nil)
-        view.layoutIfNeeded()
-        XCTAssertEqual(view.allTextLayerStrings.filter { $0 == "1" }.count, 4)
+        XCTAssertTrue(view.allTextLayerStrings.isEmpty, "막대 위 정적 라벨이 없어야 함")
     }
 
     func testXAxisLabelsThinnedWhenTooNarrow() {
