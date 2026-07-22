@@ -86,12 +86,14 @@ public final class RDBarChartView: UIView {
         // 라벨 솎아내기 stride(장거리·하프 등 슬롯보다 넓은 라벨 겹침 방지).
         // 개수 임계치가 아니라 슬롯 폭 대비 라벨 폭으로 계산 — 코어 labelStride(양 플랫폼 공유).
         // 값 라벨·x축 인덱스는 폭이 다르므로 각각 계산한다.
+        // 폭 측정은 CATextLayer를 만들지 않고 문자열 사이즈로 직접 구한다(리뷰 #2: 매 redraw당 레이어
+        // 할당 낭비 제거). ChartLayerBuilder.textLayer와 동일하게 ceil(width)로 렌더 폭과 일치시킨다.
+        let labelAttrs: [NSAttributedString.Key: Any] = [.font: style.axisLabelFont]
         func stride(for labels: [String]?) -> Int {
             guard let labels = labels, !labels.isEmpty else { return 1 }
             var maxW = 0.0
             for s in labels.prefix(n) {
-                let tl = ChartLayerBuilder.textLayer(s, font: style.axisLabelFont, color: style.axisLabelColor)
-                maxW = max(maxW, Double(tl.frame.width))
+                maxW = max(maxW, ceil((s as NSString).size(withAttributes: labelAttrs).width))
             }
             return Int(LabelThinningKt.labelStride(
                 count: Int32(n), plotWidthPx: Double(plot.width), labelWidthPx: maxW, gapPx: Self.labelMinGap))
@@ -111,11 +113,13 @@ public final class RDBarChartView: UIView {
             contentLayer.addSublayer(barLayer)
             barLayers.append(barLayer)
 
-            if let labels = barLabels, i < labels.count, i % barLabelStride == 0 {
+            if let labels = barLabels, i < labels.count,
+               LabelThinningKt.isLabelVisible(index: Int32(i), count: Int32(n), stride: Int32(barLabelStride)) {
                 addLabel(text: labels[i], at: CGPoint(x: rect.midX, y: rect.minY - 2), align: .center)
             }
 
-            if style.barShowXAxisLabels, let xLabels = xAxisLabels, i < xLabels.count, i % xLabelStride == 0 {
+            if style.barShowXAxisLabels, let xLabels = xAxisLabels, i < xLabels.count,
+               LabelThinningKt.isLabelVisible(index: Int32(i), count: Int32(n), stride: Int32(xLabelStride)) {
                 let baseline = plot.maxY + 4  // 막대 바닥 축선 아래 여백
                 addLabel(text: xLabels[i], at: CGPoint(x: rect.midX, y: baseline), align: .topCenter)
             }

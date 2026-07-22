@@ -55,12 +55,25 @@ class RDBarChartTest {
         val layers = buildBarChartLayers(
             sampleLayout(20), style, width, height,
             barLabels = labels, xAxisLabels = null, yLabelFormatter = null,
-            measureLabelWidthPx = { 40.0 }, // 슬롯보다 넓게 강제
+            barLabelWidthPx = 40.0, // 슬롯보다 넓게 강제
         )
         val shown = named(layers, "barLabel.")
         assertTrue(shown.size < labels.size, "겹침 방지 솎아내기 기대, 실제 ${shown.size}/20")
         assertTrue(shown.isNotEmpty())
-        assertTrue(shown.any { it.name == "barLabel.0" }, "첫 라벨은 항상 표시")
+    }
+
+    // 리뷰 #1: 솎아내도 첫·마지막(피니시) 라벨은 항상 표시.
+    @Test
+    fun alwaysShowsFirstAndLastBarLabel() {
+        val labels = List(20) { "5'30\"" }
+        val layers = buildBarChartLayers(
+            sampleLayout(20), style, width, height,
+            barLabels = labels, xAxisLabels = null, yLabelFormatter = null,
+            barLabelWidthPx = 40.0,
+        )
+        val names = named(layers, "barLabel.").map { it.name }
+        assertTrue(names.contains("barLabel.0"), "첫 라벨 표시")
+        assertTrue(names.contains("barLabel.19"), "마지막(피니시) 라벨 표시")
     }
 
     @Test
@@ -69,7 +82,7 @@ class RDBarChartTest {
         val layers = buildBarChartLayers(
             sampleLayout(4), style, width, height,
             barLabels = labels, xAxisLabels = null, yLabelFormatter = null,
-            measureLabelWidthPx = { 4.0 }, // 슬롯보다 좁음
+            barLabelWidthPx = 4.0, // 슬롯보다 좁음
         )
         assertEquals(4, named(layers, "barLabel.").size)
     }
@@ -80,11 +93,12 @@ class RDBarChartTest {
         val layers = buildBarChartLayers(
             sampleLayout(20), style, width, height,
             barLabels = null, xAxisLabels = x, yLabelFormatter = null,
-            measureLabelWidthPx = { 40.0 },
+            xLabelWidthPx = 40.0,
         )
         val shown = named(layers, "barXLabel.")
         assertTrue(shown.size < x.size, "x축 라벨도 솎아냄, 실제 ${shown.size}/20")
         assertTrue(shown.any { it.name == "barXLabel.0" })
+        assertTrue(shown.any { it.name == "barXLabel.19" }, "마지막 x축 라벨 표시")
     }
 
     @Test

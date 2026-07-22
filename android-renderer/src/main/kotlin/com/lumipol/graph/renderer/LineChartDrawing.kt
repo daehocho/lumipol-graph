@@ -688,20 +688,12 @@ private fun trimPath(path: Path, progress: Float): Path {
 
 /** 측정된 폭·높이로 앵커+정렬을 픽셀 원점으로 환산해 그린다(iOS `addLabel`/`textLayer` 정렬 재현). */
 internal fun DrawScope.drawAlignedText(measurer: TextMeasurer, label: TextLayer) {
-    // 접근성 글꼴 배율 상한(UX Minor-1): 사용자가 시스템 글꼴을 크게 키워도 축/마커 라벨이 여백을 넘어
-    // 겹치거나 잘리지 않도록 배율을 1.3까지만 반영한다. sp는 density+fontScale로 스케일되므로, fontScale이
-    // 상한을 넘으면 상한/현재배율 비율로 sp를 줄여 유효 배율을 고정한다.
-    val effectiveSp = if (fontScale > MAX_FONT_SCALE) {
-        label.fontSizeSp * (MAX_FONT_SCALE / fontScale)
-    } else {
-        label.fontSizeSp
-    }
     // tnum: 숫자 폭 고정 → 줌으로 tick 값이 바뀔 때 라벨이 좌우로 떨리지 않음(UX Minor-2).
     // 패밀리/웨이트는 ChartStyle 주입값(null=시스템 기본) — iOS axisLabelFont(UIFont) 대응.
     val result = measurer.measure(
         label.text,
         style = TextStyle(
-            fontSize = effectiveSp.sp,
+            fontSize = effectiveLabelSp(label.fontSizeSp, fontScale).sp,
             fontFamily = label.fontFamily,
             fontWeight = label.fontWeight,
             fontFeatureSettings = "tnum",
@@ -723,27 +715,35 @@ internal fun DrawScope.drawAlignedText(measurer: TextMeasurer, label: TextLayer)
 }
 
 /**
- * 라벨 폭(px) 측정 — 막대 차트 라벨 솎아내기 stride 계산용. [drawAlignedText]와 동일한
- * effectiveSp 상한·폰트·tnum 규칙을 써서 실제 렌더 폭과 일치시킨다.
+ * 접근성 글꼴 배율 상한(UX Minor-1): 사용자가 시스템 글꼴을 크게 키워도 축/마커 라벨이 여백을 넘어
+ * 겹치거나 잘리지 않도록 배율을 [MAX_FONT_SCALE]까지만 반영한다. sp는 density+fontScale로 스케일되므로,
+ * fontScale이 상한을 넘으면 상한/현재배율 비율로 sp를 줄여 유효 배율을 고정한다.
+ * 렌더([drawAlignedText])와 측정([measureLabelWidthPx])이 같은 규칙을 쓰도록 한 곳에 둔다.
  */
-internal fun DrawScope.measureLabelWidthPx(
+internal fun effectiveLabelSp(fontSizeSp: Float, fontScale: Float): Float =
+    if (fontScale > MAX_FONT_SCALE) fontSizeSp * (MAX_FONT_SCALE / fontScale) else fontSizeSp
+
+/**
+ * 라벨 폭(px) 측정 — 막대 차트 라벨 솎아내기 stride 계산용. [drawAlignedText]와 동일한
+ * [effectiveLabelSp] 상한·폰트·tnum 규칙을 써서 실제 렌더 폭과 일치시킨다. DrawScope에 의존하지 않아
+ * 그리기 경로 밖(composable `remember`)에서 호출해 프레임마다 재측정하는 낭비를 막을 수 있다.
+ */
+internal fun measureLabelWidthPx(
     measurer: TextMeasurer,
     text: String,
     fontSizeSp: Float,
     fontFamily: FontFamily?,
     fontWeight: FontWeight?,
-): Double {
-    val effectiveSp = if (fontScale > MAX_FONT_SCALE) fontSizeSp * (MAX_FONT_SCALE / fontScale) else fontSizeSp
-    return measurer.measure(
-        text,
-        style = TextStyle(
-            fontSize = effectiveSp.sp,
-            fontFamily = fontFamily,
-            fontWeight = fontWeight,
-            fontFeatureSettings = "tnum",
-        ),
-    ).size.width.toDouble()
-}
+    fontScale: Float,
+): Double = measurer.measure(
+    text,
+    style = TextStyle(
+        fontSize = effectiveLabelSp(fontSizeSp, fontScale).sp,
+        fontFamily = fontFamily,
+        fontWeight = fontWeight,
+        fontFeatureSettings = "tnum",
+    ),
+).size.width.toDouble()
 
 // 매직 넘버(iOS 원본 상수) — 라벨 여백·선 폭.
 private const val LABEL_GAP = 2.0            // 마커/기준선 라벨과 선 사이 여백(iOS -2)

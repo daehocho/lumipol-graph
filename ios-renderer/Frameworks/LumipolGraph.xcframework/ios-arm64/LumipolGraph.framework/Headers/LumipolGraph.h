@@ -772,6 +772,7 @@ __attribute__((swift_name("HeightFractionsKt")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("LabelThinningKt")))
 @interface LumipolGraphLabelThinningKt : LumipolGraphBase
++ (BOOL)isLabelVisibleIndex:(int32_t)index count:(int32_t)count stride:(int32_t)stride __attribute__((swift_name("isLabelVisible(index:count:stride:)")));
 + (int32_t)labelStrideCount:(int32_t)count plotWidthPx:(double)plotWidthPx labelWidthPx:(double)labelWidthPx gapPx:(double)gapPx __attribute__((swift_name("labelStride(count:plotWidthPx:labelWidthPx:gapPx:)")));
 @end
 

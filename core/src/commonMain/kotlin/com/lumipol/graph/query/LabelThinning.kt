@@ -26,3 +26,24 @@ fun labelStride(count: Int, plotWidthPx: Double, labelWidthPx: Double, gapPx: Do
     val needed = labelWidthPx + max(0.0, gapPx)
     return max(1, ceil(needed / slot).toInt())
 }
+
+/**
+ * [labelStride]로 솎을 때 [index] 라벨을 그릴지 여부(양 플랫폼 공유).
+ *
+ * 단순 `index % stride == 0`은 마지막 스플릿(피니시·부분 스플릿) 라벨을 떨어뜨린다 — 시작은 보이고
+ * 끝은 비는 비대칭. 이 함수는 **첫(0)·마지막(count-1)을 항상 표시**하고, 그 사이는 stride 배수만
+ * 표시하되 마지막 라벨과 stride 미만으로 붙는 최대 배수는 숨겨 간격을 유지한다.
+ *
+ * @param index 대상 인덱스(0..count-1).
+ * @param count 막대 수.
+ * @param stride [labelStride] 결과(1 이상).
+ */
+fun isLabelVisible(index: Int, count: Int, stride: Int): Boolean {
+    if (index == 0 || index == count - 1) return true
+    if (stride <= 1) return true
+    if (index % stride != 0) return false
+    // 마지막(강제 표시) 라벨과 너무 가까운 최대 배수는 숨겨 겹침을 막는다.
+    val lastMultiple = ((count - 1) / stride) * stride
+    if (index == lastMultiple && (count - 1) - lastMultiple < stride) return false
+    return true
+}
