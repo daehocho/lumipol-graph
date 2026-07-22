@@ -124,6 +124,19 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertGreaterThan(shown, 0)
     }
 
+    // 리뷰 #1: 솎아내도 첫·마지막(피니시) 라벨은 항상 표시.
+    func testAlwaysShowsFirstAndLastBarLabel() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        let labels = (0..<20).map { "\($0)'30\"" }
+        view.render(sampleLayout(barCount: 20), style: .default, barLabels: labels,
+                    xAxisLabels: nil, yLabelFormatter: nil)
+        view.layoutIfNeeded()
+        let strings = view.allTextLayerStrings
+        XCTAssertTrue(strings.contains("0'30\""), "첫 라벨 표시")
+        XCTAssertTrue(strings.contains("19'30\""), "마지막(피니시) 라벨 표시")
+        XCTAssertLessThan(strings.filter { $0.hasSuffix("'30\"") }.count, 20, "여전히 솎아냄")
+    }
+
     func testBarLabelsAllShownWhenTheyFit() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 600, height: 200))
         let labels = Array(repeating: "1", count: 4)

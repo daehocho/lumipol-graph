@@ -15,9 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.rememberTextMeasurer
 import com.lumipol.graph.model.BarChartLayout
 import com.lumipol.graph.model.BarColorRole
+import com.lumipol.graph.query.isLabelVisible
 import com.lumipol.graph.query.labelStride
 import kotlin.math.max
 import kotlin.math.min
@@ -47,7 +49,16 @@ fun RDBarChart(
     val growth by rememberEntranceProgress(layout, animateEntrance, BAR_GROWTH_DURATION_MS)
     // dp 의미의 스타일 기하 값을 px로 환산(실기기 렌더 붕괴 방지 — UX Critical-1).
     val density = LocalDensity.current.density
+    val fontScale = LocalDensity.current.fontScale
     val scaledStyle = remember(style, density) { style.scaledForDensity(density) }
+    // 라벨 최대 폭은 layout/스타일/글꼴배율이 바뀔 때만 측정(등장 애니로 growth가 매 프레임 바뀌어도
+    // 재측정하지 않도록 그리기 경로 밖에서 memoize — 리뷰 #3). stride 자체는 폭·크기로 싸게 계산.
+    val barLabelWidthPx = remember(barLabels, scaledStyle, fontScale, measurer) {
+        maxLabelWidthPx(measurer, barLabels, scaledStyle, fontScale)
+    }
+    val xLabelWidthPx = remember(xAxisLabels, scaledStyle, fontScale, measurer) {
+        maxLabelWidthPx(measurer, xAxisLabels, scaledStyle, fontScale)
+    }
     // TalkBack 요약(UX Major-1): 캔버스는 불투명하므로 컨테이너에 막대 수·값 요약을 노출한다.
     val description = remember(layout, barLabels) { barChartDescription(layout, barLabels) }
     Canvas(modifier.semantics { contentDescription = description }) {
@@ -62,15 +73,8 @@ fun RDBarChart(
             yLabelFormatter = yLabelFormatter,
             growth = growth,
             density = density,
-            measureLabelWidthPx = { text ->
-                measureLabelWidthPx(
-                    measurer = measurer,
-                    text = text,
-                    fontSizeSp = scaledStyle.axisLabelFontSize,
-                    fontFamily = scaledStyle.axisLabelFontFamily,
-                    fontWeight = scaledStyle.axisLabelFontWeight,
-                )
-            },
+            barLabelWidthPx = barLabelWidthPx,
+            xLabelWidthPx = xLabelWidthPx,
         ).forEach { render(it, measurer) }
     }
 }
@@ -82,6 +86,23 @@ private fun barChartDescription(layout: BarChartLayout, barLabels: List<String>?
         ?.let { labels -> layout.bars.indices.joinToString(", ") { "구간 ${it + 1} ${labels.getOrNull(it) ?: ""}".trim() } }
     return "막대 차트, 구간 ${layout.bars.size}개" + (detail?.let { ". $it" } ?: "")
 }
+
+/** 라벨 목록 중 가장 넓은 폭(px). 비었으면 0. 솎아내기 stride 입력(리뷰 #3: 그리기 밖에서 1회 측정·memoize). */
+private fun maxLabelWidthPx(
+    measurer: TextMeasurer,
+    labels: List<String>?,
+    style: ChartStyle,
+    fontScale: Float,
+): Double = labels?.maxOfOrNull {
+    measureLabelWidthPx(
+        measurer = measurer,
+        text = it,
+        fontSizeSp = style.axisLabelFontSize,
+        fontFamily = style.axisLabelFontFamily,
+        fontWeight = style.axisLabelFontWeight,
+        fontScale = fontScale,
+    )
+} ?: 0.0
 
 /**
  * BarChartLayout → z-순서 레이어(그리드/틱라벨 → 막대 → 막대라벨 → x라벨 → 참조선).
@@ -97,7 +118,8 @@ internal fun buildBarChartLayers(
     yLabelFormatter: ((Double) -> String)? = null,
     growth: Float = 1f,
     density: Float = 1f,
-    measureLabelWidthPx: (String) -> Double = { 0.0 },
+    barLabelWidthPx: Double = 0.0,
+    xLabelWidthPx: Double = 0.0,
 ): List<LineChartLayer> {
     if (layout.bars.isEmpty()) return emptyList()
     val plot = PlotArea(sizeWidth, sizeHeight, style.plotInsets)
@@ -106,16 +128,12 @@ internal fun buildBarChartLayers(
     val layers = mutableListOf<LineChartLayer>()
     val n = layout.bars.size
 
-    // 라벨 솎아내기 stride(장거리 42km≈43스플릿 겹침 방지). 가장 넓은 라벨 기준으로 겹침을 확실히 제거.
-    // 값 라벨·x축 인덱스는 폭이 다르므로 각각 계산한다(양 플랫폼 공유 코어 labelStride).
+    // 라벨 솎아내기 stride(장거리·하프 등 슬롯보다 넓은 라벨 겹침 방지). 라벨 최대 폭은 composable이 미리
+    // 측정해 주입한다(그리기 경로에서 프레임마다 재측정하지 않도록). 값 라벨·x축 인덱스는 폭이 달라
+    // 각각 계산 — 양 플랫폼 공유 코어 labelStride. 표시 여부는 isLabelVisible(첫·마지막 항상 표시).
     val gap = BAR_LABEL_MIN_GAP * density
-    fun strideFor(labels: List<String>?): Int {
-        if (labels.isNullOrEmpty()) return 1
-        val w = (0 until n).maxOf { i -> labels.getOrNull(i)?.let(measureLabelWidthPx) ?: 0.0 }
-        return labelStride(n, plot.width, w, gap)
-    }
-    val barLabelStride = strideFor(barLabels)
-    val xLabelStride = strideFor(xAxisLabels)
+    val barLabelStride = if (barLabels.isNullOrEmpty()) 1 else labelStride(n, plot.width, barLabelWidthPx, gap)
+    val xLabelStride = if (xAxisLabels.isNullOrEmpty()) 1 else labelStride(n, plot.width, xLabelWidthPx, gap)
 
     // Y 그리드 + 틱 라벨
     for ((i, tick) in layout.yTicks.withIndex()) {
@@ -170,7 +188,7 @@ internal fun buildBarChartLayers(
             ),
         )
         val midX = x + barWidth / 2
-        if (i % barLabelStride == 0) barLabels?.getOrNull(i)?.let { label ->
+        if (isLabelVisible(i, n, barLabelStride)) barLabels?.getOrNull(i)?.let { label ->
             layers.add(
                 TextLayer(
                     name = "barLabel.$i",
@@ -186,7 +204,7 @@ internal fun buildBarChartLayers(
                 ),
             )
         }
-        if (style.barShowXAxisLabels && i % xLabelStride == 0) {
+        if (style.barShowXAxisLabels && isLabelVisible(i, n, xLabelStride)) {
             xAxisLabels?.getOrNull(i)?.let { label ->
                 layers.add(
                     TextLayer(
