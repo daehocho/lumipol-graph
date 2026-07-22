@@ -45,6 +45,48 @@ class RDBarChartTest {
     private fun textCount(layers: List<LineChartLayer>) = layers.filterIsInstance<TextLayer>().size
     private fun texts(layers: List<LineChartLayer>) = layers.filterIsInstance<TextLayer>().map { it.text }
 
+    private fun named(layers: List<LineChartLayer>, prefix: String) =
+        layers.filterIsInstance<TextLayer>().filter { it.name.startsWith(prefix) }
+
+    // 장거리(42km≈43스플릿) 라벨 겹침: 슬롯보다 넓은 라벨은 stride로 솎아낸다.
+    @Test
+    fun thinsBarLabelsWhenWiderThanSlot() {
+        val labels = List(20) { "5'30\"" }
+        val layers = buildBarChartLayers(
+            sampleLayout(20), style, width, height,
+            barLabels = labels, xAxisLabels = null, yLabelFormatter = null,
+            measureLabelWidthPx = { 40.0 }, // 슬롯보다 넓게 강제
+        )
+        val shown = named(layers, "barLabel.")
+        assertTrue(shown.size < labels.size, "겹침 방지 솎아내기 기대, 실제 ${shown.size}/20")
+        assertTrue(shown.isNotEmpty())
+        assertTrue(shown.any { it.name == "barLabel.0" }, "첫 라벨은 항상 표시")
+    }
+
+    @Test
+    fun showsAllBarLabelsWhenTheyFit() {
+        val labels = List(4) { "1" }
+        val layers = buildBarChartLayers(
+            sampleLayout(4), style, width, height,
+            barLabels = labels, xAxisLabels = null, yLabelFormatter = null,
+            measureLabelWidthPx = { 4.0 }, // 슬롯보다 좁음
+        )
+        assertEquals(4, named(layers, "barLabel.").size)
+    }
+
+    @Test
+    fun thinsXAxisLabelsIndependentlyOfBarLabels() {
+        val x = List(20) { "${it + 1}" }
+        val layers = buildBarChartLayers(
+            sampleLayout(20), style, width, height,
+            barLabels = null, xAxisLabels = x, yLabelFormatter = null,
+            measureLabelWidthPx = { 40.0 },
+        )
+        val shown = named(layers, "barXLabel.")
+        assertTrue(shown.size < x.size, "x축 라벨도 솎아냄, 실제 ${shown.size}/20")
+        assertTrue(shown.any { it.name == "barXLabel.0" })
+    }
+
     @Test
     fun rendersOneLayerPerBar() {
         assertEquals(4, bars(build(sampleLayout(4))).size)

@@ -5,6 +5,9 @@ import LumipolGraph
 /// 페이스는 "낮을수록 빠름" — 막대 높이는 값 크기 그대로, 색으로 빠름/목표/느림을 전달한다.
 public final class RDBarChartView: UIView {
 
+    /// 솎아낸 이웃 라벨 사이 최소 여백(pt) — Android BAR_LABEL_MIN_GAP과 동일.
+    private static let labelMinGap = 6.0
+
     public var style: ChartStyle = .default
     public private(set) var barLayers: [CALayer] = []
 
@@ -79,6 +82,23 @@ public final class RDBarChartView: UIView {
         let n = layout.bars.count
         let slot = plot.width / CGFloat(n)
         let barWidth = slot * 0.6
+
+        // 라벨 솎아내기 stride(장거리·하프 등 슬롯보다 넓은 라벨 겹침 방지).
+        // 개수 임계치가 아니라 슬롯 폭 대비 라벨 폭으로 계산 — 코어 labelStride(양 플랫폼 공유).
+        // 값 라벨·x축 인덱스는 폭이 다르므로 각각 계산한다.
+        func stride(for labels: [String]?) -> Int {
+            guard let labels = labels, !labels.isEmpty else { return 1 }
+            var maxW = 0.0
+            for s in labels.prefix(n) {
+                let tl = ChartLayerBuilder.textLayer(s, font: style.axisLabelFont, color: style.axisLabelColor)
+                maxW = max(maxW, Double(tl.frame.width))
+            }
+            return Int(LabelThinningKt.labelStride(
+                count: Int32(n), plotWidthPx: Double(plot.width), labelWidthPx: maxW, gapPx: Self.labelMinGap))
+        }
+        let barLabelStride = stride(for: barLabels)
+        let xLabelStride = stride(for: xAxisLabels)
+
         for (i, bar) in layout.bars.enumerated() {
             let h = min(max(style.barMinHeight, CGFloat(bar.heightFraction) * plot.height), plot.height)
             let x = plot.minX + slot * CGFloat(i) + (slot - barWidth) / 2
@@ -91,11 +111,11 @@ public final class RDBarChartView: UIView {
             contentLayer.addSublayer(barLayer)
             barLayers.append(barLayer)
 
-            if let labels = barLabels, i < labels.count {
+            if let labels = barLabels, i < labels.count, i % barLabelStride == 0 {
                 addLabel(text: labels[i], at: CGPoint(x: rect.midX, y: rect.minY - 2), align: .center)
             }
 
-            if style.barShowXAxisLabels, let xLabels = xAxisLabels, i < xLabels.count {
+            if style.barShowXAxisLabels, let xLabels = xAxisLabels, i < xLabels.count, i % xLabelStride == 0 {
                 let baseline = plot.maxY + 4  // 막대 바닥 축선 아래 여백
                 addLabel(text: xLabels[i], at: CGPoint(x: rect.midX, y: baseline), align: .topCenter)
             }

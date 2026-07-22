@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import com.lumipol.graph.model.BarChartLayout
 import com.lumipol.graph.model.BarColorRole
+import com.lumipol.graph.query.labelStride
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -61,6 +62,15 @@ fun RDBarChart(
             yLabelFormatter = yLabelFormatter,
             growth = growth,
             density = density,
+            measureLabelWidthPx = { text ->
+                measureLabelWidthPx(
+                    measurer = measurer,
+                    text = text,
+                    fontSizeSp = scaledStyle.axisLabelFontSize,
+                    fontFamily = scaledStyle.axisLabelFontFamily,
+                    fontWeight = scaledStyle.axisLabelFontWeight,
+                )
+            },
         ).forEach { render(it, measurer) }
     }
 }
@@ -87,12 +97,25 @@ internal fun buildBarChartLayers(
     yLabelFormatter: ((Double) -> String)? = null,
     growth: Float = 1f,
     density: Float = 1f,
+    measureLabelWidthPx: (String) -> Double = { 0.0 },
 ): List<LineChartLayer> {
     if (layout.bars.isEmpty()) return emptyList()
     val plot = PlotArea(sizeWidth, sizeHeight, style.plotInsets)
     if (!plot.isRenderable) return emptyList()
 
     val layers = mutableListOf<LineChartLayer>()
+    val n = layout.bars.size
+
+    // 라벨 솎아내기 stride(장거리 42km≈43스플릿 겹침 방지). 가장 넓은 라벨 기준으로 겹침을 확실히 제거.
+    // 값 라벨·x축 인덱스는 폭이 다르므로 각각 계산한다(양 플랫폼 공유 코어 labelStride).
+    val gap = BAR_LABEL_MIN_GAP * density
+    fun strideFor(labels: List<String>?): Int {
+        if (labels.isNullOrEmpty()) return 1
+        val w = (0 until n).maxOf { i -> labels.getOrNull(i)?.let(measureLabelWidthPx) ?: 0.0 }
+        return labelStride(n, plot.width, w, gap)
+    }
+    val barLabelStride = strideFor(barLabels)
+    val xLabelStride = strideFor(xAxisLabels)
 
     // Y 그리드 + 틱 라벨
     for ((i, tick) in layout.yTicks.withIndex()) {
@@ -128,7 +151,6 @@ internal fun buildBarChartLayers(
     }
 
     // 막대
-    val n = layout.bars.size
     val slot = plot.width / n
     val barWidth = slot * style.barWidthRatio
     for ((i, bar) in layout.bars.withIndex()) {
@@ -148,7 +170,7 @@ internal fun buildBarChartLayers(
             ),
         )
         val midX = x + barWidth / 2
-        barLabels?.getOrNull(i)?.let { label ->
+        if (i % barLabelStride == 0) barLabels?.getOrNull(i)?.let { label ->
             layers.add(
                 TextLayer(
                     name = "barLabel.$i",
@@ -164,7 +186,7 @@ internal fun buildBarChartLayers(
                 ),
             )
         }
-        if (style.barShowXAxisLabels) {
+        if (style.barShowXAxisLabels && i % xLabelStride == 0) {
             xAxisLabels?.getOrNull(i)?.let { label ->
                 layers.add(
                     TextLayer(
@@ -203,6 +225,7 @@ internal fun buildBarChartLayers(
 private const val BAR_LABEL_GAP = 4.0               // y틱 라벨과 축 사이(iOS insets.left-4)
 private const val BAR_LABEL_ABOVE_GAP = 2.0         // 막대 위 라벨 여백(iOS rect.minY-2)
 private const val BAR_X_LABEL_GAP = 4.0             // x축 라벨과 막대 바닥 사이(iOS maxY+4)
+private const val BAR_LABEL_MIN_GAP = 6.0           // 솎아낸 이웃 라벨 사이 최소 여백(dp) — 겹침 방지
 
 /** 바 성장 등장 애니 지속시간(ms). Material Emphasized. */
 private const val BAR_GROWTH_DURATION_MS = 300

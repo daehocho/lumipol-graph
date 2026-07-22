@@ -722,6 +722,29 @@ internal fun DrawScope.drawAlignedText(measurer: TextMeasurer, label: TextLayer)
     drawText(result, color = label.color, topLeft = Offset(originX, originY))
 }
 
+/**
+ * 라벨 폭(px) 측정 — 막대 차트 라벨 솎아내기 stride 계산용. [drawAlignedText]와 동일한
+ * effectiveSp 상한·폰트·tnum 규칙을 써서 실제 렌더 폭과 일치시킨다.
+ */
+internal fun DrawScope.measureLabelWidthPx(
+    measurer: TextMeasurer,
+    text: String,
+    fontSizeSp: Float,
+    fontFamily: FontFamily?,
+    fontWeight: FontWeight?,
+): Double {
+    val effectiveSp = if (fontScale > MAX_FONT_SCALE) fontSizeSp * (MAX_FONT_SCALE / fontScale) else fontSizeSp
+    return measurer.measure(
+        text,
+        style = TextStyle(
+            fontSize = effectiveSp.sp,
+            fontFamily = fontFamily,
+            fontWeight = fontWeight,
+            fontFeatureSettings = "tnum",
+        ),
+    ).size.width.toDouble()
+}
+
 // 매직 넘버(iOS 원본 상수) — 라벨 여백·선 폭.
 private const val LABEL_GAP = 2.0            // 마커/기준선 라벨과 선 사이 여백(iOS -2)
 private const val AXIS_LABEL_GAP = 4.0       // 축 라벨과 플롯 경계 여백(iOS ±4)
