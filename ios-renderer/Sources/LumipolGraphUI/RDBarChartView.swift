@@ -83,11 +83,9 @@ public final class RDBarChartView: UIView {
         let slot = plot.width / CGFloat(n)
         let barWidth = slot * 0.6
 
-        // 라벨 솎아내기 stride(장거리·하프 등 슬롯보다 넓은 라벨 겹침 방지).
+        // x축 인덱스 라벨 솎아내기 stride(장거리·하프 등 슬롯보다 넓은 라벨 겹침 방지).
         // 개수 임계치가 아니라 슬롯 폭 대비 라벨 폭으로 계산 — 코어 labelStride(양 플랫폼 공유).
-        // 값 라벨·x축 인덱스는 폭이 다르므로 각각 계산한다.
-        // 폭 측정은 CATextLayer를 만들지 않고 문자열 사이즈로 직접 구한다(리뷰 #2: 매 redraw당 레이어
-        // 할당 낭비 제거). ChartLayerBuilder.textLayer와 동일하게 ceil(width)로 렌더 폭과 일치시킨다.
+        // 폭 측정은 CATextLayer를 만들지 않고 문자열 사이즈로 직접 구한다.
         let labelAttrs: [NSAttributedString.Key: Any] = [.font: style.axisLabelFont]
         func stride(for labels: [String]?) -> Int {
             guard let labels = labels, !labels.isEmpty else { return 1 }
@@ -98,7 +96,6 @@ public final class RDBarChartView: UIView {
             return Int(LabelThinningKt.labelStride(
                 count: Int32(n), plotWidthPx: Double(plot.width), labelWidthPx: maxW, gapPx: Self.labelMinGap))
         }
-        let barLabelStride = stride(for: barLabels)
         let xLabelStride = stride(for: xAxisLabels)
 
         for (i, bar) in layout.bars.enumerated() {
@@ -112,11 +109,6 @@ public final class RDBarChartView: UIView {
             if bar.isPartial { barLayer.opacity = 0.6 }  // 부분 스플릿은 흐리게
             contentLayer.addSublayer(barLayer)
             barLayers.append(barLayer)
-
-            if let labels = barLabels, i < labels.count,
-               LabelThinningKt.isLabelVisible(index: Int32(i), count: Int32(n), stride: Int32(barLabelStride)) {
-                addLabel(text: labels[i], at: CGPoint(x: rect.midX, y: rect.minY - 2), align: .center)
-            }
 
             if style.barShowXAxisLabels, let xLabels = xAxisLabels, i < xLabels.count,
                LabelThinningKt.isLabelVisible(index: Int32(i), count: Int32(n), stride: Int32(xLabelStride)) {
