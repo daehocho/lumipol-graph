@@ -37,23 +37,72 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertEqual(view.barLayers.count, 2)
     }
 
-    func testBarColorMatchesRoleAndPartialIsDimmed() {
-        var style = ChartStyle.default
-        style.barColors = [.faster: .red, .onTarget: .green, .slower: .blue]
+    // 값이 다른 3막대(페이스 300/330/360) 레이아웃 — 연속 색상 검증용.
+    private func pacedLayout() -> BarChartLayout {
         let bars = [
-            BarLayout(index: Int32(0), value: 250, heightFraction: 0.8, colorRole: .faster, isPartial: false, endMinutes: nil),
-            BarLayout(index: Int32(1), value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil),
-            BarLayout(index: Int32(2), value: 350, heightFraction: 0.3, colorRole: .slower, isPartial: true, endMinutes: nil),
+            BarLayout(index: 0, value: 300, heightFraction: 0.3, colorRole: .faster, isPartial: false, endMinutes: nil),
+            BarLayout(index: 1, value: 330, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil),
+            BarLayout(index: 2, value: 360, heightFraction: 0.7, colorRole: .slower, isPartial: false, endMinutes: nil),
+        ]
+        return BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+    }
+
+    private func rgbaOf(_ cg: CGColor?) -> (CGFloat, CGFloat, CGFloat) {
+        let c = UIColor(cgColor: cg!)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        c.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return (r, g, b)
+    }
+
+    // provider 미지정 → 기본 연속 팔레트. fastest(300)=파랑끝 RGB(0,0.6,1).
+    func testDefaultContinuousColorApplied() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        view.render(pacedLayout())
+        let (r, g, b) = rgbaOf(view.barLayers[0].backgroundColor)
+        XCTAssertEqual(r, 0, accuracy: 0.01)
+        XCTAssertEqual(g, 0.6, accuracy: 0.01)
+        XCTAssertEqual(b, 1, accuracy: 0.01)
+    }
+
+    // provider 지정 → 그 색 사용.
+    func testProviderOverridesColor() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var style = ChartStyle.default
+        style.barColorProvider = { _ in .magenta }
+        view.render(pacedLayout(), style: style)
+        for layer in view.barLayers {
+            XCTAssertEqual(layer.backgroundColor, UIColor.magenta.cgColor)
+        }
+    }
+
+    // provider가 받는 앵커(fastest/slowest/average/index/value)가 정확한지.
+    func testProviderReceivesCorrectAnchors() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var captured: [BarPaceColorInput] = []
+        var style = ChartStyle.default
+        style.barColorProvider = { input in captured.append(input); return .black }
+        view.render(pacedLayout(), style: style)
+        XCTAssertEqual(captured.count, 3)
+        XCTAssertEqual(captured.map { $0.value }, [300, 330, 360])
+        XCTAssertEqual(captured.map { $0.index }, [0, 1, 2])
+        for c in captured {
+            XCTAssertEqual(c.fastest, 300, accuracy: 0.001)
+            XCTAssertEqual(c.slowest, 360, accuracy: 0.001)
+            XCTAssertEqual(c.average, 330, accuracy: 0.001)  // (300+330+360)/3
+        }
+    }
+
+    // 부분막대 흐림(opacity)은 색과 독립적으로 유지.
+    func testPartialBarStillDimmedWithContinuousColor() {
+        let bars = [
+            BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .faster, isPartial: false, endMinutes: nil),
+            BarLayout(index: 1, value: 360, heightFraction: 0.3, colorRole: .slower, isPartial: true, endMinutes: nil),
         ]
         let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
-        view.render(layout, style: style)
-        XCTAssertEqual(view.barLayers.count, 3)
-        XCTAssertEqual(view.barLayers[0].backgroundColor, UIColor.red.cgColor)
-        XCTAssertEqual(view.barLayers[1].backgroundColor, UIColor.green.cgColor)
-        XCTAssertEqual(view.barLayers[2].backgroundColor, UIColor.blue.cgColor)
-        XCTAssertLessThan(view.barLayers[2].opacity, 1.0)   // 부분막대 흐림
-        XCTAssertEqual(view.barLayers[0].opacity, 1.0)
+        view.render(layout)
+        XCTAssertEqual(view.barLayers[0].opacity, 1.0, accuracy: 0.001)
+        XCTAssertEqual(view.barLayers[1].opacity, 0.6, accuracy: 0.001)   // 부분막대
     }
 
     /// contentLayer 안의 CATextLayer 개수. barLabels:nil로 렌더하면 y틱 라벨만 남는다.
