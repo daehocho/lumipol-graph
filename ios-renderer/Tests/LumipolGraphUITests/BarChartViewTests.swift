@@ -253,6 +253,27 @@ final class BarChartViewTests: XCTestCase {
         view.scrub(at: CGPoint(x: 160, y: 100))
         XCTAssertNil(view.selectedIndex, "값 소스 없으면 선택 안 함")
     }
+
+    func testScrubIgnoredWithEmptyBarLabels() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        view.render(sampleLayout(barCount: 4), style: .default, barLabels: [], xAxisLabels: nil, yLabelFormatter: nil)
+        view.scrub(at: CGPoint(x: 160, y: 100))
+        XCTAssertNil(view.selectedIndex, "barLabels가 빈 배열이면 선택 안 함")
+    }
+
+    // 재렌더 시 이전 선택 상태(인덱스/오버레이)가 초기화되는지 확인.
+    func testSelectionClearedOnReRender() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        view.render(sampleLayout(barCount: 4), style: .default,
+                    barLabels: ["4'50\"", "5'00\"", "5'10\"", "5'20\""], xAxisLabels: nil, yLabelFormatter: nil)
+        view.selectBar(at: 2)
+        view.render(sampleLayout(barCount: 2), style: .default,
+                    barLabels: ["4'50\"", "5'00\""], xAxisLabels: nil, yLabelFormatter: nil)
+        view.layoutIfNeeded()
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(view.barLayers[0].opacity, 1.0, accuracy: 0.001, "재렌더 후 막대가 dim 상태로 남아 있으면 안 됨")
+        XCTAssertFalse(hasSelectionGuide(view), "재렌더 후 이전 선택 가이드선이 남아 있으면 안 됨")
+    }
 }
 
 extension RDBarChartView {
