@@ -98,10 +98,12 @@ public final class RDBarChartView: UIView {
         let barWidth = slot * 0.6
 
         // 연속 색상 앵커(이 런 막대 value 기준). average = 등거리 스플릿에서 런 평균 페이스와 일치.
-        // 색 앵커는 온전한 스플릿만 사용 — 마지막 부분 스플릿(짧은 잔여 구간)이 극단값이면
-        // 전체 팔레트가 왜곡된다. 온전한 스플릿이 하나도 없으면(전부 부분) 전체로 폴백.
+        // 색 앵커: 온전한 스플릿만 사용해 부분 스플릿(짧은 잔여 구간) 이상치가 팔레트를 왜곡하지 않게 한다.
+        // 단, 온전한 스플릿이 2개 미만이거나 값이 모두 같아 범위가 없으면(예: 짧은 런의 단일 온전 스플릿)
+        // 전체 막대로 폴백해 색 그라데이션 신호를 보존한다.
         let fullValues = layout.bars.filter { !$0.isPartial }.map { $0.value }
-        let anchorValues = fullValues.isEmpty ? layout.bars.map { $0.value } : fullValues
+        let fullHasRange = fullValues.count >= 2 && fullValues.max()! > fullValues.min()!
+        let anchorValues = fullHasRange ? fullValues : layout.bars.map { $0.value }
         let fastest = anchorValues.min() ?? 0
         let slowest = anchorValues.max() ?? 0
         let average = anchorValues.reduce(0, +) / Double(anchorValues.count)
