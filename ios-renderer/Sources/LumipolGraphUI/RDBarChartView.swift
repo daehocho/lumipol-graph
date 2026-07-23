@@ -22,10 +22,16 @@ public final class RDBarChartView: UIView {
     public override init(frame: CGRect) {
         super.init(frame: frame)
         layer.addSublayer(contentLayer)
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+        longPress.minimumPressDuration = 0.5
+        addGestureRecognizer(longPress)
     }
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
         layer.addSublayer(contentLayer)
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+        longPress.minimumPressDuration = 0.5
+        addGestureRecognizer(longPress)
     }
 
     public func render(
@@ -137,11 +143,34 @@ public final class RDBarChartView: UIView {
         applySelection()   // 레이아웃 재패스 중 선택 상태 유지
     }
 
-    /// 롱프레스 선택 갱신. 값이 같으면 무시(중복 렌더 방지).
+    /// 롱프레스 선택 갱신. 값이 같으면 무시(중복 렌더·햅틱 방지).
     func selectBar(at index: Int?) {
         guard selectedIndex != index else { return }
         selectedIndex = index
+        if index != nil { UISelectionFeedbackGenerator().selectionChanged() }
         applySelection()
+    }
+
+    /// 손가락 뷰 좌표 → 막대 인덱스로 환산해 선택. barLabels(값 소스) 없으면 무시.
+    func scrub(at location: CGPoint) {
+        guard let layout = layout, !layout.bars.isEmpty, barLabels != nil else { return }
+        let plot = bounds.inset(by: style.plotInsets)
+        guard plot.width > 0,
+              let idx = Self.barIndex(
+                atX: location.x, plotMinX: plot.minX, plotWidth: plot.width, count: layout.bars.count)
+        else { return }
+        selectBar(at: idx)
+    }
+
+    @objc private func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
+        switch recognizer.state {
+        case .began, .changed:
+            scrub(at: recognizer.location(in: self))
+        case .ended, .cancelled, .failed:
+            selectBar(at: nil)
+        default:
+            break
+        }
     }
 
     /// 선택 상태를 기존 막대 레이어에 반영(재생성 없이 opacity만) + 가이드선/말풍선 오버레이 교체.

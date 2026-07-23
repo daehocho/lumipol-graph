@@ -232,6 +232,27 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertLessThanOrEqual(f.maxX, plot.maxX + 0.5)
         XCTAssertGreaterThanOrEqual(f.minX, plot.minX - 0.5)
     }
+
+    func testScrubSelectsBarUnderFinger() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = false
+        view.render(sampleLayout(barCount: 4), style: style,
+                    barLabels: ["4'50\"", "5'00\"", "5'10\"", "5'20\""], xAxisLabels: nil, yLabelFormatter: nil)
+        let plot = view.bounds.inset(by: style.plotInsets)
+        let slot = plot.width / 4
+        // 인덱스 2 슬롯 중앙
+        let x = plot.minX + slot * 2 + slot / 2
+        view.scrub(at: CGPoint(x: x, y: 100))
+        XCTAssertEqual(view.selectedIndex, 2)
+    }
+
+    func testScrubIgnoredWithoutBarLabels() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        view.render(sampleLayout(barCount: 4))   // barLabels 없음
+        view.scrub(at: CGPoint(x: 160, y: 100))
+        XCTAssertNil(view.selectedIndex, "값 소스 없으면 선택 안 함")
+    }
 }
 
 extension RDBarChartView {
