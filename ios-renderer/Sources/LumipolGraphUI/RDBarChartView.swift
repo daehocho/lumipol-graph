@@ -22,13 +22,15 @@ public final class RDBarChartView: UIView {
     public override init(frame: CGRect) {
         super.init(frame: frame)
         layer.addSublayer(contentLayer)
-        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
-        longPress.minimumPressDuration = 0.5
-        addGestureRecognizer(longPress)
+        installGestures()
     }
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
         layer.addSublayer(contentLayer)
+        installGestures()
+    }
+
+    private func installGestures() {
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
         longPress.minimumPressDuration = 0.5
         addGestureRecognizer(longPress)
@@ -46,6 +48,8 @@ public final class RDBarChartView: UIView {
         self.barLabels = barLabels
         self.xAxisLabels = xAxisLabels
         self.yLabelFormatter = yLabelFormatter
+        selectedIndex = nil
+        selectionLayers = []
         setNeedsLayout()
         layoutIfNeeded()  // layoutSubviews()→redraw()를 1회 유발 (테스트가 render 직후 barLayers 동기 접근)
     }
@@ -153,7 +157,7 @@ public final class RDBarChartView: UIView {
 
     /// 손가락 뷰 좌표 → 막대 인덱스로 환산해 선택. barLabels(값 소스) 없으면 무시.
     func scrub(at location: CGPoint) {
-        guard let layout = layout, !layout.bars.isEmpty, barLabels != nil else { return }
+        guard let layout = layout, !layout.bars.isEmpty, barLabels?.isEmpty == false else { return }
         let plot = bounds.inset(by: style.plotInsets)
         guard plot.width > 0,
               let idx = Self.barIndex(
@@ -250,7 +254,7 @@ public final class RDBarChartView: UIView {
     }
 
     private func yTickLabel(_ value: Double) -> String {
-        String(Int(value.rounded()))  // 앱이 barLabels로 표시 페이스를 주므로 y틱은 원값(초)만
+        String(Int(value.rounded()))  // 앱이 barLabels/롱프레스 말풍선으로 표시 페이스를 다루므로 y틱은 원값(초)만
     }
 
     private enum LabelAlign { case left, center, right, topCenter }
