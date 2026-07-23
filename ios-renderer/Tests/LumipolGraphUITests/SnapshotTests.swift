@@ -61,4 +61,29 @@ final class SnapshotTests: XCTestCase {
         view.zoom(toXRange: 1.0...3.0)
         assertSnapshot(of: view, as: .image)
     }
+
+    // ⑥ 막대 차트 — 롱프레스 선택 상태(가운데 막대: dim + 가이드선 + 페이스 말풍선)
+    func testBarChartSelectedState() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 220))
+        view.backgroundColor = .white
+        view.overrideUserInterfaceStyle = .light
+        func role(for i: Int) -> BarColorRole {
+            if i < 3 { return .slower }
+            if i < 6 { return .onTarget }
+            return .faster
+        }
+        var bars: [BarLayout] = []
+        for i in 0..<8 {
+            let value: Double = 300 + Double(i) * 5
+            let heightFraction: Double = 0.3 + 0.07 * Double(i)
+            bars.append(BarLayout(index: Int32(i), value: value, heightFraction: heightFraction,
+                                   colorRole: role(for: i), isPartial: false, endMinutes: nil))
+        }
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: KotlinDouble(double: 0.5))
+        view.render(layout, style: .default,
+                    barLabels: bars.map { _ in "5'00\"" }, xAxisLabels: nil, yLabelFormatter: nil)
+        view.layoutIfNeeded()
+        view.selectBar(at: 4)
+        assertSnapshot(of: view, as: .image)
+    }
 }
