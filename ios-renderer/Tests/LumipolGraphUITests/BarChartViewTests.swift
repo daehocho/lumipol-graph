@@ -337,6 +337,25 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(f.minX, plot.minX - 0.5)
     }
 
+    // 말풍선은 막대 높이와 무관하게 항상 플롯 상단에 고정(짧은 막대 손가락 가림 방지).
+    func testCalloutPinnedToPlotTop() throws {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 220))
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = false
+        let bars = [
+            BarLayout(index: 0, value: 300, heightFraction: 0.15, colorRole: .faster, isPartial: false, endMinutes: nil),  // 짧음
+            BarLayout(index: 1, value: 330, heightFraction: 0.9, colorRole: .slower, isPartial: false, endMinutes: nil),
+        ]
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+        view.render(layout, style: style, barLabels: ["4'50\"", "5'30\""], xAxisLabels: nil, yLabelFormatter: nil)
+        view.selectBar(at: 0)   // 짧은(빠른) 막대
+        let plot = view.bounds.inset(by: style.plotInsets)
+        let bubble = try XCTUnwrap((view.layer.sublayers ?? [])
+            .flatMap { $0.sublayers ?? [] }
+            .first { $0.name == "bar.selection.bubble" })
+        XCTAssertEqual(bubble.frame.minY, plot.minY, accuracy: 0.5, "말풍선은 플롯 상단에 고정(막대 top 아님)")
+    }
+
     func testScrubSelectsBarUnderFinger() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
         var style = ChartStyle.default
