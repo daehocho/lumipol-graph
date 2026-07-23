@@ -161,6 +161,9 @@ class RDBarChartTest {
         val rects = bars(buildBarChartLayers(layout, style, width, height))
         // slowest 앵커=360이므로 600은 노랑↔빨강 구간 상단(빨강)으로 클램프.
         assertEquals(1f, rects[2].color.red)
+        // index1(360)은 온전 스플릿만 앵커로 쓸 때 slowest → 빨강. 부분(600) 포함 시 초록↔노랑으로 갈려 실패.
+        assertEquals(1f, rects[1].color.red)
+        assertEquals(0f, rects[1].color.green)
     }
 
     @Test
