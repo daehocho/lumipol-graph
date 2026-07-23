@@ -8,10 +8,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import com.lumipol.graph.model.Axis
+import com.lumipol.graph.model.AxisTick
+import com.lumipol.graph.model.BarChartLayout
+import com.lumipol.graph.model.BarColorRole
+import com.lumipol.graph.model.BarLayout
 import com.lumipol.graph.model.DonutChartData
 import com.lumipol.graph.model.DonutColorRole
 import com.lumipol.graph.model.DonutSegment
@@ -154,6 +159,49 @@ class ComposeInteractionTest {
         rule.waitForIdle()
         assertTrue(first.isEmpty(), "교체 전 람다로 통지되면 안 됨(stale 클로저)")
         assertEquals(0, second.firstOrNull(), "교체 후 람다가 탭 선택을 받아야 함")
+    }
+
+    private fun barLayout4() = BarChartLayout(
+        bars = (0 until 4).map {
+            BarLayout(index = it, value = 300.0 + it * 20, heightFraction = 0.3 + 0.1 * it,
+                colorRole = BarColorRole.ON_TARGET, isPartial = false)
+        },
+        yTicks = listOf(AxisTick(300.0, 0.0), AxisTick(360.0, 1.0)),
+        referenceLinePosition = null,
+    )
+
+    @Test
+    fun barLongPressSelectsThenReleases() {
+        val events = mutableListOf<Int?>()
+        rule.setContent {
+            RDBarChart(
+                layout = barLayout4(),
+                modifier = Modifier.size(width = 320.dp, height = 200.dp),
+                barLabels = listOf("5'00\"", "5'10\"", "5'20\"", "5'30\""),
+                onSelectedIndexChange = { events.add(it) },
+            )
+        }
+        // 뷰 중앙 롱프레스(press→hold→release) → 인덱스 2 선택 후 해제.
+        rule.onRoot().performTouchInput { longClick(Offset(width / 2f, height / 2f)) }
+        rule.waitForIdle()
+        assertEquals(2, events.first(), "중앙 롱프레스는 인덱스 2 선택")
+        assertEquals(null, events.last(), "손 뗌 → 해제(null)")
+    }
+
+    @Test
+    fun barScrubDisabledWithoutLabels() {
+        val events = mutableListOf<Int?>()
+        rule.setContent {
+            RDBarChart(
+                layout = barLayout4(),
+                modifier = Modifier.size(width = 320.dp, height = 200.dp),
+                barLabels = null, // 값 소스 없음 → 스크럽 무효
+                onSelectedIndexChange = { events.add(it) },
+            )
+        }
+        rule.onRoot().performTouchInput { longClick(Offset(width / 2f, height / 2f)) }
+        rule.waitForIdle()
+        assertTrue(events.isEmpty(), "barLabels 없으면 선택 통지 없음")
     }
 
     @Test
