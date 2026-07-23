@@ -281,6 +281,54 @@ class RDBarChartTest {
         assertFalse(texts.contains("1"))
     }
 
+    private fun applySel(
+        layout: BarChartLayout, selectedIndex: Int, barLabels: List<String>?,
+        w: Double = width, h: Double = height, textW: Double = 30.0, textH: Double = 12.0,
+    ): List<LineChartLayer> {
+        val base = buildBarChartLayers(layout, style, w, h, barLabels = barLabels)
+        return applyBarSelection(base, layout, style, w, h, selectedIndex, barLabels, textW, textH)
+    }
+
+    // 미선택 막대는 barDimOpacity 배율로 흐려지고, 선택 막대는 원래 alpha 유지.
+    @Test
+    fun dimsUnselectedBars() {
+        val layout = sampleLayout(4, refPos = null)
+        val out = applySel(layout, selectedIndex = 1, barLabels = List(4) { "5'00\"" })
+        val rects = out.filterIsInstance<RectLayer>().filter { it.name.startsWith("bar.") && !it.name.contains("selection") }
+        // 선택 인덱스 1은 base alpha(비부분=1f), 나머지는 *0.35 (단 인덱스3은 partial base 0.6 * 0.35)
+        assertEquals(1f, rects[1].alpha)
+        assertEquals(1f * 0.35f, rects[0].alpha)
+        assertEquals(0.6f * 0.35f, rects[3].alpha, 1e-4f) // 마지막=partial
+    }
+
+    // 선택 시 세로 가이드선과 말풍선(배경+텍스트) 레이어가 추가된다.
+    @Test
+    fun addsGuideAndCallout() {
+        val out = applySel(sampleLayout(4, refPos = null), selectedIndex = 2, barLabels = List(4) { "5'00\"" })
+        assertTrue(out.any { it.name == "bar.selection.line" })
+        assertTrue(out.any { it.name == "bar.selection.bubble" })
+        val text = out.filterIsInstance<TextLayer>().first { it.name == "bar.selection.text" }
+        assertEquals("5'00\"", text.text)
+    }
+
+    // 말풍선은 막대 높이와 무관하게 항상 플롯 상단(plot.minY)에 고정.
+    @Test
+    fun calloutPinnedToPlotTop() {
+        val layout = sampleLayout(4, refPos = null) // 인덱스0 heightFraction=0.3(짧음)
+        val out = applySel(layout, selectedIndex = 0, barLabels = List(4) { "5'00\"" })
+        val bubble = out.filterIsInstance<RectLayer>().first { it.name == "bar.selection.bubble" }
+        val plot = PlotArea(width, height, style.plotInsets)
+        assertEquals(plot.minY, bubble.minY, 1e-6)
+    }
+
+    // barLabels 없으면 말풍선 없음(가이드선은 존재).
+    @Test
+    fun noCalloutWithoutLabels() {
+        val out = applySel(sampleLayout(4, refPos = null), selectedIndex = 1, barLabels = null)
+        assertTrue(out.any { it.name == "bar.selection.line" })
+        assertTrue(out.none { it.name == "bar.selection.bubble" })
+    }
+
     @Test
     fun defaultsExposeBarSelectionFields() {
         val light = ChartStyle.defaults(darkTheme = false)
