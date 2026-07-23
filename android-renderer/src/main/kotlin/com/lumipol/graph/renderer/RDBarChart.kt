@@ -7,18 +7,27 @@ package com.lumipol.graph.renderer
 
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.sp
 import com.lumipol.graph.model.BarChartLayout
 import com.lumipol.graph.model.BarColorRole
+import com.lumipol.graph.query.barIndexAtX
 import com.lumipol.graph.query.isLabelVisible
 import com.lumipol.graph.query.labelStride
 import kotlin.math.max
@@ -44,6 +53,7 @@ fun RDBarChart(
     xAxisLabels: List<String>? = null,
     yLabelFormatter: ((Double) -> String)? = null,
     animateEntrance: Boolean = false,
+    onSelectedIndexChange: ((Int?) -> Unit)? = null,
 ) {
     val measurer = rememberTextMeasurer()
     // 성장 등장 애니 — layout 교체·animateEntrance 토글 시 0부터 재생(공용 헬퍼).
@@ -59,9 +69,35 @@ fun RDBarChart(
     }
     // TalkBack 요약(UX Major-1): 캔버스는 불투명하므로 컨테이너에 막대 수·값 요약을 노출한다.
     val description = remember(layout, barLabels) { barChartDescription(layout, barLabels) }
-    Canvas(modifier.semantics { contentDescription = description }) {
+
+    // 롱프레스 스크럽 선택 상태. layout이 바뀌면 초기화(iOS render()의 선택 리셋 대응).
+    var selectedIndex by remember(layout) { mutableStateOf<Int?>(null) }
+    val haptics = LocalHapticFeedback.current
+    fun setSelection(idx: Int?, haptic: Boolean) {
+        if (idx == selectedIndex) return
+        selectedIndex = idx
+        if (idx != null && haptic) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        onSelectedIndexChange?.invoke(idx)
+    }
+    val gestureModifier = if (!barLabels.isNullOrEmpty()) {
+        Modifier.pointerInput(layout, barLabels) {
+            val plot = PlotArea(size.width.toDouble(), size.height.toDouble(), scaledStyle.plotInsets)
+            fun scrub(px: Float) =
+                setSelection(barIndexAtX(px.toDouble(), plot.minX, plot.width, layout.bars.size), haptic = true)
+            detectDragGesturesAfterLongPress(
+                onDragStart = { offset -> scrub(offset.x) },
+                onDrag = { change, _ -> change.consume(); scrub(change.position.x) },
+                onDragEnd = { setSelection(null, haptic = false) },
+                onDragCancel = { setSelection(null, haptic = false) },
+            )
+        }
+    } else {
+        Modifier
+    }
+
+    Canvas(modifier.semantics { contentDescription = description }.then(gestureModifier)) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
-        buildBarChartLayers(
+        var layers = buildBarChartLayers(
             layout = layout,
             style = scaledStyle,
             sizeWidth = size.width.toDouble(),
@@ -72,7 +108,25 @@ fun RDBarChart(
             growth = growth,
             density = density,
             xLabelWidthPx = xLabelWidthPx,
-        ).forEach { render(it, measurer) }
+        )
+        val sel = selectedIndex
+        if (sel != null) {
+            val calloutSize = barLabels?.getOrNull(sel)?.let { lbl ->
+                measurer.measure(
+                    lbl,
+                    TextStyle(fontSize = scaledStyle.barCalloutFontSize.sp, fontWeight = scaledStyle.barCalloutFontWeight),
+                ).size
+            }
+            layers = applyBarSelection(
+                layers, layout, scaledStyle,
+                sizeWidth = size.width.toDouble(), sizeHeight = size.height.toDouble(),
+                selectedIndex = sel, barLabels = barLabels,
+                calloutTextWidthPx = (calloutSize?.width ?: 0).toDouble(),
+                calloutTextHeightPx = (calloutSize?.height ?: 0).toDouble(),
+                density = density,
+            )
+        }
+        layers.forEach { render(it, measurer) }
     }
 }
 
