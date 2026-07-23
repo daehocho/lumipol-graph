@@ -7,6 +7,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.lumipol.graph.model.BarColorRole
 import com.lumipol.graph.model.DonutColorRole
+import com.lumipol.graph.renderer.BarPaceColorInput
 
 /**
  * 플롯 내부 여백 (좌우 = Y축 라벨, 상하 = 마커/X축 라벨).
@@ -80,6 +81,14 @@ data class ChartStyle(
     val barShowXAxisLabels: Boolean = true, // false면 x축 하단 라벨 숨김
     val barReferenceLineColor: Color,
     val barMinHeight: Float = 2f, // 가장 빠른(짧은) 막대도 최소 가시 높이
+    val barDimOpacity: Float = 0.35f, // 롱프레스 선택 시 미선택 막대 흐림 배율(iOS barDimOpacity)
+    /** 막대별 색 오버라이드. null이면 [defaultPaceColor](연속 팔레트) 사용. 앱은 stable 람다를 넘길 것(리컴포지션 방지). */
+    val barColorProvider: ((BarPaceColorInput) -> Color)? = null,
+    val barSelectionLineColor: Color, // 선택 막대 세로 가이드선(iOS label α0.55)
+    val barCalloutBackgroundColor: Color, // 말풍선 배경(iOS .label)
+    val barCalloutTextColor: Color, // 말풍선 텍스트(iOS .systemBackground)
+    val barCalloutFontSize: Float = 12f, // 말풍선 폰트 크기(sp) — iOS systemFont(12, .semibold)
+    val barCalloutFontWeight: FontWeight = FontWeight.SemiBold,
 
     // 심박존 도넛
     val donutColors: Map<DonutColorRole, Color>,
@@ -128,6 +137,9 @@ data class ChartStyle(
                 BarColorRole.SLOWER to Color(0xFFFF9500),            // systemOrange
             ),
             barReferenceLineColor = Color(0xFF000000).copy(alpha = 0.6f), // label α0.6
+            barSelectionLineColor = Color(0xFF000000).copy(alpha = 0.55f), // label α0.55
+            barCalloutBackgroundColor = Color(0xFF000000),                 // label
+            barCalloutTextColor = Color(0xFFFFFFFF),                       // systemBackground
             donutColors = mapOf(
                 DonutColorRole.ZONE1 to Color(0xFF007AFF),                     // systemBlue
                 DonutColorRole.ZONE2 to Color(0xFF34C759).copy(alpha = 0.7f),  // systemGreen α0.7
@@ -157,6 +169,9 @@ data class ChartStyle(
                 BarColorRole.SLOWER to Color(0xFFFF9F0A),
             ),
             barReferenceLineColor = Color(0xFFFFFFFF).copy(alpha = 0.6f),
+            barSelectionLineColor = Color(0xFFFFFFFF).copy(alpha = 0.55f),
+            barCalloutBackgroundColor = Color(0xFFFFFFFF),
+            barCalloutTextColor = Color(0xFF000000),
             donutColors = mapOf(
                 DonutColorRole.ZONE1 to Color(0xFF0A84FF),
                 DonutColorRole.ZONE2 to Color(0xFF30D158).copy(alpha = 0.7f),

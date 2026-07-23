@@ -246,4 +246,18 @@ class RDBarChartTest {
         val texts = texts(build(layout, style = style.copy(barShowXAxisLabels = false), xAxisLabels = listOf("1")))
         assertFalse(texts.contains("1"))
     }
+
+    @Test
+    fun defaultsExposeBarSelectionFields() {
+        val light = ChartStyle.defaults(darkTheme = false)
+        assertEquals(0.35f, light.barDimOpacity)
+        assertEquals(12f, light.barCalloutFontSize)
+        // 라이트 말풍선 배경 = label(불투명 검정), 텍스트 = systemBackground(불투명 흰색)
+        assertEquals(1f, light.barCalloutBackgroundColor.alpha)
+        assertEquals(Color.White, light.barCalloutTextColor)
+        assertEquals(null, light.barColorProvider)
+        // 다크는 반전
+        val dark = ChartStyle.defaults(darkTheme = true)
+        assertEquals(Color.Black, dark.barCalloutTextColor)
+    }
 }
