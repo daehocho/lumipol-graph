@@ -235,6 +235,89 @@ internal fun buildBarChartLayers(
     return layers
 }
 
+/**
+ * [buildBarChartLayers] 결과에 롱프레스 선택 상태를 반영한다(순수 — iOS `applySelection` 대응).
+ * 미선택 막대는 [ChartStyle.barDimOpacity] 배율로 흐리고, 선택 막대 중앙에 세로 가이드선을,
+ * 그 위에 페이스 말풍선을 얹는다. 말풍선은 막대 높이와 무관하게 **항상 플롯 상단**에 고정(짧은
+ * 막대에서 손가락 가림 방지)하고 좌우로 클램프한다. 말풍선 텍스트 크기는 composable이 측정해 넘긴다.
+ */
+internal fun applyBarSelection(
+    layers: List<LineChartLayer>,
+    layout: BarChartLayout,
+    style: ChartStyle,
+    sizeWidth: Double,
+    sizeHeight: Double,
+    selectedIndex: Int,
+    barLabels: List<String>?,
+    calloutTextWidthPx: Double,
+    calloutTextHeightPx: Double,
+    density: Float = 1f,
+): List<LineChartLayer> {
+    val plot = PlotArea(sizeWidth, sizeHeight, style.plotInsets)
+    if (!plot.isRenderable) return layers
+    val selName = "bar.$selectedIndex"
+    val selRect = layers.filterIsInstance<RectLayer>().firstOrNull { it.name == selName } ?: return layers
+
+    // 1) 미선택 막대 dim(선택 막대는 base alpha 유지).
+    val dimmed = layers.map { layer ->
+        if (layer is RectLayer && layer.name.startsWith("bar.") && layer.name != selName &&
+            !layer.name.contains("selection")
+        ) {
+            layer.copy(alpha = layer.alpha * style.barDimOpacity)
+        } else {
+            layer
+        }
+    }.toMutableList()
+
+    val midX = selRect.minX + selRect.width / 2
+
+    // 2) 세로 가이드선(플롯 상단~하단).
+    dimmed.add(
+        StrokeLayer(
+            name = "bar.selection.line",
+            segments = listOf(listOf(PlotPoint(midX, plot.minY), PlotPoint(midX, plot.maxY))),
+            color = style.barSelectionLineColor,
+            width = 1f * density,
+        ),
+    )
+
+    // 3) 말풍선(페이스만) — barLabels 있을 때만. 항상 플롯 상단 고정 + 좌우 클램프.
+    val label = barLabels?.getOrNull(selectedIndex)
+    if (label != null && calloutTextWidthPx > 0) {
+        val padH = 8.0 * density
+        val padV = 4.0 * density
+        val bw = calloutTextWidthPx + padH * 2
+        val bh = calloutTextHeightPx + padV * 2
+        // iOS 클램프: min 먼저(우측), max 나중(좌측 우선) — coerceIn(min>max) 예외 회피.
+        var bx = midX - bw / 2
+        bx = minOf(bx, plot.maxX - bw)
+        bx = maxOf(plot.minX, bx)
+        val by = plot.minY
+        dimmed.add(
+            RectLayer(
+                name = "bar.selection.bubble",
+                minX = bx, minY = by, width = bw, height = bh,
+                color = style.barCalloutBackgroundColor,
+                cornerRadius = 6f * density,
+            ),
+        )
+        dimmed.add(
+            TextLayer(
+                name = "bar.selection.text",
+                text = label,
+                anchorX = bx + padH,
+                anchorY = by + padV,
+                hAlign = HAlign.LEFT,
+                vAlign = VAlign.BELOW, // 상단이 앵커
+                color = style.barCalloutTextColor,
+                fontSizeSp = style.barCalloutFontSize,
+                fontWeight = style.barCalloutFontWeight,
+            ),
+        )
+    }
+    return dimmed
+}
+
 private const val BAR_LABEL_GAP = 4.0               // y틱 라벨과 축 사이(iOS insets.left-4)
 private const val BAR_X_LABEL_GAP = 4.0             // x축 라벨과 막대 바닥 사이(iOS maxY+4)
 private const val BAR_LABEL_MIN_GAP = 6.0           // 솎아낸 이웃 라벨 사이 최소 여백(dp) — 겹침 방지
