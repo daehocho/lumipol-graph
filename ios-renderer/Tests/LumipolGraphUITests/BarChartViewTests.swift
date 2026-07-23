@@ -129,6 +129,24 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertEqual(captured[0].average, 250, accuracy: 0.001)  // 폴백: 그 막대 자신
     }
 
+    // 짧은 런(온전 스플릿 1 + 부분 1): 온전 스플릿만으론 범위가 없어 전체로 폴백 → 색 신호 보존.
+    func testFallsBackToAllWhenFullSplitsLackRange() {
+        let bars = [
+            BarLayout(index: 0, value: 300, heightFraction: 0.6, colorRole: .faster, isPartial: false, endMinutes: nil),
+            BarLayout(index: 1, value: 360, heightFraction: 0.3, colorRole: .slower, isPartial: true, endMinutes: nil),
+        ]
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var captured: [BarPaceColorInput] = []
+        var style = ChartStyle.default
+        style.barColorProvider = { input in captured.append(input); return .black }
+        view.render(layout, style: style)
+        XCTAssertEqual(captured.count, 2)
+        XCTAssertEqual(captured[0].fastest, 300, accuracy: 0.001)   // 폴백: 부분 포함 전체
+        XCTAssertEqual(captured[0].slowest, 360, accuracy: 0.001)
+        XCTAssertGreaterThan(captured[0].slowest, captured[0].fastest)  // 축퇴 아님
+    }
+
     // 부분막대 흐림(opacity)은 색과 독립적으로 유지.
     func testPartialBarStillDimmedWithContinuousColor() {
         let bars = [
