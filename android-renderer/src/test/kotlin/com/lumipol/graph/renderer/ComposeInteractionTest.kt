@@ -186,6 +186,9 @@ class ComposeInteractionTest {
         rule.waitForIdle()
         assertEquals(2, events.first(), "중앙 롱프레스는 인덱스 2 선택")
         assertEquals(null, events.last(), "손 뗌 → 해제(null)")
+        // setSelection의 no-op 가드(idx == selectedIndex → return)가 onDragStart+onDrag 중복 통지를
+        // 억제해야 하므로 선택 1회 + 해제 1회 = 2건만 발화한다(스퓨리어스 중복 통지 방지 회귀 가드).
+        assertEquals(2, events.size, "선택 1 + 해제 1만 통지(중복 억제)")
     }
 
     @Test

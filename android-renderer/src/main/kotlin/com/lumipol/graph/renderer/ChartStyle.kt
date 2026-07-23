@@ -7,7 +7,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.lumipol.graph.model.BarColorRole
 import com.lumipol.graph.model.DonutColorRole
-import com.lumipol.graph.renderer.BarPaceColorInput
 
 /**
  * 플롯 내부 여백 (좌우 = Y축 라벨, 상하 = 마커/X축 라벨).

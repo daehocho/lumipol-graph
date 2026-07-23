@@ -43,6 +43,7 @@ import kotlin.math.roundToInt
  * @param xAxisLabels 막대 아래 구간 라벨. null이면 생략.
  * @param yLabelFormatter y틱 값 포매터. null이면 정수 반올림.
  * @param animateEntrance baseline→값 높이 성장 애니. iOS는 정적이라 기본 off(UX 패리티).
+ * @param onSelectedIndexChange 롱프레스 스크럽 선택 인덱스 변경 통지(해제 시 null). null이면 미통지.
  */
 @Composable
 fun RDBarChart(
@@ -76,11 +77,11 @@ fun RDBarChart(
     fun setSelection(idx: Int?, haptic: Boolean) {
         if (idx == selectedIndex) return
         selectedIndex = idx
-        if (idx != null && haptic) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        if (idx != null && haptic) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         onSelectedIndexChange?.invoke(idx)
     }
     val gestureModifier = if (!barLabels.isNullOrEmpty()) {
-        Modifier.pointerInput(layout, barLabels) {
+        Modifier.pointerInput(layout, barLabels, scaledStyle) {
             val plot = PlotArea(size.width.toDouble(), size.height.toDouble(), scaledStyle.plotInsets)
             fun scrub(px: Float) =
                 setSelection(barIndexAtX(px.toDouble(), plot.minX, plot.width, layout.bars.size), haptic = true)
@@ -314,9 +315,7 @@ internal fun applyBarSelection(
 
     // 1) 미선택 막대 dim(선택 막대는 base alpha 유지).
     val dimmed = layers.map { layer ->
-        if (layer is RectLayer && layer.name.startsWith("bar.") && layer.name != selName &&
-            !layer.name.contains("selection")
-        ) {
+        if (layer is RectLayer && layer.name.startsWith("bar.") && layer.name != selName) {
             layer.copy(alpha = layer.alpha * style.barDimOpacity)
         } else {
             layer
@@ -338,8 +337,8 @@ internal fun applyBarSelection(
     // 3) 말풍선(페이스만) — barLabels 있을 때만. 항상 플롯 상단 고정 + 좌우 클램프.
     val label = barLabels?.getOrNull(selectedIndex)
     if (label != null && calloutTextWidthPx > 0) {
-        val padH = 8.0 * density
-        val padV = 4.0 * density
+        val padH = BAR_CALLOUT_PAD_H * density
+        val padV = BAR_CALLOUT_PAD_V * density
         val bw = calloutTextWidthPx + padH * 2
         val bh = calloutTextHeightPx + padV * 2
         // iOS 클램프: min 먼저(우측), max 나중(좌측 우선) — coerceIn(min>max) 예외 회피.
@@ -352,7 +351,7 @@ internal fun applyBarSelection(
                 name = "bar.selection.bubble",
                 minX = bx, minY = by, width = bw, height = bh,
                 color = style.barCalloutBackgroundColor,
-                cornerRadius = 6f * density,
+                cornerRadius = BAR_CALLOUT_CORNER * density,
             ),
         )
         dimmed.add(
@@ -375,6 +374,9 @@ internal fun applyBarSelection(
 private const val BAR_LABEL_GAP = 4.0               // y틱 라벨과 축 사이(iOS insets.left-4)
 private const val BAR_X_LABEL_GAP = 4.0             // x축 라벨과 막대 바닥 사이(iOS maxY+4)
 private const val BAR_LABEL_MIN_GAP = 6.0           // 솎아낸 이웃 라벨 사이 최소 여백(dp) — 겹침 방지
+private const val BAR_CALLOUT_PAD_H = 8.0           // 선택 말풍선 좌우 내부 여백(dp)
+private const val BAR_CALLOUT_PAD_V = 4.0           // 선택 말풍선 상하 내부 여백(dp)
+private const val BAR_CALLOUT_CORNER = 6f           // 선택 말풍선 모서리 반경(dp)
 
 /** 바 성장 등장 애니 지속시간(ms). Material Emphasized. */
 private const val BAR_GROWTH_DURATION_MS = 300
