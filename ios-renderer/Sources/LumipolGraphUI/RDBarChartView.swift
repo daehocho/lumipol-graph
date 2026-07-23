@@ -97,6 +97,12 @@ public final class RDBarChartView: UIView {
         let slot = plot.width / CGFloat(n)
         let barWidth = slot * 0.6
 
+        // 연속 색상 앵커(이 런 막대 value 기준). average = 등거리 스플릿에서 런 평균 페이스와 일치.
+        let values = layout.bars.map { $0.value }
+        let fastest = values.min() ?? 0
+        let slowest = values.max() ?? 0
+        let average = values.isEmpty ? 0 : values.reduce(0, +) / Double(values.count)
+
         // x축 인덱스 라벨 솎아내기 stride(장거리·하프 등 슬롯보다 넓은 라벨 겹침 방지).
         // 개수 임계치가 아니라 슬롯 폭 대비 라벨 폭으로 계산 — 코어 labelStride(양 플랫폼 공유).
         // 폭 측정은 CATextLayer를 만들지 않고 문자열 사이즈로 직접 구한다.
@@ -119,7 +125,11 @@ public final class RDBarChartView: UIView {
             let barLayer = CALayer()
             barLayer.frame = rect
             barLayer.cornerRadius = style.barCornerRadius
-            barLayer.backgroundColor = color(for: bar.colorRole).cgColor
+            let colorInput = BarPaceColorInput(
+                value: bar.value, fastest: fastest, slowest: slowest, average: average,
+                isPartial: bar.isPartial, index: i, colorRole: bar.colorRole)
+            let barColor = style.barColorProvider?(colorInput) ?? ChartStyle.defaultPaceColor(colorInput)
+            barLayer.backgroundColor = barColor.cgColor
             contentLayer.addSublayer(barLayer)
             barLayers.append(barLayer)
 
@@ -252,10 +262,6 @@ public final class RDBarChartView: UIView {
         let slot = plotWidth / CGFloat(count)
         let raw = Int(((x - plotMinX) / slot).rounded(.down))
         return min(max(raw, 0), count - 1)
-    }
-
-    private func color(for role: BarColorRole) -> UIColor {
-        style.barColors[role] ?? .systemGray
     }
 
     private func yTickLabel(_ value: Double) -> String {
