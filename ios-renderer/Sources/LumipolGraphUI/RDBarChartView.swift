@@ -261,12 +261,11 @@ public final class RDBarChartView: UIView {
     }
 
     /// 플롯 내 x(뷰 좌표)를 균등 슬롯 막대 인덱스로 변환. 경계 밖은 0..<count로 클램프.
-    /// count/plotWidth가 0 이하면 nil. Android 착수 시 코어 barIndexAtX로 추출 예정.
+    /// 코어 barIndexAtX로 위임(양 플랫폼 공유 — 히트테스트 슬롯 수학 일치).
     static func barIndex(atX x: CGFloat, plotMinX: CGFloat, plotWidth: CGFloat, count: Int) -> Int? {
-        guard count > 0, plotWidth > 0 else { return nil }
-        let slot = plotWidth / CGFloat(count)
-        let raw = Int(((x - plotMinX) / slot).rounded(.down))
-        return min(max(raw, 0), count - 1)
+        BarHitTestKt.barIndexAtX(
+            x: Double(x), plotMinX: Double(plotMinX), plotWidth: Double(plotWidth), count: Int32(count)
+        )?.intValue
     }
 
     private func yTickLabel(_ value: Double) -> String {
