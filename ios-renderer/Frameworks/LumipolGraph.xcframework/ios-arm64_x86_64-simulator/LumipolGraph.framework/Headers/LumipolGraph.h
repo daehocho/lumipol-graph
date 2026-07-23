@@ -764,6 +764,12 @@ __attribute__((swift_name("AxisDomainKt")))
 @end
 
 __attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("BarHitTestKt")))
+@interface LumipolGraphBarHitTestKt : LumipolGraphBase
++ (LumipolGraphInt * _Nullable)barIndexAtXX:(double)x plotMinX:(double)plotMinX plotWidth:(double)plotWidth count:(int32_t)count __attribute__((swift_name("barIndexAtX(x:plotMinX:plotWidth:count:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("HeightFractionsKt")))
 @interface LumipolGraphHeightFractionsKt : LumipolGraphBase
 + (NSArray<LumipolGraphDouble *> *)heightFractionsValues:(NSArray<LumipolGraphDouble *> *)values __attribute__((swift_name("heightFractions(values:)")));
