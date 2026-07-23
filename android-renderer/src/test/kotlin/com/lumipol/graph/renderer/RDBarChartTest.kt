@@ -119,12 +119,48 @@ class RDBarChartTest {
         assertEquals(0.25f, partial.alpha)
     }
 
+    // provider가 있으면 그 색을 그대로 사용.
     @Test
-    fun missingColorRoleFallsBackToStyleFallbackColor() {
-        // 색 role이 주입 맵에 없으면 하드코딩 회색이 아니라 ChartStyle.fallbackDataColor를 쓴다.
-        val custom = style.copy(barColors = emptyMap(), fallbackDataColor = Color.Magenta)
-        val bar = bars(build(sampleLayout(1), style = custom)).first()
-        assertEquals(Color.Magenta, bar.color)
+    fun barColorProviderTakesPrecedence() {
+        val provided = Color(0xFF123456)
+        val s = style.copy(barColorProvider = { provided })
+        val layers = buildBarChartLayers(
+            sampleLayout(4), s, width, height, barLabels = null, xAxisLabels = null,
+        )
+        assertTrue(bars(layers).all { it.color == provided })
+    }
+
+    // provider 없으면 defaultPaceColor(연속) 사용 — 3버킷 barColors가 아님.
+    @Test
+    fun fallsBackToContinuousPalette() {
+        // 값이 서로 다른 온전 스플릿 → 가장 빠른(작은 value) 막대는 파랑(blue=1), 가장 느린 막대는 빨강.
+        val bars = listOf(
+            BarLayout(0, value = 200.0, heightFraction = 0.2, colorRole = BarColorRole.ON_TARGET, isPartial = false),
+            BarLayout(1, value = 300.0, heightFraction = 0.5, colorRole = BarColorRole.ON_TARGET, isPartial = false),
+            BarLayout(2, value = 400.0, heightFraction = 0.9, colorRole = BarColorRole.ON_TARGET, isPartial = false),
+        )
+        val layout = BarChartLayout(bars = bars,
+            yTicks = listOf(AxisTick(200.0, 0.0), AxisTick(400.0, 1.0)), referenceLinePosition = null)
+        val rects = bars(buildBarChartLayers(layout, style, width, height))
+        assertEquals(1f, rects[0].color.blue)   // 가장 빠름 → 파랑 구간
+        assertEquals(1f, rects[2].color.red)    // 가장 느림 → 빨강
+        assertEquals(0f, rects[2].color.blue)
+    }
+
+    // 앵커는 온전 스플릿만: 부분 스플릿의 극단값이 팔레트를 왜곡하지 않는다.
+    @Test
+    fun colorAnchorsUseFullSplitsOnly() {
+        // 온전 2개(300,360) 범위 있음. 부분 1개(value=600, 아주 느림)는 앵커에서 제외.
+        val bars = listOf(
+            BarLayout(0, 300.0, 0.3, BarColorRole.ON_TARGET, isPartial = false),
+            BarLayout(1, 360.0, 0.6, BarColorRole.ON_TARGET, isPartial = false),
+            BarLayout(2, 600.0, 0.9, BarColorRole.ON_TARGET, isPartial = true),
+        )
+        val layout = BarChartLayout(bars = bars,
+            yTicks = listOf(AxisTick(300.0, 0.0), AxisTick(360.0, 1.0)), referenceLinePosition = null)
+        val rects = bars(buildBarChartLayers(layout, style, width, height))
+        // slowest 앵커=360이므로 600은 노랑↔빨강 구간 상단(빨강)으로 클램프.
+        assertEquals(1f, rects[2].color.red)
     }
 
     @Test
@@ -154,8 +190,10 @@ class RDBarChartTest {
         assertTrue(scaledBars.all { it.cornerRadius == scaled.barCornerRadius })
     }
 
+    // barColors(3버킷)는 하위호환용으로 존치되나 기본 색 경로는 연속 팔레트를 쓴다 — colorRole은
+    // 알파(흐림)에만 영향을 주고 색 자체는 barColors를 참조하지 않는다.
     @Test
-    fun barColorMatchesRoleAndPartialIsDimmed() {
+    fun partialBarIsDimmedRegardlessOfLegacyColorRole() {
         val custom = style.copy(
             barColors = mapOf(
                 BarColorRole.FASTER to Color.Red,
@@ -174,11 +212,21 @@ class RDBarChartTest {
         )
         val bars = bars(build(layout, style = custom))
         assertEquals(3, bars.size)
-        assertEquals(Color.Red, bars[0].color)
-        assertEquals(Color.Green, bars[1].color)
-        assertEquals(Color.Blue, bars[2].color)
         assertTrue(bars[2].alpha < 1f) // 부분막대 흐림
         assertEquals(1f, bars[0].alpha)
+        assertEquals(1f, bars[1].alpha)
+        // 색은 barColors 3버킷이 아니라 연속 팔레트에서 나온다. 앵커는 온전 스플릿(bar0=250, bar1=300)만
+        // 사용(fastest=250, slowest=300, average=275) — 부분 스플릿 bar2(350)는 앵커 계산엔 빠지고
+        // 색 클램프 대상으로만 쓰인다.
+        for ((i, bar) in layout.bars.withIndex()) {
+            val expected = ChartStyle.defaultPaceColor(
+                BarPaceColorInput(
+                    value = bar.value, fastest = 250.0, slowest = 300.0, average = 275.0,
+                    isPartial = bar.isPartial, index = i, colorRole = bar.colorRole,
+                ),
+            )
+            assertEquals(expected, bars[i].color, "bar $i")
+        }
     }
 
     @Test

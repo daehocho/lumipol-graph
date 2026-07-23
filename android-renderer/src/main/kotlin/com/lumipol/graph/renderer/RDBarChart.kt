@@ -164,6 +164,16 @@ internal fun buildBarChartLayers(
         }
     }
 
+    // 연속 색상 앵커(이 런 막대 value 기준). average = 등거리 스플릿에서 런 평균 페이스와 일치.
+    // 온전한 스플릿만 사용해 부분 스플릿(짧은 잔여) 이상치가 팔레트를 왜곡하지 않게 한다.
+    // 단 온전 스플릿 2개 미만이거나 값 범위가 없으면 전체 막대로 폴백(색 신호 보존).
+    val fullValues = layout.bars.filter { !it.isPartial }.map { it.value }
+    val fullHasRange = fullValues.size >= 2 && fullValues.max() > fullValues.min()
+    val anchorValues = if (fullHasRange) fullValues else layout.bars.map { it.value }
+    val fastest = anchorValues.min()
+    val slowest = anchorValues.max()
+    val average = anchorValues.sum() / anchorValues.size
+
     // 막대
     val slot = plot.width / n
     val barWidth = slot * style.barWidthRatio
@@ -171,6 +181,11 @@ internal fun buildBarChartLayers(
         val fullH = min(max(style.barMinHeight.toDouble(), bar.heightFraction * plot.height), plot.height)
         val h = fullH * growth.coerceIn(0f, 1f)
         val x = plot.minX + slot * i + (slot - barWidth) / 2
+        val colorInput = BarPaceColorInput(
+            value = bar.value, fastest = fastest, slowest = slowest, average = average,
+            isPartial = bar.isPartial, index = i, colorRole = bar.colorRole,
+        )
+        val barColor = style.barColorProvider?.invoke(colorInput) ?: ChartStyle.defaultPaceColor(colorInput)
         layers.add(
             RectLayer(
                 name = "bar.$i",
@@ -178,7 +193,7 @@ internal fun buildBarChartLayers(
                 minY = plot.maxY - h,
                 width = barWidth,
                 height = h,
-                color = style.barColors[bar.colorRole] ?: style.fallbackDataColor,
+                color = barColor,
                 cornerRadius = style.barCornerRadius,
                 alpha = if (bar.isPartial) style.partialBarAlpha else 1f,
             ),
