@@ -196,7 +196,7 @@ public final class RDBarChartView: UIView {
         }
     }
 
-    /// 선택 상태를 기존 막대 레이어에 반영(재생성 없이 opacity만) + 가이드선/말풍선 오버레이 교체.
+    /// 선택 상태를 기존 막대 레이어에 반영(재생성 없이 opacity만) + 말풍선 오버레이 교체.
     private func applySelection() {
         guard let layout = layout, barLayers.count == layout.bars.count else { return }
         CATransaction.begin()
@@ -215,18 +215,6 @@ public final class RDBarChartView: UIView {
 
         let plot = bounds.inset(by: style.plotInsets)
         let barFrame = barLayers[sel].frame
-
-        // 수직 가이드선(막대 중앙, 플롯 상단~하단)
-        let guide = CAShapeLayer()
-        guide.name = "bar.selection.line"
-        let gp = UIBezierPath()
-        gp.move(to: CGPoint(x: barFrame.midX, y: plot.minY))
-        gp.addLine(to: CGPoint(x: barFrame.midX, y: plot.maxY))
-        guide.path = gp.cgPath
-        guide.strokeColor = style.barSelectionLineColor.resolvedColor(with: traitCollection).cgColor
-        guide.lineWidth = 1
-        contentLayer.addSublayer(guide)
-        selectionLayers.append(guide)
 
         // 말풍선(페이스만) — barLabels 있을 때만
         if let labels = barLabels, sel < labels.count {

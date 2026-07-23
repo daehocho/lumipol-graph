@@ -297,14 +297,14 @@ final class BarChartViewTests: XCTestCase {
             .contains { $0.name == "bar.selection.line" }
     }
 
-    func testSelectionShowsGuideAndCallout() {
+    func testSelectionShowsCalloutNoGuide() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
         var style = ChartStyle.default
         style.barShowYAxisLabels = false
         view.render(sampleLayout(barCount: 4), style: style,
                     barLabels: ["4'50\"", "5'00\"", "5'10\"", "5'20\""], xAxisLabels: nil, yLabelFormatter: nil)
         view.selectBar(at: 2)
-        XCTAssertTrue(hasSelectionGuide(view), "수직 가이드선")
+        XCTAssertFalse(hasSelectionGuide(view), "선택 시 세로 가이드선은 그리지 않는다")
         XCTAssertTrue(view.allTextLayerStrings.contains("5'10\""), "말풍선 페이스 = barLabels[2]")
     }
 
@@ -400,13 +400,13 @@ final class BarChartViewTests: XCTestCase {
         view.render(sampleLayout(barCount: 4), style: style,
                     barLabels: ["4'50\"", "5'00\"", "5'10\"", "5'20\""], xAxisLabels: nil, yLabelFormatter: nil)
         view.selectBar(at: 2)
-        let guide = try! XCTUnwrap((view.layer.sublayers ?? [])
+        let bubble = try! XCTUnwrap((view.layer.sublayers ?? [])
             .flatMap { $0.sublayers ?? [] }
-            .first { $0.name == "bar.selection.line" } as? CAShapeLayer)
-        let darkResolved = style.barSelectionLineColor.resolvedColor(with: view.traitCollection).cgColor
-        let lightResolved = style.barSelectionLineColor.resolvedColor(
+            .first { $0.name == "bar.selection.bubble" } as? CAShapeLayer)
+        let darkResolved = style.barCalloutBackgroundColor.resolvedColor(with: view.traitCollection).cgColor
+        let lightResolved = style.barCalloutBackgroundColor.resolvedColor(
             with: UITraitCollection(userInterfaceStyle: .light)).cgColor
-        XCTAssertEqual(guide.strokeColor, darkResolved, "가이드선 색은 현재(다크) 트레잇으로 해석")
+        XCTAssertEqual(bubble.fillColor, darkResolved, "말풍선 배경색은 현재(다크) 트레잇으로 해석")
         XCTAssertNotEqual(darkResolved, lightResolved, "전제: label 색은 라이트/다크가 다름")
     }
 
