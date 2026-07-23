@@ -10,7 +10,7 @@ plugins {
 // JitPack(Linux 빌더)은 Kotlin/Native iOS 타겟을 빌드할 수 없다 — macOS 호스트에서만 등록.
 // iOS 소비는 Maven이 아니라 xcframework(SPM)라서 발행 아티팩트에 iOS 타겟이 없어도 무영향.
 group = "com.github.daehocho.lumipol-graph"
-version = "0.13.0"
+version = "0.16.0"
 
 kotlin {
     jvmToolchain(17)
