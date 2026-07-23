@@ -170,6 +170,16 @@ class ComposeInteractionTest {
         referenceLinePosition = null,
     )
 
+    // barLayout4()와 구조적으로 달라 data class equals가 false를 내는 대체 레이아웃(layout 교체 시나리오용).
+    private fun barLayout4Alt() = BarChartLayout(
+        bars = (0 until 4).map {
+            BarLayout(index = it, value = 500.0 + it * 20, heightFraction = 0.3 + 0.1 * it,
+                colorRole = BarColorRole.ON_TARGET, isPartial = false)
+        },
+        yTicks = listOf(AxisTick(500.0, 0.0), AxisTick(560.0, 1.0)),
+        referenceLinePosition = null,
+    )
+
     @Test
     fun barLongPressSelectsThenReleases() {
         val events = mutableListOf<Int?>()
@@ -205,6 +215,76 @@ class ComposeInteractionTest {
         rule.onRoot().performTouchInput { longClick(Offset(width / 2f, height / 2f)) }
         rule.waitForIdle()
         assertTrue(events.isEmpty(), "barLabels 없으면 선택 통지 없음")
+    }
+
+    @Test
+    fun barLayoutReplacementNotifiesDeselectionWhileSelectionActive() {
+        // 리뷰 #1: selectedIndex가 `remember(layout)`로 layout 교체 시 조용히 null로 리셋되면
+        // onSelectedIndexChange(null)이 통지되지 않아 부모 미러가 stale해진다(KDoc "해제 시 null" 계약
+        // 위반). 선택이 활성 상태(손을 떼기 전)인 채로 layout이 교체돼도 해제가 통지되어야 한다.
+        val events = mutableListOf<Int?>()
+        var layout by mutableStateOf(barLayout4())
+        rule.setContent {
+            RDBarChart(
+                layout = layout,
+                modifier = Modifier.size(width = 320.dp, height = 200.dp),
+                barLabels = listOf("5'00\"", "5'10\"", "5'20\"", "5'30\""),
+                onSelectedIndexChange = { events.add(it) },
+            )
+        }
+        // 중앙을 눌러 롱프레스 타임아웃을 넘기되(barLongPressSelectsThenReleases와 동일한 좌표), 손은
+        // 떼지 않아 선택을 활성 상태로 유지한다.
+        rule.onRoot().performTouchInput {
+            down(Offset(width / 2f, height / 2f))
+            advanceEventTime(600)
+            move()
+        }
+        rule.waitForIdle()
+        assertEquals(2, events.first(), "중앙 롱프레스는 인덱스 2 선택")
+        assertEquals(2, events.last(), "release 전이므로 아직 해제 통지가 없어야 함")
+        // 선택이 활성인 채로 구조적으로 다른 layout으로 교체.
+        layout = barLayout4Alt()
+        rule.waitForIdle()
+        assertEquals(null, events.last(), "layout 교체는 선택 해제(null)를 통지해야 함(부모 미러 stale 방지)")
+    }
+
+    @Test
+    fun barLongPressInvokesLatestOnSelectedIndexChangeAfterRecomposition() {
+        // 리뷰 #2: 도넛의 donutTapInvokesLatestOnSelectSegmentAfterRecomposition 패턴을 막대에 이식.
+        // 도넛 탭은 즉시(다운 시점) 통지되어 콜백 교체를 "스왑 후 첫 탭"으로만 검증해도 되지만, 막대는
+        // 롱프레스라 pointerInput의 지연 시작(lazy launch, 최초 이벤트 시점에만 handler를 읽음)
+        // 코루틴이 스왑 *전에* 이미 시작돼 있어야 실제로 낡은 클로저 경로를 태운다 — 그래서 down()으로
+        // 코루틴을 먼저 기동시킨 뒤(아직 롱프레스 타임아웃 전) 콜백만 교체하고, 그 다음 타임아웃을
+        // 넘겨 선택을 확정한다. data(layout·barLabels)는 불변이라 pointerInput 키는 안 바뀐다.
+        val first = mutableListOf<Int?>()
+        val second = mutableListOf<Int?>()
+        var generation by mutableStateOf(0)
+        rule.setContent {
+            val t = if (generation == 0) first else second
+            RDBarChart(
+                layout = barLayout4(),
+                modifier = Modifier.size(width = 320.dp, height = 200.dp),
+                barLabels = listOf("5'00\"", "5'10\"", "5'20\"", "5'30\""),
+                onSelectedIndexChange = { t.add(it) },
+            )
+        }
+        rule.waitForIdle()
+        // 코루틴을 lazily 기동(첫 포인터 이벤트)시키되 롱프레스 타임아웃 전이라 아직 선택은 없다.
+        rule.onRoot().performTouchInput { down(Offset(width / 2f, height / 2f)) }
+        rule.waitForIdle()
+        // 코루틴이 이미 실행 중인 채로 람다만 교체(리컴포지션) — pointerInput 키는 그대로라 재시작 없음.
+        generation = 1
+        rule.waitForIdle()
+        // 롱프레스 타임아웃을 넘겨 선택을 확정하고 손을 뗀다.
+        rule.onRoot().performTouchInput {
+            advanceEventTime(600)
+            move()
+            up()
+        }
+        rule.waitForIdle()
+        assertTrue(first.isEmpty(), "교체 전 람다로 통지되면 안 됨(stale 클로저)")
+        assertEquals(2, second.firstOrNull(), "교체 후 람다가 롱프레스 선택을 받아야 함")
+        assertEquals(null, second.last(), "손 뗌 → 해제도 최신 람다로 통지")
     }
 
     @Test

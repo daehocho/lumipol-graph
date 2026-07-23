@@ -10,9 +10,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -71,20 +73,31 @@ fun RDBarChart(
     // TalkBack 요약(UX Major-1): 캔버스는 불투명하므로 컨테이너에 막대 수·값 요약을 노출한다.
     val description = remember(layout, barLabels) { barChartDescription(layout, barLabels) }
 
-    // 롱프레스 스크럽 선택 상태. layout이 바뀌면 초기화(iOS render()의 선택 리셋 대응).
-    var selectedIndex by remember(layout) { mutableStateOf<Int?>(null) }
+    // 롱프레스 스크럽 선택 상태. layout이 바뀌면 initial 리멤버 값은 이미 null이지만, 재사용되는 remember
+    // 슬롯은 layout 키를 두지 않는다 — 리셋 통지는 아래 LaunchedEffect(layout)가 명시적으로 담당한다
+    // (리뷰 #1: layout 교체 시 onSelectedIndexChange(null) 미발화로 부모 미러가 stale해지는 계약 갭 방지).
+    var selectedIndex by remember { mutableStateOf<Int?>(null) }
     val haptics = LocalHapticFeedback.current
+    // pointerInput 키에 콜백이 없으므로 최신 람다를 State로 유지(리뷰 #2: stale 클로저로 통지되는 것을 막음).
+    val latestOnChange by rememberUpdatedState(onSelectedIndexChange)
     fun setSelection(idx: Int?, haptic: Boolean) {
         if (idx == selectedIndex) return
         selectedIndex = idx
         if (idx != null && haptic) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        onSelectedIndexChange?.invoke(idx)
+        latestOnChange?.invoke(idx)
     }
+    // layout 교체 시 선택을 리셋하고 명시적으로 통지(iOS render()의 선택 리셋 대응). 첫 컴포지션은
+    // selectedIndex가 이미 null이라 setSelection의 no-op 가드로 무발화.
+    LaunchedEffect(layout) { setSelection(null, haptic = false) }
     val gestureModifier = if (!barLabels.isNullOrEmpty()) {
         Modifier.pointerInput(layout, barLabels, scaledStyle) {
-            val plot = PlotArea(size.width.toDouble(), size.height.toDouble(), scaledStyle.plotInsets)
-            fun scrub(px: Float) =
+            // plot은 scrub 호출마다 현재 size로 재계산한다(리뷰 #3: 코루틴 시작 시 1회 캡처하면
+            // layout/barLabels/scaledStyle이 불변인 채 리사이즈(회전)만 일어날 때 stale plot으로
+            // 히트테스트한다).
+            fun scrub(px: Float) {
+                val plot = PlotArea(size.width.toDouble(), size.height.toDouble(), scaledStyle.plotInsets)
                 setSelection(barIndexAtX(px.toDouble(), plot.minX, plot.width, layout.bars.size), haptic = true)
+            }
             detectDragGesturesAfterLongPress(
                 onDragStart = { offset -> scrub(offset.x) },
                 onDrag = { change, _ -> change.consume(); scrub(change.position.x) },
@@ -96,6 +109,18 @@ fun RDBarChart(
         Modifier
     }
 
+    // 선택 막대의 말풍선 텍스트 크기는 Canvas 밖에서 memoize(리뷰 #4: draw 람다 안 매 프레임 측정 제거).
+    // 범위 밖(layout 교체 중 1프레임) 인덱스는 null로 가드해 #1의 sel 가드와 정합시킨다.
+    val selectedLabel = selectedIndex?.takeIf { it < layout.bars.size }?.let { barLabels?.getOrNull(it) }
+    val calloutSize = remember(selectedLabel, scaledStyle.barCalloutFontSize, scaledStyle.barCalloutFontWeight, measurer) {
+        selectedLabel?.let { lbl ->
+            measurer.measure(
+                lbl,
+                TextStyle(fontSize = scaledStyle.barCalloutFontSize.sp, fontWeight = scaledStyle.barCalloutFontWeight),
+            ).size
+        }
+    }
+
     Canvas(modifier.semantics { contentDescription = description }.then(gestureModifier)) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
         var layers = buildBarChartLayers(
@@ -103,21 +128,15 @@ fun RDBarChart(
             style = scaledStyle,
             sizeWidth = size.width.toDouble(),
             sizeHeight = size.height.toDouble(),
-            barLabels = barLabels,
             xAxisLabels = xAxisLabels,
             yLabelFormatter = yLabelFormatter,
             growth = growth,
             density = density,
             xLabelWidthPx = xLabelWidthPx,
         )
-        val sel = selectedIndex
+        // layout 교체 직후 selectedIndex가 새(더 짧은) layout 범위를 벗어난 1프레임을 방지(리뷰 #1).
+        val sel = selectedIndex?.takeIf { it < layout.bars.size }
         if (sel != null) {
-            val calloutSize = barLabels?.getOrNull(sel)?.let { lbl ->
-                measurer.measure(
-                    lbl,
-                    TextStyle(fontSize = scaledStyle.barCalloutFontSize.sp, fontWeight = scaledStyle.barCalloutFontWeight),
-                ).size
-            }
             layers = applyBarSelection(
                 layers, layout, scaledStyle,
                 sizeWidth = size.width.toDouble(), sizeHeight = size.height.toDouble(),
@@ -166,7 +185,6 @@ internal fun buildBarChartLayers(
     style: ChartStyle,
     sizeWidth: Double,
     sizeHeight: Double,
-    barLabels: List<String>? = null,
     xAxisLabels: List<String>? = null,
     yLabelFormatter: ((Double) -> String)? = null,
     growth: Float = 1f,
