@@ -48,43 +48,26 @@ class RDBarChartTest {
     private fun named(layers: List<LineChartLayer>, prefix: String) =
         layers.filterIsInstance<TextLayer>().filter { it.name.startsWith(prefix) }
 
-    // 장거리(42km≈43스플릿) 라벨 겹침: 슬롯보다 넓은 라벨은 stride로 솎아낸다.
+    // iOS: 막대 위 정적 라벨 제거 — 값은 롱프레스 말풍선으로만 노출. barLabel 레이어가 없어야 함.
     @Test
-    fun thinsBarLabelsWhenWiderThanSlot() {
-        val labels = List(20) { "5'30\"" }
+    fun emitsNoStaticBarLabels() {
+        val labels = List(6) { "5'30\"" }
         val layers = buildBarChartLayers(
-            sampleLayout(20), style, width, height,
+            sampleLayout(6), style, width, height,
             barLabels = labels, xAxisLabels = null, yLabelFormatter = null,
-            barLabelWidthPx = 40.0, // 슬롯보다 넓게 강제
         )
-        val shown = named(layers, "barLabel.")
-        assertTrue(shown.size < labels.size, "겹침 방지 솎아내기 기대, 실제 ${shown.size}/20")
-        assertTrue(shown.isNotEmpty())
+        assertTrue(named(layers, "barLabel.").isEmpty())
     }
 
-    // 리뷰 #1: 솎아내도 첫·마지막(피니시) 라벨은 항상 표시.
+    // x축 인덱스 라벨은 존치(솎아내기 포함).
     @Test
-    fun alwaysShowsFirstAndLastBarLabel() {
-        val labels = List(20) { "5'30\"" }
+    fun keepsXAxisLabels() {
+        val x = List(6) { "${it + 1}" }
         val layers = buildBarChartLayers(
-            sampleLayout(20), style, width, height,
-            barLabels = labels, xAxisLabels = null, yLabelFormatter = null,
-            barLabelWidthPx = 40.0,
+            sampleLayout(6), style, width, height,
+            barLabels = null, xAxisLabels = x, yLabelFormatter = null,
         )
-        val names = named(layers, "barLabel.").map { it.name }
-        assertTrue(names.contains("barLabel.0"), "첫 라벨 표시")
-        assertTrue(names.contains("barLabel.19"), "마지막(피니시) 라벨 표시")
-    }
-
-    @Test
-    fun showsAllBarLabelsWhenTheyFit() {
-        val labels = List(4) { "1" }
-        val layers = buildBarChartLayers(
-            sampleLayout(4), style, width, height,
-            barLabels = labels, xAxisLabels = null, yLabelFormatter = null,
-            barLabelWidthPx = 4.0, // 슬롯보다 좁음
-        )
-        assertEquals(4, named(layers, "barLabel.").size)
+        assertTrue(named(layers, "barXLabel.").isNotEmpty())
     }
 
     @Test
