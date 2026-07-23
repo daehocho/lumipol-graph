@@ -92,6 +92,43 @@ final class BarChartViewTests: XCTestCase {
         }
     }
 
+    // 부분 스플릿(극단값)은 색 앵커에서 제외 — 온전한 스플릿만으로 계산.
+    func testAnchorsExcludePartialSplit() {
+        let bars = [
+            BarLayout(index: 0, value: 300, heightFraction: 0.4, colorRole: .faster, isPartial: false, endMinutes: nil),
+            BarLayout(index: 1, value: 330, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil),
+            BarLayout(index: 2, value: 360, heightFraction: 0.6, colorRole: .slower, isPartial: false, endMinutes: nil),
+            BarLayout(index: 3, value: 100, heightFraction: 0.1, colorRole: .faster, isPartial: true, endMinutes: nil), // 극단 outlier
+        ]
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var captured: [BarPaceColorInput] = []
+        var style = ChartStyle.default
+        style.barColorProvider = { input in captured.append(input); return .black }
+        view.render(layout, style: style)
+        XCTAssertEqual(captured.count, 4)
+        for c in captured {                       // 앵커는 온전한 스플릿(300/330/360)만
+            XCTAssertEqual(c.fastest, 300, accuracy: 0.001)
+            XCTAssertEqual(c.slowest, 360, accuracy: 0.001)
+            XCTAssertEqual(c.average, 330, accuracy: 0.001)  // (300+330+360)/3, 부분 100 제외
+        }
+        XCTAssertEqual(captured[3].value, 100, accuracy: 0.001)   // 부분 막대 자신은 여전히 색칠됨
+        XCTAssertTrue(captured[3].isPartial)
+    }
+
+    // 전부 부분 스플릿이면 전체로 폴백(크래시 없음).
+    func testAnchorsFallBackWhenAllPartial() {
+        let bars = [BarLayout(index: 0, value: 250, heightFraction: 0.5, colorRole: .onTarget, isPartial: true, endMinutes: nil)]
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        var captured: [BarPaceColorInput] = []
+        var style = ChartStyle.default
+        style.barColorProvider = { input in captured.append(input); return .black }
+        view.render(layout, style: style)
+        XCTAssertEqual(captured.count, 1)
+        XCTAssertEqual(captured[0].average, 250, accuracy: 0.001)  // 폴백: 그 막대 자신
+    }
+
     // 부분막대 흐림(opacity)은 색과 독립적으로 유지.
     func testPartialBarStillDimmedWithContinuousColor() {
         let bars = [
