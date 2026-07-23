@@ -34,10 +34,9 @@ class RDBarChartTest {
     private fun build(
         layout: BarChartLayout,
         style: ChartStyle = this.style,
-        barLabels: List<String>? = null,
         xAxisLabels: List<String>? = null,
         yLabelFormatter: ((Double) -> String)? = null,
-    ) = buildBarChartLayers(layout, style, width, height, barLabels, xAxisLabels, yLabelFormatter)
+    ) = buildBarChartLayers(layout, style, width, height, xAxisLabels, yLabelFormatter)
 
     private fun bars(layers: List<LineChartLayer>) =
         layers.filterIsInstance<RectLayer>().filter { it.name.startsWith("bar.") }
@@ -51,10 +50,9 @@ class RDBarChartTest {
     // iOS: 막대 위 정적 라벨 제거 — 값은 롱프레스 말풍선으로만 노출. barLabel 레이어가 없어야 함.
     @Test
     fun emitsNoStaticBarLabels() {
-        val labels = List(6) { "5'30\"" }
         val layers = buildBarChartLayers(
             sampleLayout(6), style, width, height,
-            barLabels = labels, xAxisLabels = null, yLabelFormatter = null,
+            xAxisLabels = null, yLabelFormatter = null,
         )
         assertTrue(named(layers, "barLabel.").isEmpty())
     }
@@ -65,7 +63,7 @@ class RDBarChartTest {
         val x = List(6) { "${it + 1}" }
         val layers = buildBarChartLayers(
             sampleLayout(6), style, width, height,
-            barLabels = null, xAxisLabels = x, yLabelFormatter = null,
+            xAxisLabels = x, yLabelFormatter = null,
         )
         assertTrue(named(layers, "barXLabel.").isNotEmpty())
     }
@@ -75,7 +73,7 @@ class RDBarChartTest {
         val x = List(20) { "${it + 1}" }
         val layers = buildBarChartLayers(
             sampleLayout(20), style, width, height,
-            barLabels = null, xAxisLabels = x, yLabelFormatter = null,
+            xAxisLabels = x, yLabelFormatter = null,
             xLabelWidthPx = 40.0,
         )
         val shown = named(layers, "barXLabel.")
@@ -97,7 +95,7 @@ class RDBarChartTest {
             axisLabelFontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
             axisLabelFontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
         )
-        val layers = build(sampleLayout(2), style = custom, barLabels = listOf("a", "b"), xAxisLabels = listOf("1", "2"))
+        val layers = build(sampleLayout(2), style = custom, xAxisLabels = listOf("1", "2"))
         val labels = layers.filterIsInstance<TextLayer>()
         assertTrue(labels.isNotEmpty())
         labels.forEach { label ->
@@ -125,7 +123,7 @@ class RDBarChartTest {
         val provided = Color(0xFF123456)
         val s = style.copy(barColorProvider = { provided })
         val layers = buildBarChartLayers(
-            sampleLayout(4), s, width, height, barLabels = null, xAxisLabels = null,
+            sampleLayout(4), s, width, height, xAxisLabels = null,
         )
         assertTrue(bars(layers).all { it.color == provided })
     }
@@ -285,7 +283,7 @@ class RDBarChartTest {
         layout: BarChartLayout, selectedIndex: Int, barLabels: List<String>?,
         w: Double = width, h: Double = height, textW: Double = 30.0, textH: Double = 12.0,
     ): List<LineChartLayer> {
-        val base = buildBarChartLayers(layout, style, w, h, barLabels = barLabels)
+        val base = buildBarChartLayers(layout, style, w, h)
         return applyBarSelection(base, layout, style, w, h, selectedIndex, barLabels, textW, textH)
     }
 
