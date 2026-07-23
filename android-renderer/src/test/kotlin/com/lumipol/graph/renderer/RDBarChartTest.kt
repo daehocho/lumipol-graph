@@ -301,6 +301,18 @@ class RDBarChartTest {
         assertEquals(0.6f * 0.35f, rects[3].alpha, 1e-4f) // 마지막=partial
     }
 
+    // 선택 막대가 partial이면 base alpha(partialBarAlpha)를 그대로 유지하고 dim 배율을 곱하지 않는다.
+    @Test
+    fun selectedPartialBarKeepsBaseAlphaWithoutDim() {
+        val layout = sampleLayout(4, refPos = null) // 인덱스3=partial(base alpha 0.6)
+        val out = applySel(layout, selectedIndex = 3, barLabels = List(4) { "5'00\"" })
+        val rects = out.filterIsInstance<RectLayer>().filter { it.name.startsWith("bar.") && !it.name.contains("selection") }
+        // 선택된 partial 막대(인덱스3)는 dim 없이 base alpha(0.6) 그대로.
+        assertEquals(0.6f, rects[3].alpha)
+        // 미선택 비-partial(인덱스0)은 1f * 0.35.
+        assertEquals(1f * 0.35f, rects[0].alpha)
+    }
+
     // 선택 시 세로 가이드선과 말풍선(배경+텍스트) 레이어가 추가된다.
     @Test
     fun addsGuideAndCallout() {
