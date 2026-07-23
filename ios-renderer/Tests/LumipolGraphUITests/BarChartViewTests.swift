@@ -274,6 +274,51 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertEqual(view.barLayers[0].opacity, 1.0, accuracy: 0.001, "재렌더 후 막대가 dim 상태로 남아 있으면 안 됨")
         XCTAssertFalse(hasSelectionGuide(view), "재렌더 후 이전 선택 가이드선이 남아 있으면 안 됨")
     }
+
+    func testLongPressAllowsSimultaneousRecognition() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        let longPress = try! XCTUnwrap(view.gestureRecognizers?.compactMap { $0 as? UILongPressGestureRecognizer }.first)
+        XCTAssertTrue(longPress.delegate === view, "롱프레스 델리게이트가 뷰여야 함")
+        XCTAssertTrue(view.gestureRecognizer(longPress, shouldRecognizeSimultaneouslyWith: UIPanGestureRecognizer()),
+                      "스크롤 팬과 동시 인식 허용(공존)")
+    }
+
+    func testSelectionColorsResolveForCurrentTraits() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        // overrideUserInterfaceStyle은 뷰가 UIWindow 계층에 있어야 traitCollection에 실제로 반영된다
+        // (윈도우 밖에서는 system 기본값에 머묾) — 다크 트레잇 해석을 검증하려면 윈도우에 호스팅 필요.
+        let window = UIWindow(frame: view.frame)
+        window.addSubview(view)
+        window.makeKeyAndVisible()
+        view.overrideUserInterfaceStyle = .dark
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = false
+        view.render(sampleLayout(barCount: 4), style: style,
+                    barLabels: ["4'50\"", "5'00\"", "5'10\"", "5'20\""], xAxisLabels: nil, yLabelFormatter: nil)
+        view.selectBar(at: 2)
+        let guide = try! XCTUnwrap((view.layer.sublayers ?? [])
+            .flatMap { $0.sublayers ?? [] }
+            .first { $0.name == "bar.selection.line" } as? CAShapeLayer)
+        let darkResolved = style.barSelectionLineColor.resolvedColor(with: view.traitCollection).cgColor
+        let lightResolved = style.barSelectionLineColor.resolvedColor(
+            with: UITraitCollection(userInterfaceStyle: .light)).cgColor
+        XCTAssertEqual(guide.strokeColor, darkResolved, "가이드선 색은 현재(다크) 트레잇으로 해석")
+        XCTAssertNotEqual(darkResolved, lightResolved, "전제: label 색은 라이트/다크가 다름")
+    }
+
+    func testCalloutClampedToLeftWhenBubbleWiderThanPlot() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 120, height: 200)) // plot.width = 120-88 = 32
+        var style = ChartStyle.default
+        style.barShowYAxisLabels = false
+        view.render(sampleLayout(barCount: 4), style: style,
+                    barLabels: ["4'50\"", "5'00\"", "5'10\"", "5'20\""], xAxisLabels: nil, yLabelFormatter: nil)
+        view.selectBar(at: 0)
+        let plot = view.bounds.inset(by: style.plotInsets)
+        let bubble = try! XCTUnwrap((view.layer.sublayers ?? [])
+            .flatMap { $0.sublayers ?? [] }
+            .first { $0.name == "bar.selection.bubble" })
+        XCTAssertGreaterThanOrEqual(bubble.frame.minX, plot.minX - 0.5, "너무 넓어도 좌측 경계 밖으로 나가지 않음")
+    }
 }
 
 extension RDBarChartView {

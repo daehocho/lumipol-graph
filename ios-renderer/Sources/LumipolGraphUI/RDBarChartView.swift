@@ -12,6 +12,7 @@ public final class RDBarChartView: UIView {
     public private(set) var barLayers: [CALayer] = []
     public private(set) var selectedIndex: Int?
     private var selectionLayers: [CALayer] = []
+    private let selectionFeedback = UISelectionFeedbackGenerator()
 
     private var layout: BarChartLayout?
     private var barLabels: [String]?
@@ -33,6 +34,7 @@ public final class RDBarChartView: UIView {
     private func installGestures() {
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
         longPress.minimumPressDuration = 0.5
+        longPress.delegate = self
         addGestureRecognizer(longPress)
     }
 
@@ -118,7 +120,6 @@ public final class RDBarChartView: UIView {
             barLayer.frame = rect
             barLayer.cornerRadius = style.barCornerRadius
             barLayer.backgroundColor = color(for: bar.colorRole).cgColor
-            if bar.isPartial { barLayer.opacity = 0.6 }  // 부분 스플릿은 흐리게
             contentLayer.addSublayer(barLayer)
             barLayers.append(barLayer)
 
@@ -151,7 +152,7 @@ public final class RDBarChartView: UIView {
     func selectBar(at index: Int?) {
         guard selectedIndex != index else { return }
         selectedIndex = index
-        if index != nil { UISelectionFeedbackGenerator().selectionChanged() }
+        if index != nil { selectionFeedback.selectionChanged() }
         applySelection()
     }
 
@@ -168,7 +169,10 @@ public final class RDBarChartView: UIView {
 
     @objc private func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
         switch recognizer.state {
-        case .began, .changed:
+        case .began:
+            selectionFeedback.prepare()
+            scrub(at: recognizer.location(in: self))
+        case .changed:
             scrub(at: recognizer.location(in: self))
         case .ended, .cancelled, .failed:
             selectBar(at: nil)
@@ -185,7 +189,7 @@ public final class RDBarChartView: UIView {
         defer { CATransaction.commit() }
 
         for (i, layer) in barLayers.enumerated() {
-            let base: Float = layout.bars[i].isPartial ? 0.6 : 1.0
+            let base: Float = layout.bars[i].isPartial ? style.barPartialOpacity : 1.0
             let dim = selectedIndex == nil || selectedIndex == i
             layer.opacity = dim ? base : base * style.barDimOpacity
         }
@@ -204,7 +208,7 @@ public final class RDBarChartView: UIView {
         gp.move(to: CGPoint(x: barFrame.midX, y: plot.minY))
         gp.addLine(to: CGPoint(x: barFrame.midX, y: plot.maxY))
         guide.path = gp.cgPath
-        guide.strokeColor = style.barSelectionLineColor.cgColor
+        guide.strokeColor = style.barSelectionLineColor.resolvedColor(with: traitCollection).cgColor
         guide.lineWidth = 1
         contentLayer.addSublayer(guide)
         selectionLayers.append(guide)
@@ -212,13 +216,14 @@ public final class RDBarChartView: UIView {
         // 말풍선(페이스만) — barLabels 있을 때만
         if let labels = barLabels, sel < labels.count {
             let text = ChartLayerBuilder.textLayer(
-                labels[sel], font: style.barCalloutFont, color: style.barCalloutTextColor)
+                labels[sel], font: style.barCalloutFont,
+                color: style.barCalloutTextColor.resolvedColor(with: traitCollection))
             let padH: CGFloat = 8, padV: CGFloat = 4, gap: CGFloat = 6
             let tSize = text.frame.size
             let bw = tSize.width + padH * 2
             let bh = tSize.height + padV * 2
             var bx = barFrame.midX - bw / 2
-            bx = min(max(bx, plot.minX), plot.maxX - bw)   // 좌우 클램프
+            bx = max(plot.minX, min(bx, plot.maxX - bw))   // 좌우 클램프(좌측 우선)
             var by = barFrame.minY - gap - bh
             if by < plot.minY { by = plot.minY }           // 상단 부족 시 클램프
             let bubbleRect = CGRect(x: bx, y: by, width: bw, height: bh)
@@ -229,7 +234,7 @@ public final class RDBarChartView: UIView {
             bubble.path = UIBezierPath(
                 roundedRect: CGRect(origin: .zero, size: bubbleRect.size), cornerRadius: 6
             ).cgPath
-            bubble.fillColor = style.barCalloutBackgroundColor.cgColor
+            bubble.fillColor = style.barCalloutBackgroundColor.resolvedColor(with: traitCollection).cgColor
             contentLayer.addSublayer(bubble)
             selectionLayers.append(bubble)
 
@@ -271,4 +276,14 @@ public final class RDBarChartView: UIView {
         tl.frame = CGRect(origin: origin, size: size)
         contentLayer.addSublayer(tl)
     }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+extension RDBarChartView: UIGestureRecognizerDelegate {
+    /// 세로 스크롤(UIScrollView) 안에서도 롱프레스 스크럽이 동작하도록 동시 인식 허용
+    /// (형제 RDChartView와 동일 계약 — DGCharts drag-highlight 감각).
+    public func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool { true }
 }
