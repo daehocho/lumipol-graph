@@ -53,6 +53,7 @@ public struct ChartStyle {
     public var barPartialOpacity: Float = 0.6   // 부분 스플릿(마지막 조각) 막대 기본 흐림
     /// 막대별 색 오버라이드. nil이면 ChartStyle.defaultPaceColor(연속 팔레트) 사용.
     public var barColorProvider: ((BarPaceColorInput) -> UIColor)?
+    public var barSelectionLineColor: UIColor = UIColor.label.withAlphaComponent(0.55)
     public var barCalloutBackgroundColor: UIColor = .label
     public var barCalloutTextColor: UIColor = .systemBackground
     public var barCalloutFont: UIFont = .systemFont(ofSize: 12, weight: .semibold)
