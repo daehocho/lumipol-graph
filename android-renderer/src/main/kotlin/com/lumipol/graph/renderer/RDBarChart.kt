@@ -29,7 +29,8 @@ import kotlin.math.roundToInt
  * 스플릿 막대 차트.
  *
  * @param layout 앱이 `BarChartEngine.layout`으로 만든 정규화 레이아웃(iOS 비대칭 계약 유지).
- * @param barLabels 막대 위 라벨(표시 페이스 등). null이면 생략.
+ * @param barLabels 막대 값 라벨(표시 페이스 등). 정적 표시는 하지 않고 TalkBack 요약·롱프레스 말풍선
+ *   값 소스로만 쓰인다. null이면 값 없음.
  * @param xAxisLabels 막대 아래 구간 라벨. null이면 생략.
  * @param yLabelFormatter y틱 값 포매터. null이면 정수 반올림.
  * @param animateEntrance baseline→값 높이 성장 애니. iOS는 정적이라 기본 off(UX 패리티).
@@ -53,9 +54,6 @@ fun RDBarChart(
     val scaledStyle = remember(style, density) { style.scaledForDensity(density) }
     // 라벨 최대 폭은 layout/스타일/글꼴배율이 바뀔 때만 측정(등장 애니로 growth가 매 프레임 바뀌어도
     // 재측정하지 않도록 그리기 경로 밖에서 memoize — 리뷰 #3). stride 자체는 폭·크기로 싸게 계산.
-    val barLabelWidthPx = remember(barLabels, scaledStyle, fontScale, measurer) {
-        maxLabelWidthPx(measurer, barLabels, scaledStyle, fontScale)
-    }
     val xLabelWidthPx = remember(xAxisLabels, scaledStyle, fontScale, measurer) {
         maxLabelWidthPx(measurer, xAxisLabels, scaledStyle, fontScale)
     }
@@ -73,7 +71,6 @@ fun RDBarChart(
             yLabelFormatter = yLabelFormatter,
             growth = growth,
             density = density,
-            barLabelWidthPx = barLabelWidthPx,
             xLabelWidthPx = xLabelWidthPx,
         ).forEach { render(it, measurer) }
     }
@@ -105,7 +102,8 @@ private fun maxLabelWidthPx(
 } ?: 0.0
 
 /**
- * BarChartLayout → z-순서 레이어(그리드/틱라벨 → 막대 → 막대라벨 → x라벨 → 참조선).
+ * BarChartLayout → z-순서 레이어(그리드/틱라벨 → 막대 → x라벨 → 참조선). 막대 위 정적 값 라벨은
+ * 없음(iOS: 값은 롱프레스 말풍선으로만 노출).
  * 막대가 없거나 렌더 불가 플롯이면 빈 리스트(iOS `guard !bars.isEmpty, plot>0`).
  */
 internal fun buildBarChartLayers(
@@ -118,7 +116,6 @@ internal fun buildBarChartLayers(
     yLabelFormatter: ((Double) -> String)? = null,
     growth: Float = 1f,
     density: Float = 1f,
-    barLabelWidthPx: Double = 0.0,
     xLabelWidthPx: Double = 0.0,
 ): List<LineChartLayer> {
     if (layout.bars.isEmpty()) return emptyList()
@@ -129,10 +126,9 @@ internal fun buildBarChartLayers(
     val n = layout.bars.size
 
     // 라벨 솎아내기 stride(장거리·하프 등 슬롯보다 넓은 라벨 겹침 방지). 라벨 최대 폭은 composable이 미리
-    // 측정해 주입한다(그리기 경로에서 프레임마다 재측정하지 않도록). 값 라벨·x축 인덱스는 폭이 달라
-    // 각각 계산 — 양 플랫폼 공유 코어 labelStride. 표시 여부는 isLabelVisible(첫·마지막 항상 표시).
+    // 측정해 주입한다(그리기 경로에서 프레임마다 재측정하지 않도록). 표시 여부는 isLabelVisible(첫·마지막
+    // 항상 표시).
     val gap = BAR_LABEL_MIN_GAP * density
-    val barLabelStride = if (barLabels.isNullOrEmpty()) 1 else labelStride(n, plot.width, barLabelWidthPx, gap)
     val xLabelStride = if (xAxisLabels.isNullOrEmpty()) 1 else labelStride(n, plot.width, xLabelWidthPx, gap)
 
     // Y 그리드 + 틱 라벨
@@ -188,22 +184,6 @@ internal fun buildBarChartLayers(
             ),
         )
         val midX = x + barWidth / 2
-        if (isLabelVisible(i, n, barLabelStride)) barLabels?.getOrNull(i)?.let { label ->
-            layers.add(
-                TextLayer(
-                    name = "barLabel.$i",
-                    text = label,
-                    anchorX = midX,
-                    anchorY = (plot.maxY - h) - BAR_LABEL_ABOVE_GAP * density,
-                    hAlign = HAlign.CENTER,
-                    vAlign = VAlign.ABOVE,
-                    color = style.axisLabelColor,
-                    fontSizeSp = style.axisLabelFontSize,
-                    fontFamily = style.axisLabelFontFamily,
-                    fontWeight = style.axisLabelFontWeight,
-                ),
-            )
-        }
         if (style.barShowXAxisLabels && isLabelVisible(i, n, xLabelStride)) {
             xAxisLabels?.getOrNull(i)?.let { label ->
                 layers.add(
@@ -241,7 +221,6 @@ internal fun buildBarChartLayers(
 }
 
 private const val BAR_LABEL_GAP = 4.0               // y틱 라벨과 축 사이(iOS insets.left-4)
-private const val BAR_LABEL_ABOVE_GAP = 2.0         // 막대 위 라벨 여백(iOS rect.minY-2)
 private const val BAR_X_LABEL_GAP = 4.0             // x축 라벨과 막대 바닥 사이(iOS maxY+4)
 private const val BAR_LABEL_MIN_GAP = 6.0           // 솎아낸 이웃 라벨 사이 최소 여백(dp) — 겹침 방지
 
