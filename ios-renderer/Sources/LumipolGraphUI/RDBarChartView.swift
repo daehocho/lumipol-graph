@@ -221,14 +221,14 @@ public final class RDBarChartView: UIView {
             let text = ChartLayerBuilder.textLayer(
                 labels[sel], font: style.barCalloutFont,
                 color: style.barCalloutTextColor.resolvedColor(with: traitCollection))
-            let padH: CGFloat = 8, padV: CGFloat = 4, gap: CGFloat = 6
+            let padH: CGFloat = 8, padV: CGFloat = 4
             let tSize = text.frame.size
             let bw = tSize.width + padH * 2
             let bh = tSize.height + padV * 2
             var bx = barFrame.midX - bw / 2
             bx = max(plot.minX, min(bx, plot.maxX - bw))   // 좌우 클램프(좌측 우선)
-            var by = barFrame.minY - gap - bh
-            if by < plot.minY { by = plot.minY }           // 상단 부족 시 클램프
+            // 손가락 가림 방지: 막대 높이와 무관하게 항상 플롯 상단에 고정(짧은 막대도 안 가려짐).
+            let by = plot.minY
             let bubbleRect = CGRect(x: bx, y: by, width: bw, height: bh)
 
             let bubble = CAShapeLayer()
