@@ -86,4 +86,20 @@ final class SnapshotTests: XCTestCase {
         view.selectBar(at: 4)
         assertSnapshot(of: view, as: .image)
     }
+
+    // ⑦ 막대 차트 — 연속 색상(비선택, provider 미지정 → 기본 팔레트)
+    func testBarChartContinuousColor() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 220))
+        view.backgroundColor = .white
+        view.overrideUserInterfaceStyle = .light
+        let bars = (0..<8).map { i -> BarLayout in
+            BarLayout(index: Int32(i), value: 300 + Double(i) * 12,
+                      heightFraction: 0.25 + 0.08 * Double(i),
+                      colorRole: .onTarget, isPartial: false, endMinutes: nil)
+        }
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: KotlinDouble(double: 0.5))
+        view.render(layout)   // provider 미지정 → 기본 연속 팔레트
+        view.layoutIfNeeded()
+        assertSnapshot(of: view, as: .image)
+    }
 }
