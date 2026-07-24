@@ -84,8 +84,8 @@ final class ChartLayerBuilderTests: XCTestCase {
         XCTAssertEqual(names, [
             "grid",
             "band.0", "marker.0", "marker.1",
-            "series.gradient.pace", "series.main.pace",
-            "series.overlay.cad",
+            "series.gradient.pace", "series.gradient.cad",
+            "series.main.pace", "series.overlay.cad",
             "axisLabels.x", "axisLabels.yPrimary",
         ])
     }
@@ -107,8 +107,7 @@ final class ChartLayerBuilderTests: XCTestCase {
         XCTAssertNil(layer(named: "grid", in: layers))
     }
 
-    func testGradientOnlyOnPrimaryAxisSeries() {
-        // secondary 축 main 시리즈는 fill 중첩 방지를 위해 그라데이션 없이 라인만 그린다.
+    func testGradientDrawnForEverySeriesRegardlessOfAxis() {
         let dualLayout = LineChartLayout(
             series: [
                 SeriesLayout(id: "pace", role: .main, points: [
@@ -133,9 +132,37 @@ final class ChartLayerBuilderTests: XCTestCase {
             layout: dualLayout, data: dualData, style: .default, plotArea: plotArea,
             formatter: { _, value in "\(value)" }
         )
+        let names = layers.compactMap(\.name)
         XCTAssertNotNil(layer(named: "series.gradient.pace", in: layers))
-        XCTAssertNil(layer(named: "series.gradient.hr", in: layers))
-        XCTAssertNotNil(layer(named: "series.main.hr", in: layers))
+        XCTAssertNotNil(layer(named: "series.gradient.hr", in: layers))
+        // 모든 그라데이션이 모든 라인보다 앞(아래).
+        let lastGradient = names.lastIndex { $0.hasPrefix("series.gradient.") }!
+        let firstLine = names.firstIndex { $0.hasPrefix("series.main.") || $0.hasPrefix("series.overlay.") }!
+        XCTAssertLessThan(lastGradient, firstLine)
+    }
+
+    func testGradientAlphaDecaysBySeriesCount() {
+        // 기본 layout: pace + cad = 2장 → 0.25/√2.
+        let gradient = layer(named: "series.gradient.pace", in: build()) as? CAGradientLayer
+        let topColor = gradient?.colors?.first as! CGColor  // colors는 [Any]?의 CGColor 원소
+        let expected = ChartStyle.default.gradientMaxAlpha / CGFloat(2.0).squareRoot()
+        XCTAssertEqual(topColor.alpha, expected, accuracy: 0.001)
+    }
+
+    func testNoGradientPassWhenNoSeries() {
+        let empty = LineChartLayout(
+            series: [], axisTicks: [], refBands: [], markers: [],
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+        )
+        let emptyData = LineChartData(
+            series: [], referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let layers = ChartLayerBuilder.build(
+            layout: empty, data: emptyData, style: .default, plotArea: plotArea,
+            formatter: { _, value in "\(value)" }
+        )
+        XCTAssertFalse(layers.contains { $0.name?.hasPrefix("series.gradient.") == true })
     }
 
     func testMainLinePathSpansPlotRect() {
@@ -199,7 +226,7 @@ final class ChartLayerBuilderTests: XCTestCase {
         XCTAssertTrue(layers.isEmpty)
     }
 
-    func testOverlaySeriesProducesDashedLayerWithoutAxisLabelsOrGradient() {
+    func testOverlaySeriesProducesDashedLayerWithoutAxisLabels() {
         let overlayLayout = LineChartLayout(
             series: [
                 SeriesLayout(id: "p", role: .main, points: [
@@ -226,7 +253,8 @@ final class ChartLayerBuilderTests: XCTestCase {
         )
         let names = layers.compactMap(\.name)
         XCTAssertTrue(names.contains("series.overlay.o"))
-        XCTAssertFalse(names.contains { $0.hasPrefix("series.gradient.o") })
+        // 오버레이도 이제 배경 그라데이션을 그린다(모든 시리즈 대상 2패스 계약).
+        XCTAssertTrue(names.contains("series.gradient.o"))
         XCTAssertFalse(names.contains { $0.hasPrefix("axisLabels") })
         let overlay = layer(named: "series.overlay.o", in: layers) as? CAShapeLayer
         XCTAssertEqual(overlay?.lineDashPattern, ChartStyle.default.overlayLineDashPattern)
