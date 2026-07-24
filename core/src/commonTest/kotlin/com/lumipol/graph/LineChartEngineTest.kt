@@ -45,8 +45,8 @@ class LineChartEngineTest {
         layout.series.flatMap { it.points }.forEach {
             assertTrue(it.x in 0.0..1.0 && it.y in 0.0..1.0)
         }
-        // 역할 보존
-        assertEquals(SeriesRole.MAIN, layout.series.first { it.id == "pace_prev" }.role)
+        // 역할 보존은 overlay_series_is_self_normalized... 가 MAIN과 구분되는 역할로 검증한다
+        // (여기서 MAIN을 단언해봐야 Series.role 기본값과 같아 통과가 보장된다).
     }
 
     @Test

@@ -1,7 +1,7 @@
 import UIKit
 import LumipolGraphUI
 
-/// A 데모: 페이스(반전 축)+심박 이중축 + 목표선/밴드 + km 마커 + 터치 말풍선.
+/// A 데모: 페이스(반전 축)+심박 이중축 + 목표 밴드 + km 마커 + 터치 스크럽 마커.
 final class SampleViewController: UIViewController {
     private let chartView = RDChartView()
 

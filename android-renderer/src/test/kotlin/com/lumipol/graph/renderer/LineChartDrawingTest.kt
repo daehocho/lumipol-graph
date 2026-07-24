@@ -31,6 +31,8 @@ class LineChartDrawingTest {
     private val layout = LineChartLayout(
         series = listOf(
             SeriesLayout("pace", SeriesRole.MAIN, listOf(NormalizedPoint(0.0, 0.0), NormalizedPoint(1.0, 1.0))),
+            // 역할 z-순서 계약(main → overlay)을 이름 순서로 고정하기 위해 골든 트리에 남긴다.
+            SeriesLayout("cad", SeriesRole.OVERLAY, listOf(NormalizedPoint(0.0, 1.0), NormalizedPoint(1.0, 0.0))),
         ),
         axisTicks = listOf(
             AxisTicksLayout(ChartAxis.X, listOf(AxisTick(0.0, 0.0), AxisTick(5.0, 1.0))),
@@ -46,6 +48,7 @@ class LineChartDrawingTest {
     private val data = LineChartData(
         series = listOf(
             Series("pace", emptyList(), Axis.PRIMARY, SeriesRole.MAIN),
+            Series("cad", emptyList(), Axis.PRIMARY, SeriesRole.OVERLAY),
         ),
         config = ChartConfig(segmentCount = 0, maxTicks = 5),
     )
@@ -89,6 +92,7 @@ class LineChartDrawingTest {
                 "grid",
                 "band.0", "marker.0", "marker.1",
                 "series.gradient.pace", "series.main.pace",
+                "series.overlay.cad",
                 "axisLabels.x", "axisLabels.yPrimary",
             ),
             build().map { it.name },
