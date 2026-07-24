@@ -222,4 +222,19 @@ class PaceSeriesEngineTest {
         val r = PaceSeriesEngine.preprocess(PaceSeriesInput(pts, 360.0, 600.0))
         assertEquals(r.pace.minOf { it.y } * 60.0, r.bestPaceSeconds, 1e-9)
     }
+
+    @Test fun best_pace_uses_displayed_downsampled_minimum_not_full_resolution() {
+        // skip>1일 때 best는 "표시되는(다운샘플된) 페이스"의 최소여야 한다(전해상도 최소가 아님).
+        // 6000점 → skip=2 → 짝수 인덱스만 표시. 마지막 index 5999(홀수, 미표시)로 단조 하강시키면
+        // 전해상도 평활 최소는 5999에 오고, 표시 최소는 5998에 온다. best가 표시 최소와 일치해야
+        // "선과 최고 페이스 숫자"가 어긋나지 않는다(전해상도 최소로 새면 이 단언이 깨진다).
+        val n = 6000
+        val pts = (0 until n).map { i ->
+            val pace = if (i >= n - 20) 600.0 - (i - (n - 21)) * 5.0 else 600.0
+            pacePoint((i + 1) * 0.01, pace)
+        }
+        val r = PaceSeriesEngine.preprocess(PaceSeriesInput(pts, 3300.0, 60000.0))
+        assertEquals(3000, r.pace.size) // skip = 6000/3000 = 2
+        assertEquals(r.pace.minOf { it.y } * 60.0, r.bestPaceSeconds, 1e-9)
+    }
 }

@@ -68,11 +68,11 @@ data class DonutChartLayout(
  * 비어 있고(고도는 null), 가용하면 비어 있지 않다. 둘 중 어느 쪽을 봐도 같은 답이 나온다.
  */
 data class PaceSeriesResult(
-    val pace: List<Point>,          // y = paceSeconds/60(분), 다운샘플·아웃라이어 컷. 미가용이면 emptyList
+    val pace: List<Point>,          // y = paceSeconds/60(분), 아웃라이어 컷·평활·다운샘플. 미가용이면 emptyList
     val heart: List<Point>,         // 전 포인트, 결측 승계(앞쪽 결측은 첫 유효값 소급). 미가용이면 emptyList
     val cadence: List<Point>,       // 전 포인트, 결측 승계(앞쪽 결측은 첫 유효값 소급). 미가용이면 emptyList
     val altitudeArea: List<Point>?, // 다운샘플. 고도 미측정이거나 <2점이면 null. 평지여도 측정됐으면 반환
-    val bestPaceSeconds: Double,    // 유효 최소, 없으면 0. 페이스 미가용이어도 집계값은 그대로 낸다
+    val bestPaceSeconds: Double,    // 평활·다운샘플된(표시되는) 페이스의 최소(초), 없으면 0 — 선과 일치. 미가용이어도 낸다
     val validPaceCount: Int,        // 필터·아웃라이어 통과 표본 수(다운샘플 이전). 위와 동일
     /**
      * 실제로 표시 가능한 지표 id 집합([com.lumipol.graph.PaceSeriesId]). 소비 앱의 지표 칩·범례
