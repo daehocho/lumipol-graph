@@ -64,7 +64,8 @@ object PaceSeriesEngine {
         val heart = ArrayList<Point>()
         val cadence = ArrayList<Point>()
         // 전해상도 유효 페이스(다운샘플 전) — x와 초 단위 페이스를 분리 보관해 평활을 건다.
-        // 데시메이션 전에 저역통과를 걸어야 노이즈가 제거되고 에일리어싱도 막힌다.
+        // 데시메이션 전에 저역통과를 걸어 노이즈를 제거한다. 창이 고정(15)이라 에일리어싱 억제는
+        // skip이 작은 통상 표본율에서 유효하고, 초장시간(초당 표본 수만 점) 입력에선 잔여가 남는다.
         val validX = ArrayList<Double>()
         val validPaceSec = ArrayList<Double>()
         for (s in samples) {
