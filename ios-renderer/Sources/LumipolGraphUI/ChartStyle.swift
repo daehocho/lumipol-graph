@@ -6,8 +6,9 @@ public struct ChartStyle {
     public var lineWidth: CGFloat = 2
     public var primaryLineColor: UIColor = .systemBlue
     public var secondaryLineColor: UIColor = .systemRed
-    /// primary 축 main 시리즈 라인색 기반 area 그라데이션의 시작 알파. 0이면 그라데이션 없음.
-    /// secondary 축은 fill 중첩으로 탁해지므로 그라데이션 없이 라인만 그린다.
+    /// 선택된 **모든** 시리즈(축·역할 무관, overlay 포함)에 각자 색의 area 그라데이션을 그릴 때
+    /// 시작 알파. 0이면 그라데이션 없음. 여러 장이 겹칠 때 탁해지지 않도록 실제 시작 알파는
+    /// `gradientMaxAlpha / √n`(n=그라데이션 장수)으로 감쇠한다 — n=1이면 이 값 그대로.
     public var gradientMaxAlpha: CGFloat = 0.25
     /// 시리즈 id → 색. 지정되면 라인·배경 그라데이션이 이 색을 쓴다(축 슬롯 색보다 우선).
     /// 비어 있으면 종전대로 축/역할 기반 색(primary/secondary/overlay)으로 폴백한다.
