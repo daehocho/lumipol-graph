@@ -15,9 +15,11 @@ public struct AreaPoint {
 enum AreaSilhouette {
     /// 값들을 자체 min~max로 0~1 정규화 — 코어 질의(`heightFractions`)에 위임(interpolatedY와
     /// 같은 이관 사유: 플랫폼 중립 수학). 축퇴(전부 동일) 시 모두 0(평지) 의미론 유지.
-    static func heightFractions(_ values: [Double]) -> [Double] {
-        HeightFractionsKt.heightFractions(values: values.map { KotlinDouble(value: $0) })
-            .map(\.doubleValue)
+    /// minSpan은 노이즈가 산맥으로 보이지 않게 하는 분모 하한(`ChartStyle.areaMinValueSpan`).
+    static func heightFractions(_ values: [Double], minSpan: Double = 0) -> [Double] {
+        HeightFractionsKt.heightFractions(
+            values: values.map { KotlinDouble(value: $0) }, minSpan: minSpan
+        ).map(\.doubleValue)
     }
 
     /// 도메인 area 포인트 → 실루엣 CAShapeLayer. 2점 미만이거나 렌더 불가 플롯이면 nil.
@@ -27,7 +29,7 @@ enum AreaSilhouette {
         points: [AreaPoint], xScale: AxisScale, plotArea: PlotArea, style: ChartStyle
     ) -> CAShapeLayer? {
         guard points.count >= 2, plotArea.isRenderable else { return nil }
-        let fractions = heightFractions(points.map { $0.y })
+        let fractions = heightFractions(points.map { $0.y }, minSpan: style.areaMinValueSpan)
         let baseY = plotArea.rect.maxY
         let usableHeight = style.areaHeightFraction * plotArea.rect.height
         func pixel(_ index: Int) -> CGPoint {

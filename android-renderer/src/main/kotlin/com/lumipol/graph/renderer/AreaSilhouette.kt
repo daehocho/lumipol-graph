@@ -19,9 +19,10 @@ internal object AreaSilhouette {
      * 값들을 자체 min~max로 0~1 정규화 — 코어 질의(`heightFractions`)에 위임(interpolatedY와 같은
      * 이관 사유: 플랫폼 중립 수학). 축퇴(전부 동일) 시 모두 0(평지) — `AxisDomain.normalize`(0.5)와
      * 다른 실루엣 전용 의미론이므로 그쪽으로 대체하면 안 된다(iOS parity).
+     * [minSpan]은 노이즈가 산맥으로 보이지 않게 하는 분모 하한(`ChartStyle.areaMinValueSpan`).
      */
-    fun heightFractions(values: List<Double>): List<Double> =
-        com.lumipol.graph.query.heightFractions(values)
+    fun heightFractions(values: List<Double>, minSpan: Double = 0.0): List<Double> =
+        com.lumipol.graph.query.heightFractions(values, minSpan)
 
     /**
      * 도메인 area 포인트 → 실루엣 채움 폴리곤. 2점 미만이거나 렌더 불가 플롯이면 null.
@@ -37,7 +38,7 @@ internal object AreaSilhouette {
         style: ChartStyle,
     ): AreaFillLayer? {
         if (points.size < 2 || !plot.isRenderable) return null
-        val fractions = heightFractions(points.map { it.y })
+        val fractions = heightFractions(points.map { it.y }, style.areaMinValueSpan)
         val baseY = plot.maxY
         val usableHeight = style.areaHeightFraction * plot.height
 

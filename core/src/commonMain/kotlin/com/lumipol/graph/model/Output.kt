@@ -61,14 +61,25 @@ data class DonutChartLayout(
     val total: Double,
 )
 
-/** 페이스 전처리 결과 — 정제된 라인 포인트 + 통계 + 고도 실루엣. */
+/**
+ * 페이스 전처리 결과 — 정제된 라인 포인트 + 통계 + 고도 실루엣.
+ *
+ * 네 시리즈 필드는 [availableSeries]와 항상 일치한다: 지표가 가용하지 않으면 필드도
+ * 비어 있고(고도는 null), 가용하면 비어 있지 않다. 둘 중 어느 쪽을 봐도 같은 답이 나온다.
+ */
 data class PaceSeriesResult(
-    val pace: List<Point>,          // y = paceSeconds/60(분), 다운샘플·아웃라이어 컷 적용
-    val heart: List<Point>,         // 전 포인트, 결측 승계. 무데이터면 emptyList
-    val cadence: List<Point>,       // 전 포인트, 결측 승계. 무데이터면 emptyList
-    val altitudeArea: List<Point>?, // 다운샘플. 평지(≤0.5m) 또는 <2점이면 null
-    val bestPaceSeconds: Double,    // 유효 최소, 없으면 0
-    val validPaceCount: Int,
+    val pace: List<Point>,          // y = paceSeconds/60(분), 다운샘플·아웃라이어 컷. 미가용이면 emptyList
+    val heart: List<Point>,         // 전 포인트, 결측 승계(앞쪽 결측은 첫 유효값 소급). 미가용이면 emptyList
+    val cadence: List<Point>,       // 전 포인트, 결측 승계(앞쪽 결측은 첫 유효값 소급). 미가용이면 emptyList
+    val altitudeArea: List<Point>?, // 다운샘플. 고도 미측정이거나 <2점이면 null. 평지여도 측정됐으면 반환
+    val bestPaceSeconds: Double,    // 유효 최소, 없으면 0. 페이스 미가용이어도 집계값은 그대로 낸다
+    val validPaceCount: Int,        // 필터·아웃라이어 통과 표본 수(다운샘플 이전). 위와 동일
+    /**
+     * 실제로 표시 가능한 지표 id 집합([com.lumipol.graph.PaceSeriesId]). 소비 앱의 지표 칩·범례
+     * 노출과 [com.lumipol.graph.SeriesSelection] 입력의 단일 소스 — 앱이 개별 필드를 보고
+     * 각자 판정하면 플랫폼마다 규칙이 갈리므로 코어가 확정해 내보낸다.
+     */
+    val availableSeries: Set<Int>,
 )
 
 /** 존 표시용 bpm 경계. upper=null이면 상한 없음(최대존). */

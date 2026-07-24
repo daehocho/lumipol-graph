@@ -65,6 +65,9 @@ data class ChartStyle(
     // 배경 고도 실루엣 (장식 area — 축/스크럽 없음)
     val areaFillColor: Color,
     val areaHeightFraction: Float = 0.35f,
+    // 실루엣 높이 정규화 분모의 하한(도메인 단위 — 고도면 m). 실측 고저차가 이보다 작으면
+    // 그만큼 납작하게 그려져 센서 노이즈가 산맥으로 보이지 않는다. 0이면 하한 없음.
+    val areaMinValueSpan: Double = 0.5,
 
     // 구간(km) 마커
     val markerLineColor: Color,
