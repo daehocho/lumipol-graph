@@ -19,7 +19,7 @@ enum TestFixtures {
     static var paceOnly: LineChartData {
         LineChartData(
             series: [series(id: "pace", values: paceValues, axis: .primary, role: .main)],
-            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
     }
@@ -31,13 +31,13 @@ enum TestFixtures {
                 series(id: "pace", values: paceValues, axis: .primary, role: .main),
                 series(id: "hr", values: heartRateValues, axis: .secondary, role: .main),
             ],
-            referenceLines: [], referenceBands: [],
+            referenceBands: [],
             segmentMarkers: kmMarkers,
             config: ChartConfig(segmentCount: 5, maxTicks: 5)
         )
     }
 
-    /// ③④ A+C 풀 구성: 이중축 + 고스트 + 목표선 + 목표 밴드 + km 마커
+    /// ③④ A+C 풀 구성: 이중축 + 고스트 + 목표 밴드 + km 마커
     static var fullChart: LineChartData {
         LineChartData(
             series: [
@@ -45,7 +45,6 @@ enum TestFixtures {
                 series(id: "pace_prev", values: ghostPaceValues, axis: .primary, role: .ghost),
                 series(id: "hr", values: heartRateValues, axis: .secondary, role: .main),
             ],
-            referenceLines: [RefLine(value: 5.5, axis: .primary, label: "목표 5'30\"")],
             referenceBands: [RefBand(lower: 5.4, upper: 5.6, axis: .primary)],
             segmentMarkers: kmMarkers,
             config: ChartConfig(segmentCount: 5, maxTicks: 5)
@@ -55,7 +54,7 @@ enum TestFixtures {
     /// ⑤ 시리즈 없음 — 선택 라인 지표에 데이터가 없고 배경 area(고도)만 있는 기록.
     static var emptySeries: LineChartData {
         LineChartData(
-            series: [], referenceLines: [], referenceBands: [], segmentMarkers: [],
+            series: [], referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
     }

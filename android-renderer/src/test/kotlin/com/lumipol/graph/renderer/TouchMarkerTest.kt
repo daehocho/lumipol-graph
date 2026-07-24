@@ -158,7 +158,7 @@ class TouchMarkerTest {
     @Test
     fun returnsNilWhenAxisScaleUnavailable() {
         val emptyLayout = LineChartLayout(
-            series = emptyList(), axisTicks = emptyList(), refLines = emptyList(),
+            series = emptyList(), axisTicks = emptyList(),
             refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
         )

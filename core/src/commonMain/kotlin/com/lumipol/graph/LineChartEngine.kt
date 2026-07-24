@@ -89,8 +89,8 @@ object LineChartEngine {
             )
         }
 
-        // 축 tick: 어떤 출력 요소(시리즈/기준선/밴드)든 참조하는 축은 항상 여기 등장한다 —
-        // refLine/refBand의 값도 yValues()에 흡수되어 해당 축의 도메인+틱을 만들어내기 때문.
+        // 축 tick: 어떤 출력 요소(시리즈/밴드)든 참조하는 축은 항상 여기 등장한다 —
+        // refBand의 값도 yValues()에 흡수되어 해당 축의 도메인+틱을 만들어내기 때문.
         val axisTicks = buildList {
             add(AxisTicksLayout(ChartAxis.X, xTicks.map { AxisTick(it, xDom.normalize(it)) }))
             yNice[Axis.PRIMARY]?.let { ns ->
@@ -101,10 +101,7 @@ object LineChartEngine {
             }
         }
 
-        // 기준선/밴드/마커 (마커는 windowed면 창 밖 제거)
-        val refLines = data.referenceLines.map {
-            RefLineLayout(it.axis, yDom.getValue(it.axis).normalize(it.value), it.label)
-        }
+        // 밴드/마커 (마커는 windowed면 창 밖 제거)
         val refBands = data.referenceBands.map {
             val dom = yDom.getValue(it.axis)
             RefBandLayout(it.axis, dom.normalize(it.lower), dom.normalize(it.upper))
@@ -122,7 +119,6 @@ object LineChartEngine {
         return LineChartLayout(
             series = seriesLayout,
             axisTicks = axisTicks,
-            refLines = refLines,
             refBands = refBands,
             markers = markers,
             stats = Stats(perSeries, segments, if (segments.isEmpty()) null else splitBase?.id),

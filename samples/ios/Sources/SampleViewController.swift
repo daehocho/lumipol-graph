@@ -59,7 +59,6 @@ final class SampleViewController: UIViewController {
                 series("pace_prev", ghostValues, axis: .primary, role: .ghost),
                 series("hr", heartRateValues, axis: .secondary, role: .main),
             ],
-            referenceLines: [RefLine(value: 5.5, axis: .primary, label: "목표 5'30\"")],
             referenceBands: [RefBand(lower: 5.4, upper: 5.6, axis: .primary)],
             segmentMarkers: (1...5).map { Marker(x: Double($0), label: "\($0)km", emphasis: $0 == 5) },
             config: ChartConfig(segmentCount: 5, maxTicks: 5)

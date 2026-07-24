@@ -58,8 +58,7 @@ data class ChartStyle(
     val overlayLineWidth: Float = 1.5f,
     val overlayLineDashPattern: FloatArray = floatArrayOf(2f, 2f),
 
-    // 기준선/밴드
-    val refLineColor: Color,
+    // 기준선/밴드 (refLineDashPattern은 BarChart 평균/목표 점선이 재사용)
     val refLineDashPattern: FloatArray = floatArrayOf(6f, 3f),
     val refBandColor: Color,
 
@@ -125,7 +124,6 @@ data class ChartStyle(
             gridLineColor = Color(0xFFD1D1D6).copy(alpha = 0.7f),    // systemGray4 α0.7
             ghostLineColor = Color(0xFF8E8E93).copy(alpha = 0.7f),   // systemGray α0.7
             overlayLineColor = Color(0xFFAF52DE).copy(alpha = 0.8f), // systemPurple α0.8
-            refLineColor = Color(0xFFFF9500),                        // systemOrange
             refBandColor = Color(0xFFFF9500).copy(alpha = 0.12f),    // systemOrange α0.12
             areaFillColor = Color(0xFFC7C7CC).copy(alpha = 0.35f),   // systemGray3 α0.35
             markerLineColor = Color(0xFFD1D1D6),                     // systemGray4
@@ -157,7 +155,6 @@ data class ChartStyle(
             gridLineColor = Color(0xFF3A3A3C).copy(alpha = 0.7f),
             ghostLineColor = Color(0xFF8E8E93).copy(alpha = 0.7f),
             overlayLineColor = Color(0xFFBF5AF2).copy(alpha = 0.8f),
-            refLineColor = Color(0xFFFF9F0A),
             refBandColor = Color(0xFFFF9F0A).copy(alpha = 0.12f),
             areaFillColor = Color(0xFF48484A).copy(alpha = 0.35f),
             markerLineColor = Color(0xFF3A3A3C),

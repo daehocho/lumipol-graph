@@ -7,18 +7,20 @@ import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
 
 class ViewportLayoutTest {
-    // x 0..4 등간격, y는 x=2에서 봉우리(10), 나머지 1
+    // x 0..4 등간격, y는 x=2에서 봉우리(10), 나머지는 1~2.
+    // x=4의 y=2는 의도적 — 창(2.5~4.0) 안에 서로 다른 y가 둘(1, 2) 있어야
+    // y_domain_refits_to_visible_points_only가 실제 재계산을 검증한다(전부 같은 값이면
+    // niceScale의 min==max 패딩 분기를 타 모든 점이 0.5로 뭉개져 단언이 무의미해진다).
     private val data = LineChartData(
         series = listOf(
             Series(
                 "pace",
                 listOf(
                     Point(0.0, 1.0), Point(1.0, 1.0), Point(2.0, 10.0),
-                    Point(3.0, 1.0), Point(4.0, 1.0),
+                    Point(3.0, 1.0), Point(4.0, 2.0),
                 ),
             ),
         ),
-        referenceLines = listOf(RefLine(5.0, axis = Axis.PRIMARY)),
         segmentMarkers = listOf(Marker(1.0, label = "1km"), Marker(3.5, label = "3.5km")),
     )
 
@@ -45,13 +47,18 @@ class ViewportLayoutTest {
 
     @Test
     fun y_domain_refits_to_visible_points_only() {
-        // 봉우리(x=2, y=10)가 창 밖 → Y 도메인은 y=1과 기준선 5로 재계산
-        // (창 안 y 최대 = 5(기준선) → 정규화에서 y=10 이웃 포인트는 1 초과)
+        // 봉우리(x=2, y=10)가 창 밖 → Y 도메인은 창 안 포인트(y=1, y=2)만으로 재계산된다.
         val layout = LineChartEngine.layout(data, 2.5, 4.0)
         val inWindow = layout.series[0].points.filter { it.x in 0.0..1.0 }
+        assertEquals(2, inWindow.size)
         inWindow.forEach { assertTrue(it.y in 0.0..1.0) }
-        // 기준선은 항상 Y 도메인 안 (position 0..1)
-        assertTrue(layout.refLines[0].position in 0.0..1.0)
+        // 창 안 값이 0..1을 꽉 채운다 = 도메인이 딱 가시 범위(1~2)로 맞춰졌다는 뜻.
+        // (봉우리 10이 도메인에 남아 있으면 두 점 모두 0 근처로 눌려 이 단언이 깨진다.)
+        assertEquals(0.0, inWindow.minOf { it.y }, 1e-9)
+        assertEquals(1.0, inWindow.maxOf { it.y }, 1e-9)
+        // 창 밖 이웃(봉우리)은 도메인에 기여하지 않으므로 1을 크게 넘긴다.
+        val peakNeighbor = layout.series[0].points.first { it.x < 0.0 }
+        assertTrue(peakNeighbor.y > 1.0, "창 밖 봉우리 이웃 y=${peakNeighbor.y}는 1 초과여야 한다")
     }
 
     @Test

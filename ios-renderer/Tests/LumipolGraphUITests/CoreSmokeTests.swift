@@ -13,7 +13,6 @@ final class CoreSmokeTests: XCTestCase {
                     role: .main
                 )
             ],
-            referenceLines: [],
             referenceBands: [],
             segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)

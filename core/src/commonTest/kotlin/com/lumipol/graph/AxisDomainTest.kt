@@ -22,16 +22,15 @@ class AxisDomainTest {
     }
 
     @Test
-    fun yValues_collects_series_reflines_and_bands_on_axis() {
+    fun yValues_collects_series_and_bands_on_axis() {
         val data = LineChartData(
             series = listOf(
                 Series("hr", listOf(Point(0.0, 150.0), Point(1.0, 170.0)), axis = Axis.SECONDARY),
                 Series("pace", listOf(Point(0.0, 5.0)), axis = Axis.PRIMARY),
             ),
-            referenceLines = listOf(RefLine(4.5, axis = Axis.PRIMARY)),
             referenceBands = listOf(RefBand(4.0, 4.2, axis = Axis.PRIMARY)),
         )
-        assertEquals(listOf(5.0, 4.5, 4.0, 4.2), yValues(data, Axis.PRIMARY))
+        assertEquals(listOf(5.0, 4.0, 4.2), yValues(data, Axis.PRIMARY))
         assertEquals(listOf(150.0, 170.0), yValues(data, Axis.SECONDARY))
     }
 }

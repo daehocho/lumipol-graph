@@ -36,7 +36,6 @@ import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.Marker
 import com.lumipol.graph.model.Point
 import com.lumipol.graph.model.RefBand
-import com.lumipol.graph.model.RefLine
 import com.lumipol.graph.model.Series
 import com.lumipol.graph.model.SeriesRole
 import com.lumipol.graph.model.SplitSample
@@ -165,7 +164,6 @@ private object SampleData {
             series("pace_prev", ghostValues, Axis.PRIMARY, SeriesRole.GHOST),
             series("hr", heartRateValues, Axis.SECONDARY, SeriesRole.MAIN),
         ),
-        referenceLines = listOf(RefLine(5.5, Axis.PRIMARY, "목표 5'30\"")),
         referenceBands = listOf(RefBand(5.4, 5.6, Axis.PRIMARY)),
         segmentMarkers = (1..5).map { Marker(it.toDouble(), "${it}km", it == 5) },
         config = ChartConfig(segmentCount = 5, maxTicks = 5),

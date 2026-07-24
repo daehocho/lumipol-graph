@@ -2,7 +2,7 @@ import UIKit
 import LumipolGraph
 
 /// 코어 `LineChartLayout`(정규화 0~1)을 `ChartStyle`·`PlotArea`로 CALayer 트리에 조립한다.
-/// z-순서: 그리드 → 밴드 → 마커 → 고스트 → (그라데이션+main 라인) → 오버레이(점선, 축 라벨 없음) → 기준선 → 축 라벨.
+/// z-순서: 그리드 → 밴드 → 마커 → 고스트 → (그라데이션+main 라인) → 오버레이(점선, 축 라벨 없음) → 축 라벨.
 enum ChartLayerBuilder {
 
     static func build(
@@ -44,9 +44,6 @@ enum ChartLayerBuilder {
         for series in layout.series where series.role == .overlay {
             guard let path = overlayLinePath(series.points, plotArea: plotArea) else { continue }
             layers.append(overlayLineLayer(series, path: path, style: style))
-        }
-        for (index, refLine) in layout.refLines.enumerated() {
-            layers.append(refLineLayer(refLine, index: index, style: style, plotArea: plotArea))
         }
         for ticksLayout in layout.axisTicks where !ticksLayout.ticks.isEmpty {
             layers.append(axisLabelsLayer(ticksLayout, style: style, plotArea: plotArea, formatter: formatter))
@@ -223,32 +220,6 @@ enum ChartLayerBuilder {
             text.frame.origin = CGPoint(
                 x: x - text.frame.width / 2,
                 y: plotArea.rect.minY - text.frame.height - 2
-            )
-            container.addSublayer(text)
-        }
-        return container
-    }
-
-    private static func refLineLayer(
-        _ refLine: RefLineLayout, index: Int, style: ChartStyle, plotArea: PlotArea
-    ) -> CALayer {
-        let container = CALayer()
-        container.name = "refLine.\(index)"
-        let y = plotArea.y(refLine.position, axis: refLine.axis)
-        let line = CAShapeLayer()
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: plotArea.rect.minX, y: y))
-        path.addLine(to: CGPoint(x: plotArea.rect.maxX, y: y))
-        line.path = path.cgPath
-        line.strokeColor = style.refLineColor.cgColor
-        line.lineWidth = 1
-        line.lineDashPattern = style.refLineDashPattern
-        container.addSublayer(line)
-        if let label = refLine.label {
-            let text = textLayer(label, font: style.axisLabelFont, color: style.refLineColor)
-            text.frame.origin = CGPoint(
-                x: plotArea.rect.maxX - text.frame.width,
-                y: y - text.frame.height - 2
             )
             container.addSublayer(text)
         }

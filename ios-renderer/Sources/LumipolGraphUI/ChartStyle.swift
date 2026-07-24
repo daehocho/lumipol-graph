@@ -25,8 +25,7 @@ public struct ChartStyle {
     public var overlayLineWidth: CGFloat = 1.5
     public var overlayLineDashPattern: [NSNumber] = [2, 2]
 
-    // 기준선/밴드
-    public var refLineColor: UIColor = .systemOrange
+    // 기준선/밴드 (refLineDashPattern은 BarChart 평균/목표 점선이 재사용)
     public var refLineDashPattern: [NSNumber] = [6, 3]
     public var refBandColor: UIColor = UIColor.systemOrange.withAlphaComponent(0.12)
 

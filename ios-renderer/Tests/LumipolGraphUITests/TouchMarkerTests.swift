@@ -65,7 +65,7 @@ final class TouchMarkerTests: XCTestCase {
                     axis: .primary, role: .overlay
                 ),
             ],
-            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
         let overlayLayout = LineChartEngine.shared.layout(data: overlayData)
@@ -97,7 +97,7 @@ final class TouchMarkerTests: XCTestCase {
                     axis: .primary, role: .main
                 ),
             ],
-            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
         let windowed = LineChartEngine.shared.layout(data: d, xMin: 0.0, xMax: 5.0)
@@ -121,7 +121,7 @@ final class TouchMarkerTests: XCTestCase {
                 ),
                 TestFixtures.series(id: "pace", values: TestFixtures.paceValues, axis: .primary, role: .main),
             ],
-            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
         let ghostFirstLayout = LineChartEngine.shared.layout(data: ghostFirst)
@@ -146,7 +146,7 @@ final class TouchMarkerTests: XCTestCase {
                     axis: .primary, role: .ghost
                 ),
             ],
-            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
         let windowed = LineChartEngine.shared.layout(data: ghostShort, xMin: 3.0, xMax: 5.0)
@@ -169,7 +169,7 @@ final class TouchMarkerTests: XCTestCase {
                 TestFixtures.series(id: "pace", values: TestFixtures.paceValues, axis: .primary, role: .main),
                 TestFixtures.series(id: "pace", values: TestFixtures.ghostPaceValues, axis: .primary, role: .ghost),
             ],
-            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
         let dupLayout = LineChartEngine.shared.layout(data: dupData)
@@ -183,7 +183,7 @@ final class TouchMarkerTests: XCTestCase {
     func testReturnsNilWhenAxisScaleUnavailable() {
         // 축 tick이 없는 빈 레이아웃 → 역산 불능 → nil
         let emptyLayout = LineChartLayout(
-            series: [], axisTicks: [], refLines: [], refBands: [], markers: [],
+            series: [], axisTicks: [], refBands: [], markers: [],
             stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
         )
         let result = TouchMarker.make(atRawX: 1.0, context: TouchMarker.Context(
