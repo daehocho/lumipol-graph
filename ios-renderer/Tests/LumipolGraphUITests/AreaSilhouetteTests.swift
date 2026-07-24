@@ -49,6 +49,33 @@ final class AreaSilhouetteTests: XCTestCase {
         XCTAssertLessThanOrEqual(box.maxX, plot.rect.maxX)
     }
 
+    func testLayerAppliesStyleMinValueSpanToFlattenNoise() {
+        // Android: buildAppliesStyleMinValueSpanToFlattenNoise
+        // 고저차 0.25m. 하한이 없으면 봉우리가 usableHeight를 전부 채운다(노이즈가 산맥).
+        // 기본 areaMinValueSpan=0.5가 layer까지 흐르면 절반까지만 올라간다.
+        let noise = [AreaPoint(x: 0, y: 10), AreaPoint(x: 10, y: 10.25)]
+        let usable = 0.35 * plot.rect.height // 35
+
+        let box = AreaSilhouette.layer(
+            points: noise, xScale: xScale, plotArea: plot, style: .default
+        )!.path!.boundingBox
+        XCTAssertEqual(box.minY, 100 - 0.5 * usable, accuracy: 1e-3) // 82.5
+
+        var flat = ChartStyle.default
+        flat.areaMinValueSpan = 0
+        let noFloor = AreaSilhouette.layer(
+            points: noise, xScale: xScale, plotArea: plot, style: flat
+        )!.path!.boundingBox
+        XCTAssertEqual(noFloor.minY, 100 - usable, accuracy: 1e-3) // 65.0
+
+        // 실측 고저차가 하한보다 크면 하한은 관여하지 않는다.
+        let real = AreaSilhouette.layer(
+            points: [AreaPoint(x: 0, y: 0), AreaPoint(x: 10, y: 100)],
+            xScale: xScale, plotArea: plot, style: .default
+        )!.path!.boundingBox
+        XCTAssertEqual(real.minY, 100 - usable, accuracy: 1e-3)
+    }
+
     func testLayerNilForFewerThanTwoPoints() {
         XCTAssertNil(AreaSilhouette.layer(
             points: [AreaPoint(x: 0, y: 5)], xScale: xScale, plotArea: plot, style: .default

@@ -70,6 +70,26 @@ class AreaSilhouetteTest {
     }
 
     @Test
+    fun buildAppliesStyleMinValueSpanToFlattenNoise() {
+        // 고저차 0.25m. minSpan 없으면 봉우리가 usableHeight를 전부 채운다(노이즈가 산맥).
+        // 기본 areaMinValueSpan=0.5가 build까지 흐르면 절반(0.5)까지만 올라간다.
+        val noise = listOf(Point(0.0, 10.0), Point(10.0, 10.25))
+        val usable = 0.35 * plot.height // 35
+
+        val default = AreaSilhouette.build(noise, xScale, plot, style)!!
+        assertEquals(100.0 - 0.5 * usable, bounds(default.polygon)[1], 1e-3) // 82.5
+
+        val noFloor = AreaSilhouette.build(noise, xScale, plot, style.copy(areaMinValueSpan = 0.0))!!
+        assertEquals(100.0 - usable, bounds(noFloor.polygon)[1], 1e-3) // 65.0
+
+        // 실측 고저차가 하한보다 크면 하한은 관여하지 않는다.
+        val real = AreaSilhouette.build(
+            listOf(Point(0.0, 0.0), Point(10.0, 100.0)), xScale, plot, style,
+        )!!
+        assertEquals(100.0 - usable, bounds(real.polygon)[1], 1e-3)
+    }
+
+    @Test
     fun buildNullForFewerThanTwoPoints() {
         assertNull(
             AreaSilhouette.build(listOf(Point(0.0, 5.0)), xScale, plot, style),
