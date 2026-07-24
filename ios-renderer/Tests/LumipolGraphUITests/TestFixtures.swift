@@ -37,6 +37,18 @@ enum TestFixtures {
         )
     }
 
+    /// 페이스(primary)+심박(secondary)+케이던스(overlay) — 배경 3장 겹침 검증용.
+    static let paceHeartCadence = LineChartData(
+        series: [
+            Series(id: "pace", points: paceAndHeartRate.series[0].points, axis: .primary, role: .main),
+            Series(id: "hr", points: paceAndHeartRate.series[1].points, axis: .secondary, role: .main),
+            Series(id: "cad", points: paceAndHeartRate.series[0].points.map { Point(x: $0.x, y: 170 + $0.y * 2) },
+                   axis: .primary, role: .overlay),
+        ],
+        referenceBands: [], segmentMarkers: paceAndHeartRate.segmentMarkers,
+        config: paceAndHeartRate.config
+    )
+
     /// ③④ 풀 구성: 이중축 + 목표 밴드 + km 마커
     static var fullChart: LineChartData {
         LineChartData(

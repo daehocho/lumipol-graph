@@ -102,4 +102,28 @@ final class SnapshotTests: XCTestCase {
         view.layoutIfNeeded()
         assertSnapshot(of: view, as: .image)
     }
+
+    // ⑧ 3지표 동시 — 배경 3장 겹침(선택순 스택)
+    func testThreeSeriesStackedGradients() {
+        let view = makeChartView(
+            TestFixtures.paceHeartCadence, invertedAxes: [.primary], formatter: TestFixtures.format
+        )
+        assertSnapshot(of: view, as: .image)
+    }
+
+    // ⑨ 고도 단독 — 실루엣만, 지표 배경 0장
+    func testAltitudeOnly() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.backgroundColor = .white
+        view.overrideUserInterfaceStyle = .light
+        view.isAnimationEnabled = false
+        view.render(
+            TestFixtures.emptySeries,
+            invertedAxes: [.primary],
+            labelFormatter: TestFixtures.format,
+            backgroundArea: [AreaPoint(x: 0, y: 0), AreaPoint(x: 5, y: 100)]
+        )
+        view.layoutIfNeeded()
+        assertSnapshot(of: view, as: .image)
+    }
 }

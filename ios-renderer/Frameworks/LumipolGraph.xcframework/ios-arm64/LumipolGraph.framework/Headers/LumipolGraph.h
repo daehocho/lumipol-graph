@@ -222,9 +222,9 @@ __attribute__((swift_name("SeriesSelection")))
 + (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
 + (instancetype)seriesSelection __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphSeriesSelection *shared __attribute__((swift_name("shared")));
-- (NSArray<LumipolGraphInt *> *)assignSlotsPriority:(NSArray<LumipolGraphInt *> *)priority selected:(NSSet<LumipolGraphInt *> *)selected withData:(NSSet<LumipolGraphInt *> *)withData slotCount:(int32_t)slotCount __attribute__((swift_name("assignSlots(priority:selected:withData:slotCount:)")));
-- (NSArray<LumipolGraphInt *> *)normalizedCurrent:(NSArray<LumipolGraphInt *> *)current available:(NSSet<LumipolGraphInt *> *)available linePriority:(NSArray<LumipolGraphInt *> *)linePriority maxCount:(int32_t)maxCount __attribute__((swift_name("normalized(current:available:linePriority:maxCount:)")));
-- (NSArray<LumipolGraphInt *> *)toggledCurrent:(NSArray<LumipolGraphInt *> *)current toggling:(int32_t)toggling lineItems:(NSSet<LumipolGraphInt *> *)lineItems maxCount:(int32_t)maxCount __attribute__((swift_name("toggled(current:toggling:lineItems:maxCount:)")));
+- (NSArray<LumipolGraphInt *> *)assignSlotsPriority:(NSArray<LumipolGraphInt *> *)priority selected:(NSSet<LumipolGraphInt *> *)selected withData:(NSSet<LumipolGraphInt *> *)withData __attribute__((swift_name("assignSlots(priority:selected:withData:)")));
+- (NSArray<LumipolGraphInt *> *)normalizedCurrent:(NSArray<LumipolGraphInt *> *)current available:(NSSet<LumipolGraphInt *> *)available priority:(NSArray<LumipolGraphInt *> *)priority __attribute__((swift_name("normalized(current:available:priority:)")));
+- (NSArray<LumipolGraphInt *> *)toggledCurrent:(NSArray<LumipolGraphInt *> *)current toggling:(int32_t)toggling __attribute__((swift_name("toggled(current:toggling:)")));
 @end
 
 __attribute__((swift_name("KotlinComparable")))
