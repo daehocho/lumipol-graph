@@ -178,13 +178,48 @@ class PaceSeriesEngineTest {
         assertTrue(r.availableSeries.isEmpty())
     }
 
-    @Test fun best_pace_is_min_valid_seconds() {
-        val pts = listOf(
-            pacePoint(0.01, 600.0),
-            pacePoint(0.02, 300.0), // 최고(최소 초)
-            pacePoint(0.03, 450.0),
-        )
-        val r = PaceSeriesEngine.preprocess(PaceSeriesInput(pts, 18.0, 30.0))
-        assertEquals(300.0, r.bestPaceSeconds, 1e-9)
+    @Test fun best_pace_from_smoothed_ignores_isolated_glitch() {
+        // 순간 과속 글리치(1점)는 롤링 중앙값에 흡수돼 최고 페이스에 반영되지 않는다.
+        // 균일 600s 25점 중 가운데 1점만 300s → best는 600 근처(300 아님).
+        val pts = (0 until 25).map { pacePoint((it + 1) * 0.01, 600.0) }.toMutableList()
+        pts[12] = pacePoint(0.13, 300.0)
+        val r = PaceSeriesEngine.preprocess(PaceSeriesInput(pts, 150.0, 250.0))
+        assertTrue(r.bestPaceSeconds > 400.0, "glitch should be smoothed out, got ${r.bestPaceSeconds}")
+    }
+
+    @Test fun best_pace_reflects_sustained_fast_segment() {
+        // 지속된 빠른 구간(11점 연속)은 평활에도 살아남아 최고 페이스에 반영된다.
+        val pts = (0 until 40).map { i ->
+            val p = if (i in 15..25) 300.0 else 600.0
+            pacePoint((i + 1) * 0.01, p)
+        }
+        val r = PaceSeriesEngine.preprocess(PaceSeriesInput(pts, 240.0, 400.0))
+        assertTrue(r.bestPaceSeconds < 400.0, "sustained fast segment should survive, got ${r.bestPaceSeconds}")
+    }
+
+    @Test fun smoothing_suppresses_fast_spike_amplitude() {
+        // 빠른 스파이크(1점)는 slowCap(느린 아웃라이어)에 안 걸리므로 평활이 책임진다.
+        // 균일 400s 30점 중 1점만 250s → 평활 후 최소 y가 250/60(≈4.17)까지 안 내려간다.
+        val pts = (0 until 30).map { pacePoint((it + 1) * 0.01, 400.0) }.toMutableList()
+        pts[15] = pacePoint(0.16, 250.0)
+        val r = PaceSeriesEngine.preprocess(PaceSeriesInput(pts, 240.0, 600.0))
+        val minY = r.pace.minOf { it.y }
+        assertTrue(minY > 5.5, "fast spike should be suppressed, minY=$minY")
+    }
+
+    @Test fun smoothing_preserves_monotonic_trend() {
+        // 선형 추세(점점 빨라짐)는 평활 후에도 보존 — 과평활로 뭉개지지 않는다.
+        val pts = (0 until 60).map { i -> pacePoint((i + 1) * 0.01, 600.0 - i * 3.0) }
+        val r = PaceSeriesEngine.preprocess(PaceSeriesInput(pts, 360.0, 600.0))
+        val firstY = r.pace.first().y
+        val lastY = r.pace.last().y
+        assertTrue(firstY > lastY + 1.0, "trend should be preserved: first=$firstY last=$lastY")
+    }
+
+    @Test fun best_pace_matches_displayed_pace_minimum() {
+        // 계약: bestPaceSeconds는 표시되는(다운샘플된) 페이스 최소 ×60과 정확히 일치.
+        val pts = (0 until 60).map { i -> pacePoint((i + 1) * 0.01, 600.0 - i * 3.0) }
+        val r = PaceSeriesEngine.preprocess(PaceSeriesInput(pts, 360.0, 600.0))
+        assertEquals(r.pace.minOf { it.y } * 60.0, r.bestPaceSeconds, 1e-9)
     }
 }
