@@ -19,6 +19,10 @@ object PaceSeriesEngine {
     private const val SLOW_OUTLIER_MARGIN = 1.25
     private const val SLOW_OUTLIER_MIN_SAMPLES = 20
     private const val DOWNSAMPLE_TARGET = 3000
+
+    /** 페이스 평활 창(표본 개수, 중심). 중앙값으로 스파이크 억제 → 이동평균으로 매끈. */
+    private const val MEDIAN_WINDOW = 15
+    private const val MEAN_WINDOW = 15
     private const val METERS_PER_KM = 1000.0
     private const val SECONDS_PER_MINUTE = 60.0
 
@@ -57,19 +61,32 @@ object PaceSeriesEngine {
 
         val slowCap = slowOutlierCap(samples.mapNotNull { if (it.pace > 0.0) it.pace else null })
 
-        val pace = ArrayList<Point>()
         val heart = ArrayList<Point>()
         val cadence = ArrayList<Point>()
-        var best = Double.MAX_VALUE
-        var valid = 0
+        // 전해상도 유효 페이스(다운샘플 전) — x와 초 단위 페이스를 분리 보관해 평활을 건다.
+        // 데시메이션 전에 저역통과를 걸어야 노이즈가 제거되고 에일리어싱도 막힌다.
+        val validX = ArrayList<Double>()
+        val validPaceSec = ArrayList<Double>()
         for (s in samples) {
             // 승계 시드 덕분에 여기서 null인 건 "전 구간 결측"뿐이고, 그 시리즈는 아래에서 통째로 비운다.
             heart.add(Point(s.x, s.hr ?: 0.0))
             cadence.add(Point(s.x, s.cad ?: 0.0))
             if (s.pace <= 0.0 || s.pace > slowCap) continue
-            best = minOf(best, s.pace)
-            valid += 1
-            if (valid % skip == 0) pace.add(Point(s.x, s.pace / SECONDS_PER_MINUTE))
+            validX.add(s.x)
+            validPaceSec.add(s.pace)
+        }
+        val valid = validPaceSec.size
+        val smoothed = smooth(validPaceSec)
+
+        // 다운샘플은 평활 이후에 인덱스 기준(i % skip)으로 — best도 표시되는 점에서만 집계해
+        // "선과 최고 페이스 숫자"가 정확히 일치한다.
+        val pace = ArrayList<Point>()
+        var best = Double.MAX_VALUE
+        for (i in smoothed.indices) {
+            if (i % skip != 0) continue
+            val sec = smoothed[i]
+            pace.add(Point(validX[i], sec / SECONDS_PER_MINUTE))
+            best = minOf(best, sec)
         }
         val area = ArrayList<Point>()
         samples.forEachIndexed { i, s -> if (i % skip == 0) area.add(Point(s.x, s.alt ?: 0.0)) }
@@ -111,5 +128,39 @@ object PaceSeriesEngine {
         val sorted = validPaceSeconds.sorted()
         val index = (SLOW_OUTLIER_PERCENTILE * (sorted.size - 1)).toInt()
         return sorted[index] * SLOW_OUTLIER_MARGIN
+    }
+
+    /** 롤링 중앙값 → 중심 이동평균 2단 평활(초 단위). 크기 보존, 양 끝 창 clamp. */
+    private fun smooth(paceSec: List<Double>): List<Double> {
+        if (paceSec.isEmpty()) return paceSec
+        return movingAverage(rollingMedian(paceSec, MEDIAN_WINDOW), MEAN_WINDOW)
+    }
+
+    private fun rollingMedian(v: List<Double>, window: Int): List<Double> {
+        val n = v.size
+        val h = window / 2
+        val out = ArrayList<Double>(n)
+        for (i in 0 until n) {
+            val lo = maxOf(0, i - h)
+            val hi = minOf(n - 1, i + h)
+            val slice = v.subList(lo, hi + 1).sorted()
+            val m = slice.size
+            out.add(if (m % 2 == 1) slice[m / 2] else (slice[m / 2 - 1] + slice[m / 2]) / 2.0)
+        }
+        return out
+    }
+
+    private fun movingAverage(v: List<Double>, window: Int): List<Double> {
+        val n = v.size
+        val h = window / 2
+        val out = ArrayList<Double>(n)
+        for (i in 0 until n) {
+            val lo = maxOf(0, i - h)
+            val hi = minOf(n - 1, i + h)
+            var sum = 0.0
+            for (j in lo..hi) sum += v[j]
+            out.add(sum / (hi - lo + 1))
+        }
+        return out
     }
 }
