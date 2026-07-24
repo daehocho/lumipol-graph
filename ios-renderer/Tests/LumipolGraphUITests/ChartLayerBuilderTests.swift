@@ -9,6 +9,10 @@ final class ChartLayerBuilderTests: XCTestCase {
             SeriesLayout(id: "pace", role: .main, points: [
                 NormalizedPoint(x: 0, y: 0), NormalizedPoint(x: 1, y: 1),
             ]),
+            // 역할 z-순서 계약(main → overlay)을 이름 순서로 고정하기 위해 골든 트리에 남긴다.
+            SeriesLayout(id: "cad", role: .overlay, points: [
+                NormalizedPoint(x: 0, y: 1), NormalizedPoint(x: 1, y: 0),
+            ]),
         ],
         axisTicks: [
             AxisTicksLayout(axis: .x, ticks: [AxisTick(value: 0, position: 0), AxisTick(value: 5, position: 1)]),
@@ -24,6 +28,7 @@ final class ChartLayerBuilderTests: XCTestCase {
     private let data = LineChartData(
         series: [
             Series(id: "pace", points: [], axis: .primary, role: .main),
+            Series(id: "cad", points: [], axis: .primary, role: .overlay),
         ],
         referenceBands: [], segmentMarkers: [],
         config: ChartConfig(segmentCount: 0, maxTicks: 5)
@@ -80,6 +85,7 @@ final class ChartLayerBuilderTests: XCTestCase {
             "grid",
             "band.0", "marker.0", "marker.1",
             "series.gradient.pace", "series.main.pace",
+            "series.overlay.cad",
             "axisLabels.x", "axisLabels.yPrimary",
         ])
     }
