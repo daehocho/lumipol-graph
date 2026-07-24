@@ -70,8 +70,11 @@ enum ChartLayerBuilder {
         polylinePath(points) { plotArea.pointIgnoringInversion($0) }
     }
 
-    private static func lineColor(for axis: Axis, style: ChartStyle) -> UIColor {
-        axis == .secondary ? style.secondaryLineColor : style.primaryLineColor
+    /// 시리즈 색 — 맵 우선, 없으면 역할/축 폴백. 라인·그라데이션 공용 단일 소스.
+    static func seriesColor(id: String, role: SeriesRole, axis: Axis, style: ChartStyle) -> UIColor {
+        if let c = style.seriesColors[id] { return c }
+        if role == .overlay { return style.overlayLineColor }
+        return axis == .secondary ? style.secondaryLineColor : style.primaryLineColor
     }
 
     private static func mainLineLayer(
@@ -80,7 +83,7 @@ enum ChartLayerBuilder {
         let layer = CAShapeLayer()
         layer.name = "series.main.\(series.id)"
         layer.path = path.cgPath
-        layer.strokeColor = lineColor(for: axis, style: style).cgColor
+        layer.strokeColor = seriesColor(id: series.id, role: series.role, axis: axis, style: style).cgColor
         layer.fillColor = nil
         layer.lineWidth = style.lineWidth
         layer.lineJoin = .round
@@ -95,7 +98,7 @@ enum ChartLayerBuilder {
         let layer = CAShapeLayer()
         layer.name = "series.overlay.\(series.id)"
         layer.path = path.cgPath
-        layer.strokeColor = style.overlayLineColor.cgColor
+        layer.strokeColor = seriesColor(id: series.id, role: series.role, axis: .primary, style: style).cgColor
         layer.fillColor = nil
         layer.lineWidth = style.overlayLineWidth
         layer.lineDashPattern = style.overlayLineDashPattern
@@ -106,7 +109,7 @@ enum ChartLayerBuilder {
     private static func gradientLayer(
         _ series: SeriesLayout, axis: Axis, linePath: UIBezierPath, style: ChartStyle, plotArea: PlotArea
     ) -> CAGradientLayer {
-        let color = lineColor(for: axis, style: style)
+        let color = seriesColor(id: series.id, role: series.role, axis: axis, style: style)
         let gradient = CAGradientLayer()
         gradient.name = "series.gradient.\(series.id)"
         gradient.frame = plotArea.rect

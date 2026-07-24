@@ -280,4 +280,28 @@ final class ChartLayerBuilderTests: XCTestCase {
         )
         XCTAssertTrue(layers.isEmpty)
     }
+
+    func testSeriesColorResolvesFromMapThenFallsBackToAxisRole() {
+        var style = ChartStyle.default
+        style.seriesColors = ["pace": .green]
+        // 맵에 있으면 맵 색
+        XCTAssertEqual(
+            ChartLayerBuilder.seriesColor(id: "pace", role: .main, axis: .primary, style: style), .green
+        )
+        // 없으면 role/axis 폴백: overlay → overlayLineColor
+        XCTAssertEqual(
+            ChartLayerBuilder.seriesColor(id: "cad", role: .overlay, axis: .primary, style: style),
+            style.overlayLineColor
+        )
+        // secondary main → secondaryLineColor
+        XCTAssertEqual(
+            ChartLayerBuilder.seriesColor(id: "hr", role: .main, axis: .secondary, style: style),
+            style.secondaryLineColor
+        )
+        // primary main → primaryLineColor
+        XCTAssertEqual(
+            ChartLayerBuilder.seriesColor(id: "x", role: .main, axis: .primary, style: style),
+            style.primaryLineColor
+        )
+    }
 }

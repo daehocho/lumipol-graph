@@ -9,6 +9,9 @@ public struct ChartStyle {
     /// primary 축 main 시리즈 라인색 기반 area 그라데이션의 시작 알파. 0이면 그라데이션 없음.
     /// secondary 축은 fill 중첩으로 탁해지므로 그라데이션 없이 라인만 그린다.
     public var gradientMaxAlpha: CGFloat = 0.25
+    /// 시리즈 id → 색. 지정되면 라인·배경 그라데이션이 이 색을 쓴다(축 슬롯 색보다 우선).
+    /// 비어 있으면 종전대로 축/역할 기반 색(primary/secondary/overlay)으로 폴백한다.
+    public var seriesColors: [String: UIColor] = [:]
 
     // 그리드 (X tick 세로선 + Y tick 가로선). nil이면 그리드 없음.
     public var gridLineColor: UIColor? = UIColor.systemGray4.withAlphaComponent(0.7)
