@@ -655,7 +655,6 @@ __attribute__((swift_name("SeriesRole")))
 + (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
 - (instancetype)initWithName:(NSString *)name ordinal:(int32_t)ordinal __attribute__((swift_name("init(name:ordinal:)"))) __attribute__((objc_designated_initializer)) __attribute__((unavailable));
 @property (class, readonly) LumipolGraphSeriesRole *main __attribute__((swift_name("main")));
-@property (class, readonly) LumipolGraphSeriesRole *ghost __attribute__((swift_name("ghost")));
 @property (class, readonly) LumipolGraphSeriesRole *overlay __attribute__((swift_name("overlay")));
 + (LumipolGraphKotlinArray<LumipolGraphSeriesRole *> *)values __attribute__((swift_name("values()")));
 @property (class, readonly) NSArray<LumipolGraphSeriesRole *> *entries __attribute__((swift_name("entries")));

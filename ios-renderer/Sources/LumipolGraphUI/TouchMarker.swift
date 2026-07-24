@@ -59,7 +59,7 @@ enum TouchMarker {
         let roleBySeriesId = Dictionary(
             context.data.series.map { ($0.id, $0.role) }, uniquingKeysWith: { first, _ in first }
         )
-        // 수직선 x는 main 시리즈의 근접점 기준 — 시리즈 순서 계약이 없고 고스트/오버레이는
+        // 수직선 x는 main 시리즈의 근접점 기준 — 시리즈 순서 계약이 없고 오버레이는
         // 성긴 샘플링일 수 있어, 스냅 격자는 본 기록(main)을 따른다. main 없으면 첫 시리즈 폴백.
         let snapSource = results.first { roleBySeriesId[$0.seriesId] == .main } ?? results.first
         guard let snappedX = snapSource?.x else { return nil }
@@ -78,7 +78,7 @@ enum TouchMarker {
         var valuesBySeriesId: [String: String] = [:]
         for result in results {
             // 시리즈별 근접점이 현재 표시 도메인(창) 밖이면 점·값 모두 생략 —
-            // 창에 포인트가 없는 시리즈(예: 짧은 고스트)가 창 밖 값을 스크럽 위치인 양
+            // 창에 포인트가 없는 시리즈(예: 짧은 보조 라인)가 창 밖 값을 스크럽 위치인 양
             // 보고하거나, 창 기준 y-도메인을 벗어난 위치에 점을 그리는 것을 방지.
             let seriesNx = xScale.position(ofValue: result.x)
             guard seriesNx >= -1e-9, seriesNx <= 1 + 1e-9 else { continue }
@@ -102,14 +102,9 @@ enum TouchMarker {
                 arcCenter: point, radius: context.style.touchDotRadius,
                 startAngle: 0, endAngle: .pi * 2, clockwise: true
             ).cgPath
-            let dotColor: UIColor
-            if roleBySeriesId[result.seriesId] == .ghost {
-                dotColor = context.style.ghostLineColor
-            } else if axis == .secondary {
-                dotColor = context.style.secondaryLineColor
-            } else {
-                dotColor = context.style.primaryLineColor
-            }
+            let dotColor: UIColor = axis == .secondary
+                ? context.style.secondaryLineColor
+                : context.style.primaryLineColor
             dot.fillColor = dotColor.cgColor
             container.addSublayer(dot)
             valuesBySeriesId[result.seriesId] = context.formatter(chartAxis, result.y)

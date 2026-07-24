@@ -48,11 +48,6 @@ data class ChartStyle(
     val gridLineDashPattern: FloatArray = floatArrayOf(3f, 3f),
     val gridLineWidth: Float = 0.5f,
 
-    // 고스트(지난 러닝)
-    val ghostLineColor: Color,
-    val ghostLineWidth: Float = 1.5f,
-    val ghostDashPattern: FloatArray = floatArrayOf(4f, 3f),
-
     // 오버레이(코어가 자체 정규화한 시리즈) — 축 라벨·그라데이션 없는 점선 라인
     val overlayLineColor: Color,
     val overlayLineWidth: Float = 1.5f,
@@ -125,7 +120,6 @@ data class ChartStyle(
             primaryLineColor = Color(0xFF007AFF),                    // systemBlue
             secondaryLineColor = Color(0xFFFF3B30),                  // systemRed
             gridLineColor = Color(0xFFD1D1D6).copy(alpha = 0.7f),    // systemGray4 α0.7
-            ghostLineColor = Color(0xFF8E8E93).copy(alpha = 0.7f),   // systemGray α0.7
             overlayLineColor = Color(0xFFAF52DE).copy(alpha = 0.8f), // systemPurple α0.8
             refBandColor = Color(0xFFFF9500).copy(alpha = 0.12f),    // systemOrange α0.12
             areaFillColor = Color(0xFFC7C7CC).copy(alpha = 0.35f),   // systemGray3 α0.35
@@ -156,7 +150,6 @@ data class ChartStyle(
             primaryLineColor = Color(0xFF0A84FF),
             secondaryLineColor = Color(0xFFFF453A),
             gridLineColor = Color(0xFF3A3A3C).copy(alpha = 0.7f),
-            ghostLineColor = Color(0xFF8E8E93).copy(alpha = 0.7f),
             overlayLineColor = Color(0xFFBF5AF2).copy(alpha = 0.8f),
             refBandColor = Color(0xFFFF9F0A).copy(alpha = 0.12f),
             areaFillColor = Color(0xFF48484A).copy(alpha = 0.35f),
@@ -207,8 +200,6 @@ internal fun ChartStyle.scaledForDensity(density: Float): ChartStyle {
         lineWidth = lineWidth * density,
         gridLineDashPattern = gridLineDashPattern.scaled(),
         gridLineWidth = maxOf(gridLineWidth * density, ChartStyle.HAIRLINE_MIN_PX),
-        ghostLineWidth = ghostLineWidth * density,
-        ghostDashPattern = ghostDashPattern.scaled(),
         overlayLineWidth = overlayLineWidth * density,
         overlayLineDashPattern = overlayLineDashPattern.scaled(),
         refLineDashPattern = refLineDashPattern.scaled(),

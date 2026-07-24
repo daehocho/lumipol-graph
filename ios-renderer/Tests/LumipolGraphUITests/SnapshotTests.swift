@@ -35,8 +35,8 @@ final class SnapshotTests: XCTestCase {
         assertSnapshot(of: view, as: .image)
     }
 
-    // ③ 고스트 + 목표 밴드 (A+C 풀 구성) — 목표선(RefLine)은 0.17.0에서 제거
-    func testGhostAndBand() {
+    // ③ 이중축 + 목표 밴드 (풀 구성) — 목표선(RefLine)은 0.17.0에서 제거
+    func testDualAxisAndBand() {
         let view = makeChartView(
             TestFixtures.fullChart, invertedAxes: [.primary], formatter: TestFixtures.format
         )

@@ -25,7 +25,6 @@ final class TouchMarkerTests: XCTestCase {
         let names = result?.layer.sublayers?.compactMap(\.name) ?? []
         XCTAssertTrue(names.contains("touch.line"))
         XCTAssertTrue(names.contains("touch.dot.pace"))
-        XCTAssertTrue(names.contains("touch.dot.pace_prev"))
         XCTAssertTrue(names.contains("touch.dot.hr"))
         XCTAssertFalse(names.contains("touch.bubble"), "말풍선은 제거됨")
     }
@@ -109,49 +108,49 @@ final class TouchMarkerTests: XCTestCase {
         XCTAssertEqual(result?.snappedX ?? -1, 4.4, accuracy: 1e-9)
     }
 
-    func testSnappedXPrefersMainSeriesWhenGhostListedFirst() {
-        // 시리즈 순서 계약이 없고 고스트는 성긴 샘플링일 수 있다 — 수직선/배경 보간의 기준인
+    func testSnappedXPrefersMainSeriesWhenOverlayListedFirst() {
+        // 시리즈 순서 계약이 없고 오버레이는 성긴 샘플링일 수 있다 — 수직선/배경 보간의 기준인
         // snappedX는 배열 첫 시리즈가 아니라 main 시리즈의 근접점을 따라야 한다.
-        let ghostFirst = LineChartData(
+        let overlayFirst = LineChartData(
             series: [
                 Series(
                     id: "prev",
-                    points: [Point(x: 0, y: 6.0), Point(x: 2, y: 6.2)],  // 2km 간격 성긴 고스트
-                    axis: .primary, role: .ghost
+                    points: [Point(x: 0, y: 6.0), Point(x: 2, y: 6.2)],  // 2km 간격 성긴 오버레이
+                    axis: .primary, role: .overlay
                 ),
                 TestFixtures.series(id: "pace", values: TestFixtures.paceValues, axis: .primary, role: .main),
             ],
             referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
-        let ghostFirstLayout = LineChartEngine.shared.layout(data: ghostFirst)
+        let overlayFirstLayout = LineChartEngine.shared.layout(data: overlayFirst)
         let result = TouchMarker.make(atRawX: 1.3, context: TouchMarker.Context(
-            data: ghostFirst, layout: ghostFirstLayout, style: .default, plotArea: plotArea,
+            data: overlayFirst, layout: overlayFirstLayout, style: .default, plotArea: plotArea,
             formatter: TestFixtures.format
         ))
-        // main(0.5 간격) 근접점 = 1.5. 고스트 근접점(2.0)이 기준이 되면 안 된다.
+        // main(0.5 간격) 근접점 = 1.5. 오버레이 근접점(2.0)이 기준이 되면 안 된다.
         XCTAssertEqual(result?.snappedX ?? -1, 1.5, accuracy: 1e-9)
     }
 
     func testOutOfWindowSeriesOmittedFromDotsAndValues() {
-        // 확대 창(3~5)에 포인트가 전혀 없는 고스트(0~2) — 근접점이 창 밖(x=2)으로 스냅되면
+        // 확대 창(3~5)에 포인트가 전혀 없는 짧은 시리즈(0~2) — 근접점이 창 밖(x=2)으로 스냅되면
         // 창 기준 y-도메인을 벗어난 위치에 점이 그려지고 값도 스크럽 위치인 양 전달된다.
         // 창 밖 근접점은 점·값 모두 생략해야 한다.
-        let ghostShort = LineChartData(
+        let shortSeries = LineChartData(
             series: [
                 TestFixtures.series(id: "pace", values: TestFixtures.paceValues, axis: .primary, role: .main),
                 Series(
                     id: "prev",
                     points: [Point(x: 0, y: 6.0), Point(x: 2, y: 6.2)],
-                    axis: .primary, role: .ghost
+                    axis: .primary, role: .main
                 ),
             ],
             referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
-        let windowed = LineChartEngine.shared.layout(data: ghostShort, xMin: 3.0, xMax: 5.0)
+        let windowed = LineChartEngine.shared.layout(data: shortSeries, xMin: 3.0, xMax: 5.0)
         let result = TouchMarker.make(atRawX: 4.0, context: TouchMarker.Context(
-            data: ghostShort, layout: windowed, style: .default, plotArea: plotArea,
+            data: shortSeries, layout: windowed, style: .default, plotArea: plotArea,
             formatter: TestFixtures.format
         ))
         XCTAssertNotNil(result)
@@ -167,7 +166,7 @@ final class TouchMarkerTests: XCTestCase {
         let dupData = LineChartData(
             series: [
                 TestFixtures.series(id: "pace", values: TestFixtures.paceValues, axis: .primary, role: .main),
-                TestFixtures.series(id: "pace", values: TestFixtures.ghostPaceValues, axis: .primary, role: .ghost),
+                TestFixtures.series(id: "pace", values: TestFixtures.altPaceValues, axis: .primary, role: .main),
             ],
             referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)

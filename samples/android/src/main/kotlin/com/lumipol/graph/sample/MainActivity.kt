@@ -45,7 +45,7 @@ import com.lumipol.graph.renderer.RDLineChart
 import kotlin.math.roundToInt
 
 /**
- * android-renderer 데모 앱. 라인(스크럽·줌·고스트·배경 area)/바/심박존 3화면.
+ * android-renderer 데모 앱. 라인(스크럽·줌·배경 area)/바/심박존 3화면.
  * iOS 샘플(`samples/ios`)과 동일한 TestFixtures 데이터를 쓴다. material3 미의존(foundation만) —
  * 차트 SDK가 소비자 디자인시스템을 강요하지 않음을 데모에서도 지킨다.
  */
@@ -153,7 +153,6 @@ private fun ZoneScreen() {
 private object SampleData {
     private val paceValues = listOf(6.1, 5.9, 5.75, 5.6, 5.7, 5.5, 5.35, 5.45, 5.3, 5.2, 5.4)
     private val heartRateValues = listOf(148.0, 152.0, 157.0, 160.0, 163.0, 166.0, 168.0, 170.0, 172.0, 174.0, 171.0)
-    private val ghostValues = listOf(6.4, 6.2, 6.15, 6.0, 6.05, 5.9, 5.8, 5.85, 5.7, 5.65, 5.75)
 
     private fun series(id: String, values: List<Double>, axis: Axis, role: SeriesRole) =
         Series(id, values.mapIndexed { i, v -> Point(i * 0.5, v) }, axis, role)
@@ -161,7 +160,6 @@ private object SampleData {
     val lineChart = LineChartData(
         series = listOf(
             series("pace", paceValues, Axis.PRIMARY, SeriesRole.MAIN),
-            series("pace_prev", ghostValues, Axis.PRIMARY, SeriesRole.GHOST),
             series("hr", heartRateValues, Axis.SECONDARY, SeriesRole.MAIN),
         ),
         referenceBands = listOf(RefBand(5.4, 5.6, Axis.PRIMARY)),

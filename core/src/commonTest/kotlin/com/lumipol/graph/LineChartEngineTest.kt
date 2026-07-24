@@ -6,11 +6,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class LineChartEngineTest {
-    // A(페이스+심박 이중축) + C(고스트) + km 마커/스플릿
+    // A(페이스+심박 이중축) + 같은 축 보조 라인 + km 마커/스플릿
     private val data = LineChartData(
         series = listOf(
             Series("pace", listOf(Point(0.0, 6.0), Point(1.0, 5.0), Point(2.0, 5.5)), axis = Axis.PRIMARY, role = SeriesRole.MAIN),
-            Series("pace_prev", listOf(Point(0.0, 6.5), Point(1.0, 5.5), Point(2.0, 6.0)), axis = Axis.PRIMARY, role = SeriesRole.GHOST),
+            Series("pace_prev", listOf(Point(0.0, 6.5), Point(1.0, 5.5), Point(2.0, 6.0)), axis = Axis.PRIMARY, role = SeriesRole.MAIN),
             Series("hr", listOf(Point(0.0, 150.0), Point(1.0, 165.0), Point(2.0, 172.0)), axis = Axis.SECONDARY, role = SeriesRole.MAIN),
         ),
         segmentMarkers = listOf(Marker(1.0, label = "1km"), Marker(2.0, label = "2km", emphasis = true)),
@@ -46,7 +46,7 @@ class LineChartEngineTest {
             assertTrue(it.x in 0.0..1.0 && it.y in 0.0..1.0)
         }
         // 역할 보존
-        assertEquals(SeriesRole.GHOST, layout.series.first { it.id == "pace_prev" }.role)
+        assertEquals(SeriesRole.MAIN, layout.series.first { it.id == "pace_prev" }.role)
     }
 
     @Test

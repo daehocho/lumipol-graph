@@ -127,7 +127,7 @@ internal data class ContainerLayer(
 // =====================================================================================
 
 /**
- * 코어 [LineChartLayout]을 z-순서 [LineChartLayer] 리스트로 조립한다(그리드→밴드→마커→고스트→
+ * 코어 [LineChartLayout]을 z-순서 [LineChartLayer] 리스트로 조립한다(그리드→밴드→마커→
  * 그라데이션+main→오버레이→축라벨). 렌더 불가 플롯이면 빈 리스트.
  *
  * 코어 API가 시리즈 id 유일성을 강제하지 않으므로 중복 시 **첫 시리즈 우선**으로 축을 해석한다
@@ -165,20 +165,6 @@ internal fun buildLineChartLayers(
     }
     layout.markers.forEachIndexed { index, marker ->
         layers.add(markerLayer(marker, index, style, plot, density))
-    }
-    layout.series.filter { it.role == SeriesRole.GHOST }.forEach { series ->
-        val axis = axisBySeriesId[series.id] ?: Axis.PRIMARY
-        val points = linePoints(series.points, axis, plot) ?: return@forEach
-        layers.add(
-            StrokeLayer(
-                name = "series.ghost.${series.id}",
-                segments = listOf(points),
-                color = style.ghostLineColor,
-                width = style.ghostLineWidth,
-                dash = style.ghostDashPattern,
-                join = StrokeJoin.Round,
-            ),
-        )
     }
     layout.series.filter { it.role == SeriesRole.MAIN }.forEach { series ->
         val axis = axisBySeriesId[series.id] ?: Axis.PRIMARY

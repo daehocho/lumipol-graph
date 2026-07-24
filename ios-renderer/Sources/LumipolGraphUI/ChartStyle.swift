@@ -15,11 +15,6 @@ public struct ChartStyle {
     public var gridLineDashPattern: [NSNumber] = [3, 3]
     public var gridLineWidth: CGFloat = 0.5
 
-    // 고스트(지난 러닝)
-    public var ghostLineColor: UIColor = UIColor.systemGray.withAlphaComponent(0.7)
-    public var ghostLineWidth: CGFloat = 1.5
-    public var ghostDashPattern: [NSNumber] = [4, 3]
-
     // 오버레이(코어가 자체 정규화한 시리즈) — 축 라벨·그라데이션 없는 점선 라인
     public var overlayLineColor: UIColor = UIColor.systemPurple.withAlphaComponent(0.8)
     public var overlayLineWidth: CGFloat = 1.5

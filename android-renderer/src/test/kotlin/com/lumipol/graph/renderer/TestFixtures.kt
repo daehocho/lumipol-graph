@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
 internal object TestFixtures {
     val paceValues = listOf(6.1, 5.9, 5.75, 5.6, 5.7, 5.5, 5.35, 5.45, 5.3, 5.2, 5.4)
     val heartRateValues = listOf(148.0, 152.0, 157.0, 160.0, 163.0, 166.0, 168.0, 170.0, 172.0, 174.0, 171.0)
-    val ghostPaceValues = listOf(6.4, 6.2, 6.15, 6.0, 6.05, 5.9, 5.8, 5.85, 5.7, 5.65, 5.75)
+    val altPaceValues = listOf(6.4, 6.2, 6.15, 6.0, 6.05, 5.9, 5.8, 5.85, 5.7, 5.65, 5.75)
 
     fun series(id: String, values: List<Double>, axis: Axis, role: SeriesRole): Series {
         val points = values.mapIndexed { i, v -> Point(x = i * 0.5, y = v) }
@@ -29,7 +29,6 @@ internal object TestFixtures {
         get() = LineChartData(
             series = listOf(
                 series("pace", paceValues, Axis.PRIMARY, SeriesRole.MAIN),
-                series("pace_prev", ghostPaceValues, Axis.PRIMARY, SeriesRole.GHOST),
                 series("hr", heartRateValues, Axis.SECONDARY, SeriesRole.MAIN),
             ),
             referenceBands = listOf(RefBand(lower = 5.4, upper = 5.6, axis = Axis.PRIMARY)),
