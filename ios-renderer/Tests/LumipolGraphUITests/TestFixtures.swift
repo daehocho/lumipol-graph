@@ -1,10 +1,10 @@
 import LumipolGraph
 
-/// 스냅샷·터치 테스트 공용 A+C 데이터 (x = km, 0.0~5.0, 0.5 간격 11점).
+/// 스냅샷·터치 테스트 공용 데이터 (x = km, 0.0~5.0, 0.5 간격 11점).
 enum TestFixtures {
     static let paceValues: [Double] = [6.1, 5.9, 5.75, 5.6, 5.7, 5.5, 5.35, 5.45, 5.3, 5.2, 5.4]
     static let heartRateValues: [Double] = [148, 152, 157, 160, 163, 166, 168, 170, 172, 174, 171]
-    static let ghostPaceValues: [Double] = [6.4, 6.2, 6.15, 6.0, 6.05, 5.9, 5.8, 5.85, 5.7, 5.65, 5.75]
+    static let altPaceValues: [Double] = [6.4, 6.2, 6.15, 6.0, 6.05, 5.9, 5.8, 5.85, 5.7, 5.65, 5.75]
 
     static func series(id: String, values: [Double], axis: Axis, role: SeriesRole) -> Series {
         let points = values.enumerated().map { Point(x: Double($0.offset) * 0.5, y: $0.element) }
@@ -37,12 +37,11 @@ enum TestFixtures {
         )
     }
 
-    /// ③④ A+C 풀 구성: 이중축 + 고스트 + 목표 밴드 + km 마커
+    /// ③④ 풀 구성: 이중축 + 목표 밴드 + km 마커
     static var fullChart: LineChartData {
         LineChartData(
             series: [
                 series(id: "pace", values: paceValues, axis: .primary, role: .main),
-                series(id: "pace_prev", values: ghostPaceValues, axis: .primary, role: .ghost),
                 series(id: "hr", values: heartRateValues, axis: .secondary, role: .main),
             ],
             referenceBands: [RefBand(lower: 5.4, upper: 5.6, axis: .primary)],

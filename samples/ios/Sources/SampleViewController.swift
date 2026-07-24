@@ -1,7 +1,7 @@
 import UIKit
 import LumipolGraphUI
 
-/// A+C 데모: 페이스(반전 축)+심박 이중축 + 지난 러닝 고스트 + 목표선/밴드 + km 마커 + 터치 말풍선.
+/// A 데모: 페이스(반전 축)+심박 이중축 + 목표선/밴드 + km 마커 + 터치 말풍선.
 final class SampleViewController: UIViewController {
     private let chartView = RDChartView()
 
@@ -44,7 +44,6 @@ final class SampleViewController: UIViewController {
     private static func sampleData() -> LineChartData {
         let paceValues: [Double] = [6.1, 5.9, 5.75, 5.6, 5.7, 5.5, 5.35, 5.45, 5.3, 5.2, 5.4]
         let heartRateValues: [Double] = [148, 152, 157, 160, 163, 166, 168, 170, 172, 174, 171]
-        let ghostValues: [Double] = [6.4, 6.2, 6.15, 6.0, 6.05, 5.9, 5.8, 5.85, 5.7, 5.65, 5.75]
         func series(_ id: String, _ values: [Double], axis: Axis, role: SeriesRole) -> Series {
             Series(
                 id: id,
@@ -56,7 +55,6 @@ final class SampleViewController: UIViewController {
         return LineChartData(
             series: [
                 series("pace", paceValues, axis: .primary, role: .main),
-                series("pace_prev", ghostValues, axis: .primary, role: .ghost),
                 series("hr", heartRateValues, axis: .secondary, role: .main),
             ],
             referenceBands: [RefBand(lower: 5.4, upper: 5.6, axis: .primary)],

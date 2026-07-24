@@ -9,9 +9,6 @@ final class ChartLayerBuilderTests: XCTestCase {
             SeriesLayout(id: "pace", role: .main, points: [
                 NormalizedPoint(x: 0, y: 0), NormalizedPoint(x: 1, y: 1),
             ]),
-            SeriesLayout(id: "pace_prev", role: .ghost, points: [
-                NormalizedPoint(x: 0, y: 1), NormalizedPoint(x: 1, y: 0),
-            ]),
         ],
         axisTicks: [
             AxisTicksLayout(axis: .x, ticks: [AxisTick(value: 0, position: 0), AxisTick(value: 5, position: 1)]),
@@ -27,7 +24,6 @@ final class ChartLayerBuilderTests: XCTestCase {
     private let data = LineChartData(
         series: [
             Series(id: "pace", points: [], axis: .primary, role: .main),
-            Series(id: "pace_prev", points: [], axis: .primary, role: .ghost),
         ],
         referenceBands: [], segmentMarkers: [],
         config: ChartConfig(segmentCount: 0, maxTicks: 5)
@@ -51,7 +47,7 @@ final class ChartLayerBuilderTests: XCTestCase {
         let dupData = LineChartData(
             series: [
                 Series(id: "pace", points: [], axis: .primary, role: .main),
-                Series(id: "pace", points: [], axis: .secondary, role: .ghost),
+                Series(id: "pace", points: [], axis: .secondary, role: .main),
             ],
             referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
@@ -83,7 +79,6 @@ final class ChartLayerBuilderTests: XCTestCase {
         XCTAssertEqual(names, [
             "grid",
             "band.0", "marker.0", "marker.1",
-            "series.ghost.pace_prev",
             "series.gradient.pace", "series.main.pace",
             "axisLabels.x", "axisLabels.yPrimary",
         ])
@@ -142,11 +137,6 @@ final class ChartLayerBuilderTests: XCTestCase {
         // (0,0)→아래왼쪽 (0,100), (1,1)→위오른쪽 (100,0)
         XCTAssertEqual(main?.path?.boundingBox, CGRect(x: 0, y: 0, width: 100, height: 100))
         XCTAssertEqual(main?.lineWidth, ChartStyle.default.lineWidth)
-    }
-
-    func testGhostLineIsDashed() {
-        let ghost = layer(named: "series.ghost.pace_prev", in: build()) as? CAShapeLayer
-        XCTAssertEqual(ghost?.lineDashPattern, ChartStyle.default.ghostDashPattern)
     }
 
     func testBandCoversNormalizedRange() {

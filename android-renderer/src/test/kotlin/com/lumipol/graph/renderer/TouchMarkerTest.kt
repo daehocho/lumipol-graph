@@ -40,7 +40,6 @@ class TouchMarkerTest {
         val names = childNames(result)
         assertTrue(names.contains("touch.line"))
         assertTrue(names.contains("touch.dot.pace"))
-        assertTrue(names.contains("touch.dot.pace_prev"))
         assertTrue(names.contains("touch.dot.hr"))
         assertFalse(names.contains("touch.bubble"))
     }
@@ -97,30 +96,30 @@ class TouchMarkerTest {
     }
 
     @Test
-    fun snappedXPrefersMainSeriesWhenGhostListedFirst() {
-        val ghostFirst = LineChartData(
+    fun snappedXPrefersMainSeriesWhenOverlayListedFirst() {
+        val overlayFirst = LineChartData(
             series = listOf(
-                Series("prev", listOf(Point(0.0, 6.0), Point(2.0, 6.2)), Axis.PRIMARY, SeriesRole.GHOST),
+                Series("prev", listOf(Point(0.0, 6.0), Point(2.0, 6.2)), Axis.PRIMARY, SeriesRole.OVERLAY),
                 TestFixtures.series("pace", TestFixtures.paceValues, Axis.PRIMARY, SeriesRole.MAIN),
             ),
             config = ChartConfig(segmentCount = 0, maxTicks = 5),
         )
-        val result = makeResult(1.3, LineChartEngine.layout(ghostFirst), ghostFirst)
-        // main(0.5 간격) 근접점 = 1.5. 고스트 근접점(2.0)이 기준이 되면 안 된다.
+        val result = makeResult(1.3, LineChartEngine.layout(overlayFirst), overlayFirst)
+        // main(0.5 간격) 근접점 = 1.5. 오버레이 근접점(2.0)이 기준이 되면 안 된다.
         assertEquals(1.5, result!!.snappedX, 1e-9)
     }
 
     @Test
     fun outOfWindowSeriesOmittedFromDotsAndValues() {
-        val ghostShort = LineChartData(
+        val shortSeries = LineChartData(
             series = listOf(
                 TestFixtures.series("pace", TestFixtures.paceValues, Axis.PRIMARY, SeriesRole.MAIN),
-                Series("prev", listOf(Point(0.0, 6.0), Point(2.0, 6.2)), Axis.PRIMARY, SeriesRole.GHOST),
+                Series("prev", listOf(Point(0.0, 6.0), Point(2.0, 6.2)), Axis.PRIMARY, SeriesRole.MAIN),
             ),
             config = ChartConfig(segmentCount = 0, maxTicks = 5),
         )
-        val windowed = LineChartEngine.layout(ghostShort, 3.0, 5.0)
-        val result = makeResult(4.0, windowed, ghostShort)
+        val windowed = LineChartEngine.layout(shortSeries, 3.0, 5.0)
+        val result = makeResult(4.0, windowed, shortSeries)
         assertNotNull(result)
         assertNotNull(result.valuesBySeriesId["pace"])
         assertNull(result.valuesBySeriesId["prev"])
@@ -148,7 +147,7 @@ class TouchMarkerTest {
         val dupData = LineChartData(
             series = listOf(
                 TestFixtures.series("pace", TestFixtures.paceValues, Axis.PRIMARY, SeriesRole.MAIN),
-                TestFixtures.series("pace", TestFixtures.ghostPaceValues, Axis.PRIMARY, SeriesRole.GHOST),
+                TestFixtures.series("pace", TestFixtures.altPaceValues, Axis.PRIMARY, SeriesRole.MAIN),
             ),
             config = ChartConfig(segmentCount = 0, maxTicks = 5),
         )

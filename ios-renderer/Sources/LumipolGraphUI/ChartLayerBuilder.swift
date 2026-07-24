@@ -2,7 +2,7 @@ import UIKit
 import LumipolGraph
 
 /// 코어 `LineChartLayout`(정규화 0~1)을 `ChartStyle`·`PlotArea`로 CALayer 트리에 조립한다.
-/// z-순서: 그리드 → 밴드 → 마커 → 고스트 → (그라데이션+main 라인) → 오버레이(점선, 축 라벨 없음) → 축 라벨.
+/// z-순서: 그리드 → 밴드 → 마커 → (그라데이션+main 라인) → 오버레이(점선, 축 라벨 없음) → 축 라벨.
 enum ChartLayerBuilder {
 
     static func build(
@@ -26,12 +26,6 @@ enum ChartLayerBuilder {
         }
         for (index, marker) in layout.markers.enumerated() {
             layers.append(markerLayer(marker, index: index, style: style, plotArea: plotArea))
-        }
-        for series in layout.series where series.role == .ghost {
-            let axis = axisBySeriesId[series.id] ?? .primary
-            if let layer = ghostLayer(series, axis: axis, style: style, plotArea: plotArea) {
-                layers.append(layer)
-            }
         }
         for series in layout.series where series.role == .main {
             let axis = axisBySeriesId[series.id] ?? .primary
@@ -91,21 +85,6 @@ enum ChartLayerBuilder {
         layer.lineWidth = style.lineWidth
         layer.lineJoin = .round
         layer.lineCap = .round
-        return layer
-    }
-
-    private static func ghostLayer(
-        _ series: SeriesLayout, axis: Axis, style: ChartStyle, plotArea: PlotArea
-    ) -> CAShapeLayer? {
-        guard let path = linePath(series.points, axis: axis, plotArea: plotArea) else { return nil }
-        let layer = CAShapeLayer()
-        layer.name = "series.ghost.\(series.id)"
-        layer.path = path.cgPath
-        layer.strokeColor = style.ghostLineColor.cgColor
-        layer.fillColor = nil
-        layer.lineWidth = style.ghostLineWidth
-        layer.lineDashPattern = style.ghostDashPattern
-        layer.lineJoin = .round
         return layer
     }
 

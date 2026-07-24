@@ -31,7 +31,6 @@ class LineChartDrawingTest {
     private val layout = LineChartLayout(
         series = listOf(
             SeriesLayout("pace", SeriesRole.MAIN, listOf(NormalizedPoint(0.0, 0.0), NormalizedPoint(1.0, 1.0))),
-            SeriesLayout("pace_prev", SeriesRole.GHOST, listOf(NormalizedPoint(0.0, 1.0), NormalizedPoint(1.0, 0.0))),
         ),
         axisTicks = listOf(
             AxisTicksLayout(ChartAxis.X, listOf(AxisTick(0.0, 0.0), AxisTick(5.0, 1.0))),
@@ -47,7 +46,6 @@ class LineChartDrawingTest {
     private val data = LineChartData(
         series = listOf(
             Series("pace", emptyList(), Axis.PRIMARY, SeriesRole.MAIN),
-            Series("pace_prev", emptyList(), Axis.PRIMARY, SeriesRole.GHOST),
         ),
         config = ChartConfig(segmentCount = 0, maxTicks = 5),
     )
@@ -77,7 +75,7 @@ class LineChartDrawingTest {
         val dupData = LineChartData(
             series = listOf(
                 Series("pace", emptyList(), Axis.PRIMARY, SeriesRole.MAIN),
-                Series("pace", emptyList(), Axis.SECONDARY, SeriesRole.GHOST),
+                Series("pace", emptyList(), Axis.SECONDARY, SeriesRole.MAIN),
             ),
             config = ChartConfig(segmentCount = 0, maxTicks = 5),
         )
@@ -90,7 +88,6 @@ class LineChartDrawingTest {
             listOf(
                 "grid",
                 "band.0", "marker.0", "marker.1",
-                "series.ghost.pace_prev",
                 "series.gradient.pace", "series.main.pace",
                 "axisLabels.x", "axisLabels.yPrimary",
             ),
@@ -140,12 +137,6 @@ class LineChartDrawingTest {
         // (0,0)→(0,100), (1,1)→(100,0)
         assertContentEquals(floatArrayOf(0f, 0f, 100f, 100f), main.bounds())
         assertEquals(style.lineWidth, main.width)
-    }
-
-    @Test
-    fun ghostLineIsDashed() {
-        val ghost = build().named("series.ghost.pace_prev") as StrokeLayer
-        assertContentEquals(style.ghostDashPattern, ghost.dash)
     }
 
     @Test

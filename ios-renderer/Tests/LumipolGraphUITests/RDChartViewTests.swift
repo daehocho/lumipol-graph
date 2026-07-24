@@ -25,7 +25,6 @@ final class RDChartViewTests: XCTestCase {
         let names = chartLayerNames(of: view)
         XCTAssertTrue(names.contains("series.main.pace"))
         XCTAssertTrue(names.contains("series.main.hr"))
-        XCTAssertTrue(names.contains("series.ghost.pace_prev"))
         XCTAssertTrue(names.contains("band.0"))
         XCTAssertTrue(names.contains("axisLabels.ySecondary"))
     }
@@ -50,7 +49,7 @@ final class RDChartViewTests: XCTestCase {
         view.layoutIfNeeded()
         let names = chartLayerNames(of: view)
         XCTAssertTrue(names.contains("series.main.pace"))
-        XCTAssertFalse(names.contains("series.ghost.pace_prev"))
+        XCTAssertFalse(names.contains("series.main.hr"))
         XCTAssertEqual(names.filter { $0 == "series.main.pace" }.count, 1)
     }
 

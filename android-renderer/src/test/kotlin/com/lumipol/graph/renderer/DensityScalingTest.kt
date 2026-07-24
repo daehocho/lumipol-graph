@@ -22,7 +22,6 @@ class DensityScalingTest {
     fun geometryScalesByDensity() {
         val s = base.scaledForDensity(3f)
         assertEquals(base.lineWidth * 3f, s.lineWidth)
-        assertEquals(base.ghostLineWidth * 3f, s.ghostLineWidth)
         assertEquals(base.overlayLineWidth * 3f, s.overlayLineWidth)
         assertEquals(base.donutRingWidth * 3f, s.donutRingWidth)
         assertEquals(base.touchDotRadius * 3f, s.touchDotRadius)
@@ -32,7 +31,7 @@ class DensityScalingTest {
         assertEquals(base.plotInsets.top * 3f, s.plotInsets.top)
         // dash 패턴도 스케일
         assertEquals(base.gridLineDashPattern[0] * 3f, s.gridLineDashPattern[0])
-        assertEquals(base.ghostDashPattern[0] * 3f, s.ghostDashPattern[0])
+        assertEquals(base.overlayLineDashPattern[0] * 3f, s.overlayLineDashPattern[0])
     }
 
     @Test

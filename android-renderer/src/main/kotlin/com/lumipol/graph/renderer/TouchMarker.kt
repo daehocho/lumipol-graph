@@ -49,7 +49,7 @@ internal object TouchMarker {
     /**
      * 원본 도메인 [rawX] 기준 마커. 표시 불가(플롯 없음·축 변환 불능·근접점 없음/전부 창밖)면 null.
      *
-     * - 스냅 소스는 **main 시리즈** 근접점(없으면 첫 시리즈) — 고스트/오버레이는 성긴 샘플일 수 있음.
+     * - 스냅 소스는 **main 시리즈** 근접점(없으면 첫 시리즈) — 오버레이는 성긴 샘플일 수 있음.
      * - 스냅/시리즈 근접점이 현재 표시 창 밖이면 마커/점·값을 생략. 단 도메인 양끝은 부동소수 반올림으로
      *   0/1을 [WINDOW_EPSILON] 이내 벗어날 수 있으므로 그 범위는 창 안으로 간주해 클램프한다.
      */
@@ -82,7 +82,7 @@ internal object TouchMarker {
 
         val valuesBySeriesId = LinkedHashMap<String, String>()
         for (result in results) {
-            // 창 밖 근접점은 점·값 모두 생략(짧은 고스트가 창 밖 값을 스크럽 위치인 양 보고 방지).
+            // 창 밖 근접점은 점·값 모두 생략(짧은 보조 시리즈가 창 밖 값을 스크럽 위치인 양 보고 방지).
             val seriesNx = xScale.position(result.x)
             if (seriesNx < -WINDOW_EPSILON || seriesNx > 1 + WINDOW_EPSILON) continue
 
@@ -99,10 +99,10 @@ internal object TouchMarker {
                 NormalizedPoint(x = nx, y = yScale.position(result.y)),
                 axis,
             )
-            val dotColor = when {
-                roleBySeriesId[result.seriesId] == SeriesRole.GHOST -> context.style.ghostLineColor
-                axis == Axis.SECONDARY -> context.style.secondaryLineColor
-                else -> context.style.primaryLineColor
+            val dotColor = if (axis == Axis.SECONDARY) {
+                context.style.secondaryLineColor
+            } else {
+                context.style.primaryLineColor
             }
             children.add(
                 DotLayer(
