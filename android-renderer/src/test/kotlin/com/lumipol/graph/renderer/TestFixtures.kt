@@ -7,7 +7,6 @@ import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.Marker
 import com.lumipol.graph.model.Point
 import com.lumipol.graph.model.RefBand
-import com.lumipol.graph.model.RefLine
 import com.lumipol.graph.model.Series
 import com.lumipol.graph.model.SeriesRole
 import kotlin.math.roundToInt
@@ -33,7 +32,6 @@ internal object TestFixtures {
                 series("pace_prev", ghostPaceValues, Axis.PRIMARY, SeriesRole.GHOST),
                 series("hr", heartRateValues, Axis.SECONDARY, SeriesRole.MAIN),
             ),
-            referenceLines = listOf(RefLine(value = 5.5, axis = Axis.PRIMARY, label = "목표 5'30\"")),
             referenceBands = listOf(RefBand(lower = 5.4, upper = 5.6, axis = Axis.PRIMARY)),
             segmentMarkers = kmMarkers,
             config = ChartConfig(segmentCount = 5, maxTicks = 5),

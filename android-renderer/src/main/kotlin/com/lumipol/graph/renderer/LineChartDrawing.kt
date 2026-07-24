@@ -128,7 +128,7 @@ internal data class ContainerLayer(
 
 /**
  * 코어 [LineChartLayout]을 z-순서 [LineChartLayer] 리스트로 조립한다(그리드→밴드→마커→고스트→
- * 그라데이션+main→오버레이→기준선→축라벨). 렌더 불가 플롯이면 빈 리스트.
+ * 그라데이션+main→오버레이→축라벨). 렌더 불가 플롯이면 빈 리스트.
  *
  * 코어 API가 시리즈 id 유일성을 강제하지 않으므로 중복 시 **첫 시리즈 우선**으로 축을 해석한다
  * (Kotlin `associate`는 마지막 우선이라 `putIfAbsent`로 명시).
@@ -210,9 +210,6 @@ internal fun buildLineChartLayers(
                 join = StrokeJoin.Round,
             ),
         )
-    }
-    layout.refLines.forEachIndexed { index, refLine ->
-        layers.add(refLineLayer(refLine, index, style, plot, density))
     }
     layout.axisTicks.filter { it.ticks.isNotEmpty() }.forEach { ticksLayout ->
         layers.add(axisLabelsLayer(ticksLayout, style, plot, formatter, density))
@@ -347,43 +344,6 @@ private fun gradientLayer(
         topY = plot.minY,
         bottomY = plot.maxY,
     )
-}
-
-private fun refLineLayer(
-    refLine: com.lumipol.graph.model.RefLineLayout,
-    index: Int,
-    style: ChartStyle,
-    plot: PlotArea,
-    density: Float,
-): ContainerLayer {
-    val y = plot.y(refLine.position, refLine.axis)
-    val children = mutableListOf<LineChartLayer>()
-    children.add(
-        StrokeLayer(
-            name = "refLine.$index.line",
-            segments = listOf(listOf(PlotPoint(plot.minX, y), PlotPoint(plot.maxX, y))),
-            color = style.refLineColor,
-            width = REF_LINE_WIDTH * density,
-            dash = style.refLineDashPattern,
-        ),
-    )
-    refLine.label?.let { label ->
-        children.add(
-            TextLayer(
-                name = "refLine.$index.label",
-                text = label,
-                anchorX = plot.maxX,
-                anchorY = y - LABEL_GAP * density,
-                hAlign = HAlign.RIGHT,
-                vAlign = VAlign.ABOVE,
-                color = style.refLineColor, // iOS: 기준선 라벨은 refLineColor
-                fontSizeSp = style.axisLabelFontSize,
-                fontFamily = style.axisLabelFontFamily,
-                fontWeight = style.axisLabelFontWeight,
-            ),
-        )
-    }
-    return ContainerLayer("refLine.$index", children)
 }
 
 private fun axisLabelsLayer(
@@ -750,6 +710,5 @@ private const val LABEL_GAP = 2.0            // 마커/기준선 라벨과 선 �
 private const val AXIS_LABEL_GAP = 4.0       // 축 라벨과 플롯 경계 여백(iOS ±4)
 private const val MARKER_WIDTH = 1f
 private const val MARKER_EMPHASIS_WIDTH = 1.5f
-private const val REF_LINE_WIDTH = 1f
 /** 접근성 글꼴 배율 상한(UX Minor-1) — 라벨이 플롯 여백을 넘지 않게 1.3까지만 키운다. */
 private const val MAX_FONT_SCALE = 1.3f

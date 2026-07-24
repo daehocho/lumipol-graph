@@ -10,14 +10,13 @@ data class AxisDomain(val min: Double, val max: Double) {
         if (max == min) 0.5 else (v - min) / (max - min)
 }
 
-/** 해당 Y축에 걸리는 모든 값(시리즈 점 + 기준선 + 밴드 경계)을 순서대로 모음.
- *  [xWindow]가 주어지면 시리즈 점은 창 안의 것만 (기준선/밴드는 항상 포함 — 축에서 사라지지 않게). */
+/** 해당 Y축에 걸리는 모든 값(시리즈 점 + 밴드 경계)을 순서대로 모음.
+ *  [xWindow]가 주어지면 시리즈 점은 창 안의 것만 (밴드는 항상 포함 — 축에서 사라지지 않게). */
 fun yValues(data: LineChartData, axis: Axis, xWindow: AxisDomain? = null): List<Double> = buildList {
     data.series.filter { it.axis == axis && it.role != SeriesRole.OVERLAY }.forEach { s ->
         s.points.forEach { p ->
             if (xWindow == null || (p.x >= xWindow.min && p.x <= xWindow.max)) add(p.y)
         }
     }
-    data.referenceLines.filter { it.axis == axis }.forEach { add(it.value) }
     data.referenceBands.filter { it.axis == axis }.forEach { add(it.lower); add(it.upper) }
 }

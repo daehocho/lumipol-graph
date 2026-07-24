@@ -15,9 +15,6 @@ data class Series(
     val role: SeriesRole = SeriesRole.MAIN,
 )
 
-/** 수평 기준선(목표 페이스 등). label은 앱이 이미 포맷한 문자열. */
-data class RefLine(val value: Double, val axis: Axis = Axis.PRIMARY, val label: String? = null)
-
 data class RefBand(val lower: Double, val upper: Double, val axis: Axis = Axis.PRIMARY)
 
 /** X축 위 마커(km 구분 등). */
@@ -28,7 +25,6 @@ data class ChartConfig(val segmentCount: Int = 0, val maxTicks: Int = 5)
 
 data class LineChartData(
     val series: List<Series>,
-    val referenceLines: List<RefLine> = emptyList(),
     val referenceBands: List<RefBand> = emptyList(),
     val segmentMarkers: List<Marker> = emptyList(),
     val config: ChartConfig = ChartConfig(),

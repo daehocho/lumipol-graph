@@ -17,7 +17,6 @@ final class ChartLayerBuilderTests: XCTestCase {
             AxisTicksLayout(axis: .x, ticks: [AxisTick(value: 0, position: 0), AxisTick(value: 5, position: 1)]),
             AxisTicksLayout(axis: .yPrimary, ticks: [AxisTick(value: 4, position: 0), AxisTick(value: 6, position: 1)]),
         ],
-        refLines: [RefLineLayout(axis: .primary, position: 0.5, label: "목표")],
         refBands: [RefBandLayout(axis: .primary, lower: 0.25, upper: 0.75)],
         markers: [
             MarkerLayout(position: 0.5, label: "1km", emphasis: false),
@@ -30,7 +29,7 @@ final class ChartLayerBuilderTests: XCTestCase {
             Series(id: "pace", points: [], axis: .primary, role: .main),
             Series(id: "pace_prev", points: [], axis: .primary, role: .ghost),
         ],
-        referenceLines: [], referenceBands: [], segmentMarkers: [],
+        referenceBands: [], segmentMarkers: [],
         config: ChartConfig(segmentCount: 0, maxTicks: 5)
     )
     private let plotArea = PlotArea(bounds: CGRect(x: 0, y: 0, width: 100, height: 100), insets: .zero)
@@ -54,7 +53,7 @@ final class ChartLayerBuilderTests: XCTestCase {
                 Series(id: "pace", points: [], axis: .primary, role: .main),
                 Series(id: "pace", points: [], axis: .secondary, role: .ghost),
             ],
-            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
         let layers = ChartLayerBuilder.build(
@@ -86,7 +85,6 @@ final class ChartLayerBuilderTests: XCTestCase {
             "band.0", "marker.0", "marker.1",
             "series.ghost.pace_prev",
             "series.gradient.pace", "series.main.pace",
-            "refLine.0",
             "axisLabels.x", "axisLabels.yPrimary",
         ])
     }
@@ -119,7 +117,7 @@ final class ChartLayerBuilderTests: XCTestCase {
                     NormalizedPoint(x: 0, y: 1), NormalizedPoint(x: 1, y: 0),
                 ]),
             ],
-            axisTicks: [], refLines: [], refBands: [], markers: [],
+            axisTicks: [], refBands: [], markers: [],
             stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
         )
         let dualData = LineChartData(
@@ -127,7 +125,7 @@ final class ChartLayerBuilderTests: XCTestCase {
                 Series(id: "pace", points: [], axis: .primary, role: .main),
                 Series(id: "hr", points: [], axis: .secondary, role: .main),
             ],
-            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
         let layers = ChartLayerBuilder.build(
@@ -149,15 +147,6 @@ final class ChartLayerBuilderTests: XCTestCase {
     func testGhostLineIsDashed() {
         let ghost = layer(named: "series.ghost.pace_prev", in: build()) as? CAShapeLayer
         XCTAssertEqual(ghost?.lineDashPattern, ChartStyle.default.ghostDashPattern)
-    }
-
-    func testRefLineSitsAtNormalizedPosition() {
-        let refLine = layer(named: "refLine.0", in: build())
-        let line = refLine?.sublayers?.compactMap { $0 as? CAShapeLayer }.first
-        // position 0.5, 정상 축 → y = 50
-        XCTAssertEqual(line?.path?.boundingBox.midY, 50)
-        // 라벨(CATextLayer) 존재
-        XCTAssertTrue(refLine?.sublayers?.contains { $0 is CATextLayer } ?? false)
     }
 
     func testBandCoversNormalizedRange() {
@@ -191,7 +180,7 @@ final class ChartLayerBuilderTests: XCTestCase {
         XCTAssertEqual(yLabels, ["v4", "v6"])
     }
 
-    func testInvertedAxisFlipsSeriesAndRefLine() {
+    func testInvertedAxisKeepsBandFrame() {
         let inverted = PlotArea(
             bounds: CGRect(x: 0, y: 0, width: 100, height: 100), insets: .zero,
             invertedAxes: [.primary]
@@ -224,7 +213,7 @@ final class ChartLayerBuilderTests: XCTestCase {
                     NormalizedPoint(x: 0, y: 0.0), NormalizedPoint(x: 1, y: 1.0),
                 ]),
             ],
-            axisTicks: [], refLines: [], refBands: [], markers: [],
+            axisTicks: [], refBands: [], markers: [],
             stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
         )
         let overlayData = LineChartData(
@@ -232,7 +221,7 @@ final class ChartLayerBuilderTests: XCTestCase {
                 Series(id: "p", points: [], axis: .primary, role: .main),
                 Series(id: "o", points: [], axis: .primary, role: .overlay),
             ],
-            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
         let layers = ChartLayerBuilder.build(
@@ -258,14 +247,14 @@ final class ChartLayerBuilderTests: XCTestCase {
                     NormalizedPoint(x: 0, y: 0.0), NormalizedPoint(x: 1, y: 1.0),
                 ]),
             ],
-            axisTicks: [], refLines: [], refBands: [], markers: [],
+            axisTicks: [], refBands: [], markers: [],
             stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
         )
         let overlayData = LineChartData(
             series: [
                 Series(id: "o", points: [], axis: .primary, role: .overlay),
             ],
-            referenceLines: [], referenceBands: [], segmentMarkers: [],
+            referenceBands: [], segmentMarkers: [],
             config: ChartConfig(segmentCount: 0, maxTicks: 5)
         )
         let invertedPlotArea = PlotArea(
@@ -286,7 +275,7 @@ final class ChartLayerBuilderTests: XCTestCase {
     func testSeriesWithFewerThanTwoPointsIsSkipped() {
         let single = LineChartLayout(
             series: [SeriesLayout(id: "one", role: .main, points: [NormalizedPoint(x: 0.5, y: 0.5)])],
-            axisTicks: [], refLines: [], refBands: [], markers: [],
+            axisTicks: [], refBands: [], markers: [],
             stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
         )
         let layers = ChartLayerBuilder.build(

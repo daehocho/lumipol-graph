@@ -10,7 +10,6 @@ import com.lumipol.graph.model.LineChartLayout
 import com.lumipol.graph.model.MarkerLayout
 import com.lumipol.graph.model.NormalizedPoint
 import com.lumipol.graph.model.RefBandLayout
-import com.lumipol.graph.model.RefLineLayout
 import com.lumipol.graph.model.Series
 import com.lumipol.graph.model.SeriesLayout
 import com.lumipol.graph.model.SeriesRole
@@ -38,7 +37,6 @@ class LineChartDrawingTest {
             AxisTicksLayout(ChartAxis.X, listOf(AxisTick(0.0, 0.0), AxisTick(5.0, 1.0))),
             AxisTicksLayout(ChartAxis.Y_PRIMARY, listOf(AxisTick(4.0, 0.0), AxisTick(6.0, 1.0))),
         ),
-        refLines = listOf(RefLineLayout(Axis.PRIMARY, 0.5, "목표")),
         refBands = listOf(RefBandLayout(Axis.PRIMARY, 0.25, 0.75)),
         markers = listOf(
             MarkerLayout(0.5, "1km", false),
@@ -94,7 +92,6 @@ class LineChartDrawingTest {
                 "band.0", "marker.0", "marker.1",
                 "series.ghost.pace_prev",
                 "series.gradient.pace", "series.main.pace",
-                "refLine.0",
                 "axisLabels.x", "axisLabels.yPrimary",
             ),
             build().map { it.name },
@@ -121,7 +118,7 @@ class LineChartDrawingTest {
                 SeriesLayout("pace", SeriesRole.MAIN, listOf(NormalizedPoint(0.0, 0.0), NormalizedPoint(1.0, 1.0))),
                 SeriesLayout("hr", SeriesRole.MAIN, listOf(NormalizedPoint(0.0, 1.0), NormalizedPoint(1.0, 0.0))),
             ),
-            axisTicks = emptyList(), refLines = emptyList(), refBands = emptyList(), markers = emptyList(),
+            axisTicks = emptyList(), refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
         )
         val dualData = LineChartData(
@@ -149,15 +146,6 @@ class LineChartDrawingTest {
     fun ghostLineIsDashed() {
         val ghost = build().named("series.ghost.pace_prev") as StrokeLayer
         assertContentEquals(style.ghostDashPattern, ghost.dash)
-    }
-
-    @Test
-    fun refLineSitsAtNormalizedPosition() {
-        val refLine = build().named("refLine.0") as ContainerLayer
-        val line = refLine.strokeChild()
-        val midY = (line.bounds()[1] + line.bounds()[3]) / 2
-        assertEquals(50f, midY) // position 0.5, 정상 축
-        assertTrue(refLine.hasText())
     }
 
     @Test
@@ -215,7 +203,7 @@ class LineChartDrawingTest {
                 SeriesLayout("p", SeriesRole.MAIN, listOf(NormalizedPoint(0.0, 0.2), NormalizedPoint(1.0, 0.8))),
                 SeriesLayout("o", SeriesRole.OVERLAY, listOf(NormalizedPoint(0.0, 0.0), NormalizedPoint(1.0, 1.0))),
             ),
-            axisTicks = emptyList(), refLines = emptyList(), refBands = emptyList(), markers = emptyList(),
+            axisTicks = emptyList(), refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
         )
         val overlayData = LineChartData(
@@ -242,7 +230,7 @@ class LineChartDrawingTest {
             series = listOf(
                 SeriesLayout("o", SeriesRole.OVERLAY, listOf(NormalizedPoint(0.0, 0.0), NormalizedPoint(1.0, 1.0))),
             ),
-            axisTicks = emptyList(), refLines = emptyList(), refBands = emptyList(), markers = emptyList(),
+            axisTicks = emptyList(), refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
         )
         val overlayData = LineChartData(
@@ -259,8 +247,8 @@ class LineChartDrawingTest {
     }
 
     @Test
-    fun markerAndRefLineLabelsSitAbovePlotTopInset() {
-        // Major-1 회귀 가드: 구간(km) 마커 라벨·기준선 라벨은 플롯 상단 여백(plot.minY 위)에 그려진다.
+    fun markerLabelsSitAbovePlotTopInset() {
+        // Major-1 회귀 가드: 구간(km) 마커 라벨은 플롯 상단 여백(plot.minY 위)에 그려진다.
         // 그러므로 clipRect의 top이 plot.minY이면 이 라벨들이 전부 잘려 화면에서 사라진다 —
         // drawLineChart는 iOS 확대 마스크(y=0)와 동치로 top을 0f까지 열어야 한다.
         val insetPlot = PlotArea(120.0, 120.0, Insets(top = 16f, left = 8f, bottom = 20f, right = 8f))
@@ -273,13 +261,6 @@ class LineChartDrawingTest {
             markerLabel.anchorY < insetPlot.minY,
             "마커 라벨 앵커(${markerLabel.anchorY})는 플롯 상단(${insetPlot.minY}) 위여야 한다",
         )
-
-        val refLabel = (layers.named("refLine.0") as ContainerLayer)
-            .children.filterIsInstance<TextLayer>().first()
-        assertEquals(VAlign.ABOVE, refLabel.vAlign)
-        // 기준선 라벨은 라인 y 바로 위(플롯 내부일 수도 있음)지만 앵커는 항상 라인보다 위(더 작은 y).
-        val refLineY = (layers.named("refLine.0") as ContainerLayer).strokeChild().bounds()[1]
-        assertTrue(refLabel.anchorY < refLineY)
     }
 
     @Test
@@ -293,7 +274,7 @@ class LineChartDrawingTest {
 
     @Test
     fun axisLabelFontFamilyAndWeightPropagateToAllLabelLayers() {
-        // QA Minor-6: iOS axisLabelFont(UIFont — 패밀리/웨이트 주입 가능)는 축·마커·기준선 라벨 전부에
+        // QA Minor-6: iOS axisLabelFont(UIFont — 패밀리/웨이트 주입 가능)는 축·마커 라벨 전부에
         // 쓰인다. Android도 ChartStyle 주입 폰트가 모든 라벨 TextLayer에 실려야 한다(기본 null=시스템).
         val customStyle = style.copy(
             axisLabelFontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
@@ -303,7 +284,6 @@ class LineChartDrawingTest {
         val labels = listOf(
             (layers.named("axisLabels.x") as ContainerLayer).children.filterIsInstance<TextLayer>().first(),
             (layers.named("marker.0") as ContainerLayer).children.filterIsInstance<TextLayer>().first(),
-            (layers.named("refLine.0") as ContainerLayer).children.filterIsInstance<TextLayer>().first(),
         )
         labels.forEach { label ->
             assertEquals(androidx.compose.ui.text.font.FontFamily.Monospace, label.fontFamily, label.name)
@@ -320,7 +300,7 @@ class LineChartDrawingTest {
     fun seriesWithFewerThanTwoPointsIsSkipped() {
         val single = LineChartLayout(
             series = listOf(SeriesLayout("one", SeriesRole.MAIN, listOf(NormalizedPoint(0.5, 0.5)))),
-            axisTicks = emptyList(), refLines = emptyList(), refBands = emptyList(), markers = emptyList(),
+            axisTicks = emptyList(), refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
         )
         assertTrue(build(layout = single).isEmpty())

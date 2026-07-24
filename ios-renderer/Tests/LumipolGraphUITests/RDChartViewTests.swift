@@ -26,7 +26,6 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertTrue(names.contains("series.main.pace"))
         XCTAssertTrue(names.contains("series.main.hr"))
         XCTAssertTrue(names.contains("series.ghost.pace_prev"))
-        XCTAssertTrue(names.contains("refLine.0"))
         XCTAssertTrue(names.contains("band.0"))
         XCTAssertTrue(names.contains("axisLabels.ySecondary"))
     }

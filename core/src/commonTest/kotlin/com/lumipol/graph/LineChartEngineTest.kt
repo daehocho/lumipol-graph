@@ -6,14 +6,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class LineChartEngineTest {
-    // A(페이스+심박 이중축) + C(고스트 + 목표선) + km 마커/스플릿
+    // A(페이스+심박 이중축) + C(고스트) + km 마커/스플릿
     private val data = LineChartData(
         series = listOf(
             Series("pace", listOf(Point(0.0, 6.0), Point(1.0, 5.0), Point(2.0, 5.5)), axis = Axis.PRIMARY, role = SeriesRole.MAIN),
             Series("pace_prev", listOf(Point(0.0, 6.5), Point(1.0, 5.5), Point(2.0, 6.0)), axis = Axis.PRIMARY, role = SeriesRole.GHOST),
             Series("hr", listOf(Point(0.0, 150.0), Point(1.0, 165.0), Point(2.0, 172.0)), axis = Axis.SECONDARY, role = SeriesRole.MAIN),
         ),
-        referenceLines = listOf(RefLine(5.3, axis = Axis.PRIMARY, label = "목표 5'18\"")),
         segmentMarkers = listOf(Marker(1.0, label = "1km"), Marker(2.0, label = "2km", emphasis = true)),
         config = ChartConfig(segmentCount = 2),
     )
@@ -58,11 +57,8 @@ class LineChartEngineTest {
     }
 
     @Test
-    fun reference_line_and_markers_are_normalized() {
+    fun markers_are_normalized() {
         val layout = LineChartEngine.layout(data)
-        assertEquals(1, layout.refLines.size)
-        assertEquals("목표 5'18\"", layout.refLines[0].label)
-        assertTrue(layout.refLines[0].position in 0.0..1.0)
         assertEquals(2, layout.markers.size)
         assertTrue(layout.markers[1].emphasis)
         assertTrue(layout.markers[0].position in 0.0..1.0)
@@ -85,13 +81,13 @@ class LineChartEngineTest {
     }
 
     @Test
-    fun orphan_axis_with_only_ref_line_still_gets_ticks() {
-        // SECONDARY 축엔 시리즈가 없고 RefLine만 있어도 axisTicks에 Y_SECONDARY가 나와야 한다.
+    fun orphan_axis_with_only_ref_band_still_gets_ticks() {
+        // SECONDARY 축엔 시리즈가 없고 RefBand만 있어도 axisTicks에 Y_SECONDARY가 나와야 한다.
         val d = LineChartData(
             series = listOf(
                 Series("pace", listOf(Point(0.0, 6.0), Point(1.0, 5.0)), axis = Axis.PRIMARY, role = SeriesRole.MAIN),
             ),
-            referenceLines = listOf(RefLine(170.0, axis = Axis.SECONDARY)),
+            referenceBands = listOf(RefBand(165.0, 175.0, axis = Axis.SECONDARY)),
         )
         val layout = LineChartEngine.layout(d)
         val axes = layout.axisTicks.map { it.axis }.toSet()
