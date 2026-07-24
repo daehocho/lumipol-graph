@@ -42,6 +42,12 @@ data class ChartStyle(
      * secondary 축은 fill 중첩으로 탁해지므로 그라데이션 없이 라인만 그린다.
      */
     val gradientMaxAlpha: Float = 0.25f,
+    /**
+     * 시리즈 id → 색. 지정되면 라인·배경 그라데이션이 이 색을 쓴다(축 슬롯 색보다 우선).
+     * 비어 있으면 종전대로 축/역할 기반 색으로 폴백. 클로저가 아니라 Map인 이유는
+     * LineChartDrawCache가 style을 값 동등성으로 캐시 키에 쓰기 때문(람다면 매 프레임 미스).
+     */
+    val seriesColors: Map<String, Color> = emptyMap(),
 
     // 그리드 (X tick 세로선 + Y tick 가로선). null이면 그리드 없음.
     val gridLineColor: Color?,

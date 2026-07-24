@@ -176,7 +176,7 @@ internal fun buildLineChartLayers(
             StrokeLayer(
                 name = "series.main.${series.id}",
                 segments = listOf(points),
-                color = lineColor(axis, style),
+                color = seriesColor(series.id, SeriesRole.MAIN, axis, style),
                 width = style.lineWidth,
                 cap = StrokeCap.Round,
                 join = StrokeJoin.Round,
@@ -219,8 +219,12 @@ internal inline fun <T> firstWinsBy(
 
 private fun firstWinsAxis(data: LineChartData): Map<String, Axis> = firstWinsBy(data) { it.axis }
 
-private fun lineColor(axis: Axis, style: ChartStyle): Color =
-    if (axis == Axis.SECONDARY) style.secondaryLineColor else style.primaryLineColor
+/** 시리즈 색 — 맵 우선, 없으면 역할/축 폴백. 라인·그라데이션 공용 단일 소스. */
+internal fun seriesColor(id: String, role: SeriesRole, axis: Axis, style: ChartStyle): Color {
+    style.seriesColors[id]?.let { return it }
+    if (role == SeriesRole.OVERLAY) return style.overlayLineColor
+    return if (axis == Axis.SECONDARY) style.secondaryLineColor else style.primaryLineColor
+}
 
 /** 2점 미만이면 null(iOS `polylinePath` 규칙). */
 private fun linePoints(points: List<NormalizedPoint>, axis: Axis, plot: PlotArea): List<PlotPoint>? {
@@ -321,7 +325,7 @@ private fun gradientLayer(
         add(PlotPoint(linePoints.last().x, plot.maxY))
         add(PlotPoint(linePoints.first().x, plot.maxY))
     }
-    val color = lineColor(axis, style)
+    val color = seriesColor(seriesId, SeriesRole.MAIN, axis, style)
     return GradientLayer(
         name = "series.gradient.$seriesId",
         polygon = polygon,

@@ -1,5 +1,6 @@
 package com.lumipol.graph.renderer
 
+import androidx.compose.ui.graphics.Color
 import com.lumipol.graph.model.Axis
 import com.lumipol.graph.model.AxisTick
 import com.lumipol.graph.model.AxisTicksLayout
@@ -299,5 +300,13 @@ class LineChartDrawingTest {
             stats = Stats(emptyList(), emptyList(), null),
         )
         assertTrue(build(layout = single).isEmpty())
+    }
+
+    @Test fun seriesColor_resolves_from_map_then_falls_back() {
+        val style = ChartStyle.defaults(darkTheme = false).copy(seriesColors = mapOf("pace" to Color.Green))
+        assertEquals(Color.Green, seriesColor("pace", SeriesRole.MAIN, Axis.PRIMARY, style))
+        assertEquals(style.overlayLineColor, seriesColor("cad", SeriesRole.OVERLAY, Axis.PRIMARY, style))
+        assertEquals(style.secondaryLineColor, seriesColor("hr", SeriesRole.MAIN, Axis.SECONDARY, style))
+        assertEquals(style.primaryLineColor, seriesColor("x", SeriesRole.MAIN, Axis.PRIMARY, style))
     }
 }
