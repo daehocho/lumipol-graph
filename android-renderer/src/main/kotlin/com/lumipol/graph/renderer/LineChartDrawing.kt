@@ -31,6 +31,7 @@ import com.lumipol.graph.model.ChartAxis
 import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.LineChartLayout
 import com.lumipol.graph.model.NormalizedPoint
+import com.lumipol.graph.model.SeriesLayout
 import com.lumipol.graph.model.SeriesRole
 
 // =====================================================================================
@@ -166,36 +167,50 @@ internal fun buildLineChartLayers(
     layout.markers.forEachIndexed { index, marker ->
         layers.add(markerLayer(marker, index, style, plot, density))
     }
-    layout.series.filter { it.role == SeriesRole.MAIN }.forEach { series ->
-        val axis = axisBySeriesId[series.id] ?: Axis.PRIMARY
-        val points = linePoints(series.points, axis, plot) ?: return@forEach
-        if (style.gradientMaxAlpha > 0f && axis == Axis.PRIMARY) {
-            layers.add(gradientLayer(series.id, points, axis, style, plot))
-        }
-        layers.add(
-            StrokeLayer(
-                name = "series.main.${series.id}",
-                segments = listOf(points),
-                color = seriesColor(series.id, SeriesRole.MAIN, axis, style),
-                width = style.lineWidth,
-                cap = StrokeCap.Round,
-                join = StrokeJoin.Round,
-                trimmable = true,
-            ),
-        )
+    // 그라데이션을 그릴 시리즈(2점 이상 라인 경로가 나오는 것) — 알파 감쇠 분모 n.
+    val gradientSeries = layout.series.filter { s ->
+        val axis = axisBySeriesId[s.id] ?: Axis.PRIMARY
+        seriesPoints(s, axis, plot) != null
     }
-    layout.series.filter { it.role == SeriesRole.OVERLAY }.forEach { series ->
-        val points = overlayLinePoints(series.points, plot) ?: return@forEach
-        layers.add(
-            StrokeLayer(
-                name = "series.overlay.${series.id}",
-                segments = listOf(points),
-                color = style.overlayLineColor,
-                width = style.overlayLineWidth,
-                dash = style.overlayLineDashPattern,
-                join = StrokeJoin.Round,
-            ),
-        )
+    val n = gradientSeries.size
+    if (style.gradientMaxAlpha > 0f && n > 0) {
+        val alpha = style.gradientMaxAlpha / kotlin.math.sqrt(n.toFloat())
+        // 패스 A: 모든 그라데이션(배열 순서 = 아래에서 위).
+        gradientSeries.forEach { s ->
+            val axis = axisBySeriesId[s.id] ?: Axis.PRIMARY
+            val points = seriesPoints(s, axis, plot) ?: return@forEach
+            layers.add(gradientLayer(s.id, s.role, points, axis, alpha, style, plot))
+        }
+    }
+    // 패스 B: 모든 라인(배열 순서). main=실선, overlay=점선.
+    layout.series.forEach { series ->
+        val axis = axisBySeriesId[series.id] ?: Axis.PRIMARY
+        if (series.role == SeriesRole.OVERLAY) {
+            val points = overlayLinePoints(series.points, plot) ?: return@forEach
+            layers.add(
+                StrokeLayer(
+                    name = "series.overlay.${series.id}",
+                    segments = listOf(points),
+                    color = seriesColor(series.id, series.role, axis, style),
+                    width = style.overlayLineWidth,
+                    dash = style.overlayLineDashPattern,
+                    join = StrokeJoin.Round,
+                ),
+            )
+        } else {
+            val points = linePoints(series.points, axis, plot) ?: return@forEach
+            layers.add(
+                StrokeLayer(
+                    name = "series.main.${series.id}",
+                    segments = listOf(points),
+                    color = seriesColor(series.id, series.role, axis, style),
+                    width = style.lineWidth,
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round,
+                    trimmable = true,
+                ),
+            )
+        }
     }
     layout.axisTicks.filter { it.ticks.isNotEmpty() }.forEach { ticksLayout ->
         layers.add(axisLabelsLayer(ticksLayout, style, plot, formatter, density))
@@ -237,6 +252,10 @@ private fun overlayLinePoints(points: List<NormalizedPoint>, plot: PlotArea): Li
     if (points.size < 2) return null
     return points.map { plot.pointIgnoringInversion(it) }
 }
+
+/** 역할에 맞는 라인 포인트 — main은 축 정규화, overlay는 반전 무시 자체 정규화. */
+private fun seriesPoints(s: SeriesLayout, axis: Axis, plot: PlotArea): List<PlotPoint>? =
+    if (s.role == SeriesRole.OVERLAY) overlayLinePoints(s.points, plot) else linePoints(s.points, axis, plot)
 
 /** X tick 세로선 + Y tick 가로선(가로선은 primary 축, 없으면 secondary). 선이 없으면 null. */
 private fun gridLayer(
@@ -314,8 +333,10 @@ private fun markerLayer(
 
 private fun gradientLayer(
     seriesId: String,
+    role: SeriesRole,
     linePoints: List<PlotPoint>,
     axis: Axis,
+    alpha: Float,
     style: ChartStyle,
     plot: PlotArea,
 ): GradientLayer {
@@ -325,11 +346,11 @@ private fun gradientLayer(
         add(PlotPoint(linePoints.last().x, plot.maxY))
         add(PlotPoint(linePoints.first().x, plot.maxY))
     }
-    val color = seriesColor(seriesId, SeriesRole.MAIN, axis, style)
+    val color = seriesColor(seriesId, role, axis, style)
     return GradientLayer(
         name = "series.gradient.$seriesId",
         polygon = polygon,
-        topColor = color.copy(alpha = style.gradientMaxAlpha),
+        topColor = color.copy(alpha = alpha),
         bottomColor = color.copy(alpha = 0f),
         topY = plot.minY,
         bottomY = plot.maxY,

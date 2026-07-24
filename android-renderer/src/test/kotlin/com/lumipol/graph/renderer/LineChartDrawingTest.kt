@@ -88,12 +88,13 @@ class LineChartDrawingTest {
 
     @Test
     fun buildsExpectedLayerTree() {
+        // 2패스 계약(Task 5): 모든 그라데이션(배열 순서) → 모든 라인(배열 순서, main/overlay 통합).
         assertEquals(
             listOf(
                 "grid",
                 "band.0", "marker.0", "marker.1",
-                "series.gradient.pace", "series.main.pace",
-                "series.overlay.cad",
+                "series.gradient.pace", "series.gradient.cad",
+                "series.main.pace", "series.overlay.cad",
                 "axisLabels.x", "axisLabels.yPrimary",
             ),
             build().map { it.name },
@@ -114,7 +115,8 @@ class LineChartDrawingTest {
     }
 
     @Test
-    fun gradientOnlyOnPrimaryAxisSeries() {
+    fun gradientDrawnForEverySeriesRegardlessOfAxis() {
+        // Task 5: 축 필터 제거 — 2점 이상 경로가 나오는 모든 시리즈가 그라데이션을 갖는다.
         val dualLayout = LineChartLayout(
             series = listOf(
                 SeriesLayout("pace", SeriesRole.MAIN, listOf(NormalizedPoint(0.0, 0.0), NormalizedPoint(1.0, 1.0))),
@@ -132,8 +134,12 @@ class LineChartDrawingTest {
         )
         val layers = build(layout = dualLayout, data = dualData)
         assertNotNull(layers.named("series.gradient.pace"))
-        assertNull(layers.named("series.gradient.hr"))
+        assertNotNull(layers.named("series.gradient.hr"))
         assertNotNull(layers.named("series.main.hr"))
+        val names = layers.map { it.name }
+        val lastGradient = names.indexOfLast { it.startsWith("series.gradient.") }
+        val firstLine = names.indexOfFirst { it.startsWith("series.main.") || it.startsWith("series.overlay.") }
+        assertTrue(lastGradient < firstLine)
     }
 
     @Test
@@ -193,7 +199,7 @@ class LineChartDrawingTest {
     }
 
     @Test
-    fun overlaySeriesProducesDashedLayerWithoutAxisLabelsOrGradient() {
+    fun overlaySeriesProducesDashedLayerWithoutAxisLabels() {
         val overlayLayout = LineChartLayout(
             series = listOf(
                 SeriesLayout("p", SeriesRole.MAIN, listOf(NormalizedPoint(0.0, 0.2), NormalizedPoint(1.0, 0.8))),
@@ -212,7 +218,8 @@ class LineChartDrawingTest {
         val layers = build(layout = overlayLayout, data = overlayData)
         val names = layers.map { it.name }
         assertTrue(names.contains("series.overlay.o"))
-        assertFalse(names.any { it.startsWith("series.gradient.o") })
+        // 오버레이도 이제 배경 그라데이션을 그린다(모든 시리즈 대상 2패스 계약).
+        assertTrue(names.contains("series.gradient.o"))
         assertFalse(names.any { it.startsWith("axisLabels") })
         val overlay = layers.named("series.overlay.o") as StrokeLayer
         assertContentEquals(style.overlayLineDashPattern, overlay.dash)
@@ -308,5 +315,53 @@ class LineChartDrawingTest {
         assertEquals(style.overlayLineColor, seriesColor("cad", SeriesRole.OVERLAY, Axis.PRIMARY, style))
         assertEquals(style.secondaryLineColor, seriesColor("hr", SeriesRole.MAIN, Axis.SECONDARY, style))
         assertEquals(style.primaryLineColor, seriesColor("x", SeriesRole.MAIN, Axis.PRIMARY, style))
+    }
+
+    private fun twoSeriesLayers(): List<LineChartLayer> {
+        val layout = LineChartLayout(
+            series = listOf(
+                SeriesLayout("pace", SeriesRole.MAIN, listOf(NormalizedPoint(0.0, 0.0), NormalizedPoint(1.0, 1.0))),
+                SeriesLayout("cad", SeriesRole.OVERLAY, listOf(NormalizedPoint(0.0, 1.0), NormalizedPoint(1.0, 0.0))),
+            ),
+            axisTicks = emptyList(), refBands = emptyList(), markers = emptyList(),
+            stats = Stats(emptyList(), emptyList(), null),
+        )
+        val data = LineChartData(
+            series = listOf(
+                Series("pace", emptyList(), Axis.PRIMARY, SeriesRole.MAIN),
+                Series("cad", emptyList(), Axis.PRIMARY, SeriesRole.OVERLAY),
+            ),
+        )
+        return buildLineChartLayers(
+            layout, data, ChartStyle.defaults(darkTheme = false),
+            PlotArea(100.0, 100.0, Insets(0f, 0f, 0f, 0f), invertedAxes = emptySet()),
+            formatter = { _, v -> v.toString() }, density = 1f,
+        )
+    }
+
+    @Test fun gradient_drawn_for_every_series_before_all_lines() {
+        val names = twoSeriesLayers().map { it.name }
+        assertTrue(names.contains("series.gradient.pace"))
+        assertTrue(names.contains("series.gradient.cad"))
+        val lastGradient = names.indexOfLast { it.startsWith("series.gradient.") }
+        val firstLine = names.indexOfFirst { it.startsWith("series.main.") || it.startsWith("series.overlay.") }
+        assertTrue(lastGradient < firstLine, "모든 그라데이션이 모든 라인보다 앞이어야 함")
+    }
+
+    @Test fun gradient_alpha_decays_by_series_count() {
+        val grad = twoSeriesLayers().filterIsInstance<GradientLayer>().first { it.name == "series.gradient.pace" }
+        val expected = ChartStyle.defaults(darkTheme = false).gradientMaxAlpha / kotlin.math.sqrt(2f)
+        assertEquals(expected, grad.topColor.alpha, 0.001f)
+    }
+
+    @Test fun no_gradient_when_no_series() {
+        val layout = LineChartLayout(emptyList(), emptyList(), emptyList(), emptyList(), Stats(emptyList(), emptyList(), null))
+        val data = LineChartData(emptyList())
+        val layers = buildLineChartLayers(
+            layout, data, ChartStyle.defaults(darkTheme = false),
+            PlotArea(100.0, 100.0, Insets(0f, 0f, 0f, 0f), invertedAxes = emptySet()),
+            formatter = { _, v -> v.toString() }, density = 1f,
+        )
+        assertTrue(layers.none { it.name.startsWith("series.gradient.") })
     }
 }
