@@ -279,7 +279,8 @@ Android/iOS가 따로 구현하고 있어 실제로 페이스 판정 기준이 �
   무관한 집계값이라 페이스가 미가용이어도 그대로 낸다.
 - 고도 평지 컷 제거: 측정만 됐으면 고저차가 0이어도 `altitudeArea`를 반환한다.
 
-**선택 규칙 완결** — `SeriesSelection.normalized(current:available:linePriority:maxCount:)` 신설.
+**선택 규칙 완결** — `SeriesSelection.normalized(current:available:linePriority:maxCount:)` 신설
+(0.21.0에서 `normalized(current:available:priority:)`로 시그니처 변경 — 아래 0.21.0 항목 참조).
 - 앱이 각자 들고 있던 "숨긴 지표를 선택에서 빼고 라인이 비면 채우기"가 코어 단일 소스가 됐다.
 - `toggled`의 최소1 보호를 `lineItems` 한정에서 **선택 전체**로 넓혔다. 고도만 측정된 기록에서
   고도 칩을 끄면 선택이 비어 "데이터 없음"이 뜨던 버그(양 플랫폼 공통)를 한 곳에서 잡는다.
@@ -311,10 +312,10 @@ Android/iOS가 따로 구현하고 있어 실제로 페이스 판정 기준이 �
 
 **마이그레이션** — 비교선을 계속 그리려면 둘 중 하나로 옮긴다. 성격이 다르니 골라야 한다.
 - **같은 축 `.main` 추가**: y가 현재 기록과 같은 축·같은 도메인으로 정규화돼 비교가 수치적으로
-  유효하다. 대신 `.main`/`.primary` 시리즈마다 area 그라데이션이 붙어 두 겹이 겹치고
-  (`gradientMaxAlpha` 0.25 두 장 → ~0.44), 라인·터치 도트가 모두 `primaryLineColor`라 두 선을
-  구분할 수 없다. 앱이 `ChartStyle`로 색을 구분할 수단이 현재 없으므로, 겹쳐 그릴 거면
-  `gradientMaxAlpha = 0`으로 두는 편이 낫다.
+  유효하다. 시리즈마다 area 그라데이션이 붙지만 0.21.0의 α/√n 감쇠로 두 장이면 장당
+  0.25/√2 ≈ 0.177, 겹친 구간 합성 ~0.32다. 같은 축 두 `.main`의 라인·그라데이션·터치 도트
+  색은 `ChartStyle.seriesColors`(0.21.0)로 시리즈별로 구분한다(예: 비교선 id에 회색 지정).
+  그라데이션 중첩 자체가 싫으면 `gradientMaxAlpha = 0`으로 끈다.
 - **`.overlay`**: 자체 min~max로 재정규화되고 Y 도메인에서 제외되며 축 반전도 무시한다
   (`pointIgnoringInversion`). 즉 **모양만 겹쳐 보이고 y 위치는 현재 기록 축과 무관**하다 —
   반전된 페이스 축에서는 지난 러닝의 가장 느린 구간이 아래에 그려진다. 스케일이 다른 보조
@@ -326,6 +327,47 @@ Android/iOS가 따로 구현하고 있어 실제로 페이스 판정 기준이 �
 재생성한 바이너리를 같은 커밋에 포함해야 iOS 테스트/샘플이 빌드된다.
 iOS 스냅샷 3건(`testGhostAndBand`→`testDualAxisAndBand`·`testTouchMarkerShown`·
 `testZoomedWindow`)도 재녹화했다.
+
+### SeriesSelection 단순화 + 시리즈별 색·그라데이션 (0.21.0, 2026-07-26, **breaking**)
+선택 규칙에서 상한·라인최소1·축출을 제거하고(동시 선택 무제한, 고도 단독 허용), 같은 축에
+여러 `.main`을 겹치는 사용(비교선)을 렌더러가 색·그라데이션으로 지원한다.
+
+**breaking — `SeriesSelection` 시그니처 변경.** 아래를 쓰던 코드는 컴파일 에러가 난다.
+- `toggled(current:toggling:lineItems:maxCount:)` → `toggled(current:toggling:)`.
+  남은 규칙은 "마지막 하나 해제 무시"뿐 — 상한 축출·라인 최소1 보호가 사라졌다.
+- `normalized(current:available:linePriority:maxCount:)` → `normalized(current:available:priority:)`.
+  **`priority`는 라인만이 아니라 고도 포함 전체 표시 우선순위다** — 기존 호출에서 maxCount만
+  지우고 `LINE_PRIORITY`를 그대로 넘기면 고도만 측정된 기록에서 폴백이 실패해 빈 선택
+  ("데이터 없음")이 된다. 코어 상수 `PaceSeriesId.DISPLAY_PRIORITY`(0.22.0)를 쓴다.
+- `assignSlots(priority:selected:withData:slotCount:)` → `assignSlots(priority:selected:withData:)`.
+  상한 없음 — index 2+는 전부 overlay. 여기의 `priority`는 종전대로 `LINE_PRIORITY`(축 슬롯
+  배정이므로 고도 제외)가 맞다.
+
+**렌더러 — 시리즈별 색·배경 그라데이션 (양 플랫폼)**
+- `ChartStyle.seriesColors`(id→색 Map) 신설. 라인·배경 그라데이션이 맵 색을 쓰고(축 슬롯 색보다
+  우선), 비어 있으면 종전 축/역할 폴백. 같은 축 두 `.main`(비교선)을 색으로 구분하는 수단.
+- 배경 그라데이션을 2패스로 재구성: 모든 시리즈(overlay 포함) 그라데이션 → 모든 시리즈 라인.
+  겹침 탁해짐 방지로 시작 알파를 `gradientMaxAlpha / √n`(n=그라데이션 장수)로 감쇠한다.
+  한계: n은 실제 겹침이 아니라 전체 그리기 가능 시리즈 수고, 합성 불투명도는 `1-(1-α/√n)^n`로
+  n과 함께 서서히 는다 — 동시 선택이 많은 화면은 값을 낮추거나 0으로 끈다.
+
+**xcframework 재빌드 필요** — 코어 공개 API가 바뀌므로 재생성 바이너리를 같은 커밋에 포함.
+다중 배경 스냅샷도 재녹화했다.
+
+### 코드리뷰 후속 — DISPLAY_PRIORITY·터치 도트 색 통일 (0.22.0, 2026-07-27)
+0.21.0 코드리뷰에서 확인된 결함 수정. breaking 없음(공개 API는 추가만).
+
+- **`PaceSeriesId.DISPLAY_PRIORITY` 신설** — `LINE_PRIORITY + ALTITUDE`. `normalized`의
+  priority 계약(고도 포함)을 충족하는 코어 상수. 앱이 손으로 `+ altitude`를 조립할 필요가
+  없어졌다. `LINE_PRIORITY`는 `assignSlots` 전용임을 KDoc에 명시.
+- **터치 스크럽 도트 색 버그 수정(양 플랫폼)** — 도트가 축 슬롯 색만 쓰고 `seriesColors` 맵을
+  무시하던 것을 라인·그라데이션과 같은 `seriesColor` 리졸버로 통일. 맵 미지정 스타일은 종전과
+  동일한 색이다(스냅샷 영향 없음).
+- **build 핫패스 재계산 제거(양 플랫폼, 동작 불변)** — 시리즈별 매핑 포인트/경로를 리빌드당
+  최대 3회 계산하던 것을 1회로. 역할→좌표 매핑 규칙도 플랫폼당 한 곳(`mappedPoints`/
+  `seriesPoints`)으로 단일화 — 그라데이션 닫는 변이 라인과 같은 매핑 결과를 공유한다.
+
+**xcframework 재빌드 필요** — 코어 공개 API 추가이므로 재생성 바이너리를 같은 커밋에 포함.
 
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 

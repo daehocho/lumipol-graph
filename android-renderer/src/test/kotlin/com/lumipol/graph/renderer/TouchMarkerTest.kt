@@ -45,6 +45,23 @@ class TouchMarkerTest {
     }
 
     @Test
+    fun dotColorUsesSeriesColorsMap() {
+        // 도트도 라인·그라데이션과 같은 seriesColor 리졸버를 쓴다 — 맵 지정 시 축 슬롯 색보다 우선.
+        val styled = style.copy(
+            seriesColors = mapOf("pace" to androidx.compose.ui.graphics.Color.Green),
+        )
+        val result = TouchMarker.make(
+            2.4,
+            TouchMarkerContext(data, layout, styled, plot, TestFixtures::format),
+        )!!
+        val paceDot = result.layer.children.first { it.name == "touch.dot.pace" } as DotLayer
+        val hrDot = result.layer.children.first { it.name == "touch.dot.hr" } as DotLayer
+        assertEquals(androidx.compose.ui.graphics.Color.Green, paceDot.color)
+        // 맵에 없는 시리즈는 종전대로 축 슬롯 색 폴백.
+        assertEquals(styled.secondaryLineColor, hrDot.color)
+    }
+
+    @Test
     fun returnsFormattedValuesPerSeries() {
         // rawX 2.4 → 근접점 x=2.5 (인덱스 5): pace 5.5 → "5'30\"", hr 166 → "166"
         val values = makeResult(2.4)!!.valuesBySeriesId

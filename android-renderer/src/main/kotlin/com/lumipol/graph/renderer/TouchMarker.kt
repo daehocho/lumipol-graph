@@ -99,11 +99,13 @@ internal object TouchMarker {
                 NormalizedPoint(x = nx, y = yScale.position(result.y)),
                 axis,
             )
-            val dotColor = if (axis == Axis.SECONDARY) {
-                context.style.secondaryLineColor
-            } else {
-                context.style.primaryLineColor
-            }
+            // 라인·그라데이션과 같은 seriesColor 리졸버(맵 우선, 축/역할 폴백) — 도트만 다른 색이 되지 않게.
+            val dotColor = seriesColor(
+                result.seriesId,
+                roleBySeriesId[result.seriesId] ?: SeriesRole.MAIN,
+                axis,
+                context.style,
+            )
             children.add(
                 DotLayer(
                     name = "touch.dot.${result.seriesId}",

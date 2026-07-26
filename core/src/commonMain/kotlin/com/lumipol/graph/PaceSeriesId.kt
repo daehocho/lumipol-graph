@@ -13,6 +13,19 @@ object PaceSeriesId {
     const val CADENCE = 2
     const val ALTITUDE = 3
 
-    /** 라인 지표 축 우선순위(앞이 주축). ALTITUDE는 배경 실루엣이라 제외. */
+    /**
+     * 라인 지표 축 우선순위(앞이 주축) — [SeriesSelection.assignSlots] 전용.
+     * ALTITUDE는 배경 실루엣(축 슬롯 없음)이라 제외한다.
+     *
+     * [SeriesSelection.normalized]의 `priority`로 넘기면 안 된다 — 고도만 가용한 기록에서
+     * 폴백이 실패해 빈 선택("데이터 없음")이 된다. 그 용도는 [DISPLAY_PRIORITY].
+     */
     val LINE_PRIORITY: List<Int> = listOf(PACE, HEART, CADENCE)
+
+    /**
+     * 고도 포함 전체 표시 우선순위 — [SeriesSelection.normalized]의 `priority` 계약
+     * ("라인만이 아니라 고도 포함")을 충족하는 코어 상수. 고도만 측정된 기록도
+     * 폴백으로 살아남는다. 축 슬롯 배정([SeriesSelection.assignSlots])에는 [LINE_PRIORITY].
+     */
+    val DISPLAY_PRIORITY: List<Int> = LINE_PRIORITY + ALTITUDE
 }

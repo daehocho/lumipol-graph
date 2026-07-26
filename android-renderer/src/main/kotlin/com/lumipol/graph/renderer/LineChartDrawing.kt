@@ -129,7 +129,8 @@ internal data class ContainerLayer(
 
 /**
  * 코어 [LineChartLayout]을 z-순서 [LineChartLayer] 리스트로 조립한다(그리드→밴드→마커→
- * 그라데이션+main→오버레이→축라벨). 렌더 불가 플롯이면 빈 리스트.
+ * 모든 시리즈 그라데이션(배경)→모든 시리즈 라인(main 실선/overlay 점선)→축라벨).
+ * 렌더 불가 플롯이면 빈 리스트.
  *
  * 코어 API가 시리즈 id 유일성을 강제하지 않으므로 중복 시 **첫 시리즈 우선**으로 축을 해석한다
  * (Kotlin `associate`는 마지막 우선이라 `putIfAbsent`로 명시).
@@ -167,26 +168,24 @@ internal fun buildLineChartLayers(
     layout.markers.forEachIndexed { index, marker ->
         layers.add(markerLayer(marker, index, style, plot, density))
     }
-    // 그라데이션을 그릴 시리즈(2점 이상 라인 경로가 나오는 것) — 알파 감쇠 분모 n.
-    val gradientSeries = layout.series.filter { s ->
+    // 시리즈별 매핑 포인트를 한 번만 계산해 그라데이션·라인 양 패스가 공유한다
+    // (build는 제스처 중 프레임 단위 핫패스 — 시리즈당 최대 3회 재계산 방지).
+    val drawableSeries = layout.series.mapNotNull { s ->
         val axis = axisBySeriesId[s.id] ?: Axis.PRIMARY
-        seriesPoints(s, axis, plot) != null
+        seriesPoints(s, axis, plot)?.let { Triple(s, axis, it) }
     }
-    val n = gradientSeries.size
+    // 알파 감쇠 분모 n = 그라데이션을 그릴 시리즈(2점 이상 라인 경로가 나오는 것) 수.
+    val n = drawableSeries.size
     if (style.gradientMaxAlpha > 0f && n > 0) {
         val alpha = style.gradientMaxAlpha / kotlin.math.sqrt(n.toFloat())
         // 패스 A: 모든 그라데이션(배열 순서 = 아래에서 위).
-        gradientSeries.forEach { s ->
-            val axis = axisBySeriesId[s.id] ?: Axis.PRIMARY
-            val points = seriesPoints(s, axis, plot) ?: return@forEach
+        drawableSeries.forEach { (s, axis, points) ->
             layers.add(gradientLayer(s.id, s.role, points, axis, alpha, style, plot))
         }
     }
     // 패스 B: 모든 라인(배열 순서). main=실선, overlay=점선.
-    layout.series.forEach { series ->
-        val axis = axisBySeriesId[series.id] ?: Axis.PRIMARY
+    drawableSeries.forEach { (series, axis, points) ->
         if (series.role == SeriesRole.OVERLAY) {
-            val points = overlayLinePoints(series.points, plot) ?: return@forEach
             layers.add(
                 StrokeLayer(
                     name = "series.overlay.${series.id}",
@@ -198,7 +197,6 @@ internal fun buildLineChartLayers(
                 ),
             )
         } else {
-            val points = linePoints(series.points, axis, plot) ?: return@forEach
             layers.add(
                 StrokeLayer(
                     name = "series.main.${series.id}",

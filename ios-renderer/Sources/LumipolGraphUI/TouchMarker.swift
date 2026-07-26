@@ -102,9 +102,13 @@ enum TouchMarker {
                 arcCenter: point, radius: context.style.touchDotRadius,
                 startAngle: 0, endAngle: .pi * 2, clockwise: true
             ).cgPath
-            let dotColor: UIColor = axis == .secondary
-                ? context.style.secondaryLineColor
-                : context.style.primaryLineColor
+            // 라인·그라데이션과 같은 seriesColor 리졸버(맵 우선, 축/역할 폴백) — 도트만 다른 색이 되지 않게.
+            let dotColor = ChartLayerBuilder.seriesColor(
+                id: result.seriesId,
+                role: roleBySeriesId[result.seriesId] ?? .main,
+                axis: axis,
+                style: context.style
+            )
             dot.fillColor = dotColor.cgColor
             container.addSublayer(dot)
             valuesBySeriesId[result.seriesId] = context.formatter(chartAxis, result.y)

@@ -29,6 +29,21 @@ final class TouchMarkerTests: XCTestCase {
         XCTAssertFalse(names.contains("touch.bubble"), "말풍선은 제거됨")
     }
 
+    func testDotColorUsesSeriesColorsMap() {
+        // 도트도 라인·그라데이션과 같은 seriesColor 리졸버를 쓴다 — 맵 지정 시 축 슬롯 색보다 우선.
+        var style = ChartStyle.default
+        style.seriesColors = ["pace": .systemGreen]
+        let result = TouchMarker.make(atRawX: 2.4, context: TouchMarker.Context(
+            data: data, layout: layout, style: style, plotArea: plotArea,
+            formatter: TestFixtures.format
+        ))
+        let paceDot = result?.layer.sublayers?.first { $0.name == "touch.dot.pace" } as? CAShapeLayer
+        let hrDot = result?.layer.sublayers?.first { $0.name == "touch.dot.hr" } as? CAShapeLayer
+        XCTAssertEqual(paceDot?.fillColor, UIColor.systemGreen.cgColor)
+        // 맵에 없는 시리즈는 종전대로 축 슬롯 색 폴백.
+        XCTAssertEqual(hrDot?.fillColor, style.secondaryLineColor.cgColor)
+    }
+
     func testReturnsFormattedValuesPerSeries() {
         // rawX 2.4 → 근접점 x=2.5 (인덱스 5): pace 5.5 → "5'30\"", hr 166 → "166"
         let values = makeResult(atRawX: 2.4)?.valuesBySeriesId ?? [:]

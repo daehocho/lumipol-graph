@@ -9,6 +9,11 @@ public struct ChartStyle {
     /// 선택된 **모든** 시리즈(축·역할 무관, overlay 포함)에 각자 색의 area 그라데이션을 그릴 때
     /// 시작 알파. 0이면 그라데이션 없음. 여러 장이 겹칠 때 탁해지지 않도록 실제 시작 알파는
     /// `gradientMaxAlpha / √n`(n=그라데이션 장수)으로 감쇠한다 — n=1이면 이 값 그대로.
+    ///
+    /// 감쇠의 한계: n은 실제 겹침이 아니라 **그리기 가능한 전체 시리즈 수**다. x 범위가 겹치지
+    /// 않는 시리즈도 서로를 감쇠시키고(단독 구간이 α/√n로 흐려짐), 겹치는 구간의 합성 불투명도는
+    /// `1-(1-α/√n)^n`로 n과 함께 서서히 는다(α=0.25: n=2→0.33, n=9→0.54). 선택 상한이 없으므로
+    /// 동시 선택이 많은 화면은 이 값을 낮추거나 0으로 끄는 편이 안전하다.
     public var gradientMaxAlpha: CGFloat = 0.25
     /// 시리즈 id → 색. 지정되면 라인·배경 그라데이션이 이 색을 쓴다(축 슬롯 색보다 우선).
     /// 비어 있으면 종전대로 축/역할 기반 색(primary/secondary/overlay)으로 폴백한다.
@@ -19,7 +24,8 @@ public struct ChartStyle {
     public var gridLineDashPattern: [NSNumber] = [3, 3]
     public var gridLineWidth: CGFloat = 0.5
 
-    // 오버레이(코어가 자체 정규화한 시리즈) — 축 라벨·그라데이션 없는 점선 라인
+    // 오버레이(코어가 자체 정규화한 시리즈) — 축 라벨 없는 점선 라인.
+    // 배경 그라데이션은 다른 시리즈와 동일하게 gradientMaxAlpha 규칙을 따른다(0.21.0부터).
     public var overlayLineColor: UIColor = UIColor.systemPurple.withAlphaComponent(0.8)
     public var overlayLineWidth: CGFloat = 1.5
     public var overlayLineDashPattern: [NSNumber] = [2, 2]

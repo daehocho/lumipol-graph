@@ -210,6 +210,7 @@ __attribute__((swift_name("PaceSeriesId")))
 @property (class, readonly, getter=shared) LumipolGraphPaceSeriesId *shared __attribute__((swift_name("shared")));
 @property (readonly) int32_t ALTITUDE __attribute__((swift_name("ALTITUDE")));
 @property (readonly) int32_t CADENCE __attribute__((swift_name("CADENCE")));
+@property (readonly) NSArray<LumipolGraphInt *> *DISPLAY_PRIORITY __attribute__((swift_name("DISPLAY_PRIORITY")));
 @property (readonly) int32_t HEART __attribute__((swift_name("HEART")));
 @property (readonly) NSArray<LumipolGraphInt *> *LINE_PRIORITY __attribute__((swift_name("LINE_PRIORITY")));
 @property (readonly) int32_t PACE __attribute__((swift_name("PACE")));

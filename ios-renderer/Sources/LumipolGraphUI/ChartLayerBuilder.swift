@@ -27,30 +27,32 @@ enum ChartLayerBuilder {
         for (index, marker) in layout.markers.enumerated() {
             layers.append(markerLayer(marker, index: index, style: style, plotArea: plotArea))
         }
-        // 그라데이션을 그릴 시리즈(2점 이상 라인 경로가 나오는 것) 목록 — 알파 감쇠 분모 n.
-        let gradientSeries = layout.series.filter { series -> Bool in
-            let axis = axisBySeriesId[series.id] ?? .primary
-            return path(for: series, axis: axis, plotArea: plotArea) != nil
-        }
-        let n = gradientSeries.count
+        // 시리즈별 매핑 포인트·경로를 한 번만 계산해 그라데이션·라인 양 패스가 공유한다
+        // (build는 제스처 중 프레임 단위 핫패스 — 시리즈당 최대 3회 재계산 방지).
+        let drawableSeries: [(series: SeriesLayout, axis: Axis, points: [CGPoint], path: UIBezierPath)] =
+            layout.series.compactMap { series in
+                let axis = axisBySeriesId[series.id] ?? .primary
+                guard let points = mappedPoints(series, axis: axis, plotArea: plotArea) else { return nil }
+                return (series, axis, points, polylinePath(points))
+            }
+        // 알파 감쇠 분모 n = 그라데이션을 그릴 시리즈(2점 이상 라인 경로가 나오는 것) 수.
+        let n = drawableSeries.count
         if style.gradientMaxAlpha > 0, n > 0 {
             let alpha = style.gradientMaxAlpha / CGFloat(n).squareRoot()
             // 패스 A: 모든 그라데이션(배열 순서 = 아래에서 위).
-            for series in gradientSeries {
-                let axis = axisBySeriesId[series.id] ?? .primary
-                guard let path = path(for: series, axis: axis, plotArea: plotArea) else { continue }
-                layers.append(gradientLayer(series, axis: axis, linePath: path, alpha: alpha, style: style, plotArea: plotArea))
+            for entry in drawableSeries {
+                layers.append(gradientLayer(
+                    entry.series, axis: entry.axis, linePoints: entry.points, linePath: entry.path,
+                    alpha: alpha, style: style, plotArea: plotArea
+                ))
             }
         }
         // 패스 B: 모든 라인(배열 순서). main=실선, overlay=점선.
-        for series in layout.series {
-            let axis = axisBySeriesId[series.id] ?? .primary
-            if series.role == .overlay {
-                guard let path = overlayLinePath(series.points, plotArea: plotArea) else { continue }
-                layers.append(overlayLineLayer(series, path: path, style: style))
+        for entry in drawableSeries {
+            if entry.series.role == .overlay {
+                layers.append(overlayLineLayer(entry.series, path: entry.path, style: style))
             } else {
-                guard let path = linePath(series.points, axis: axis, plotArea: plotArea) else { continue }
-                layers.append(mainLineLayer(series, axis: axis, path: path, style: style))
+                layers.append(mainLineLayer(entry.series, axis: entry.axis, path: entry.path, style: style))
             }
         }
         for ticksLayout in layout.axisTicks where !ticksLayout.ticks.isEmpty {
@@ -61,34 +63,24 @@ enum ChartLayerBuilder {
 
     // MARK: - Series
 
-    /// 공통 폴리라인 빌더 — 좌표 매핑만 다른 라인 경로들의 단일 구현(2점 미만이면 nil).
-    private static func polylinePath(
-        _ points: [NormalizedPoint], map: (NormalizedPoint) -> CGPoint
-    ) -> UIBezierPath? {
-        guard points.count >= 2 else { return nil }
+    /// 역할→좌표 매핑의 단일 소스(2점 미만이면 nil) — main은 축 정규화, overlay는 코어가 이미
+    /// 정규화한 값이라 호스트 축의 `invertedAxes`를 무시하고 항상 "값이 클수록 위"로 그린다
+    /// (`PlotArea.pointIgnoringInversion` 참고). 그라데이션 닫는 변도 이 결과의 양끝점을 그대로 쓴다.
+    private static func mappedPoints(_ series: SeriesLayout, axis: Axis, plotArea: PlotArea) -> [CGPoint]? {
+        guard series.points.count >= 2 else { return nil }
+        return series.role == .overlay
+            ? series.points.map { plotArea.pointIgnoringInversion($0) }
+            : series.points.map { plotArea.point($0, axis: axis) }
+    }
+
+    /// 매핑된 포인트([mappedPoints] 결과, 2점 이상 보장)를 잇는 폴리라인 경로.
+    private static func polylinePath(_ points: [CGPoint]) -> UIBezierPath {
         let path = UIBezierPath()
-        path.move(to: map(points[0]))
+        path.move(to: points[0])
         for point in points.dropFirst() {
-            path.addLine(to: map(point))
+            path.addLine(to: point)
         }
         return path
-    }
-
-    private static func linePath(_ points: [NormalizedPoint], axis: Axis, plotArea: PlotArea) -> UIBezierPath? {
-        polylinePath(points) { plotArea.point($0, axis: axis) }
-    }
-
-    /// 오버레이 전용 라인 경로 — 코어가 이미 정규화한 값이라 호스트 축의 `invertedAxes`를 무시하고
-    /// 항상 "값이 클수록 위"로 그린다(`PlotArea.pointIgnoringInversion` 참고).
-    private static func overlayLinePath(_ points: [NormalizedPoint], plotArea: PlotArea) -> UIBezierPath? {
-        polylinePath(points) { plotArea.pointIgnoringInversion($0) }
-    }
-
-    /// 역할에 맞는 라인 경로 — main은 축 정규화, overlay는 반전 무시 자체 정규화.
-    private static func path(for series: SeriesLayout, axis: Axis, plotArea: PlotArea) -> UIBezierPath? {
-        series.role == .overlay
-            ? overlayLinePath(series.points, plotArea: plotArea)
-            : linePath(series.points, axis: axis, plotArea: plotArea)
     }
 
     /// 시리즈 색 — 맵 우선, 없으면 역할/축 폴백. 라인·그라데이션 공용 단일 소스.
@@ -112,7 +104,7 @@ enum ChartLayerBuilder {
         return layer
     }
 
-    /// 코어가 자체 정규화한 오버레이 시리즈 — 축 라벨·그라데이션 없이 점선 라인만.
+    /// 코어가 자체 정규화한 오버레이 시리즈 — 축 라벨 없는 점선 라인(그라데이션은 패스 A가 그린다).
     private static func overlayLineLayer(
         _ series: SeriesLayout, path: UIBezierPath, style: ChartStyle
     ) -> CAShapeLayer {
@@ -128,7 +120,7 @@ enum ChartLayerBuilder {
     }
 
     private static func gradientLayer(
-        _ series: SeriesLayout, axis: Axis, linePath: UIBezierPath, alpha: CGFloat,
+        _ series: SeriesLayout, axis: Axis, linePoints: [CGPoint], linePath: UIBezierPath, alpha: CGFloat,
         style: ChartStyle, plotArea: PlotArea
     ) -> CAGradientLayer {
         let color = seriesColor(id: series.id, role: series.role, axis: axis, style: style)
@@ -139,14 +131,11 @@ enum ChartLayerBuilder {
             color.withAlphaComponent(alpha).cgColor,
             color.withAlphaComponent(0).cgColor,
         ]
-        // 라인 아래를 플롯 바닥까지 닫은 area path. 역할에 맞는 좌표 매핑으로 양끝을 잇는다.
-        let map: (NormalizedPoint) -> CGPoint =
-            series.role == .overlay ? plotArea.pointIgnoringInversion : { plotArea.point($0, axis: axis) }
+        // 라인 아래를 플롯 바닥까지 닫은 area path — 닫는 변은 이미 매핑된 라인 양끝점을 그대로
+        // 잇는다(Android gradientLayer와 동일: 역할별 좌표 재계산 없음).
         let areaPath = linePath.copy() as! UIBezierPath
-        let firstPoint = map(series.points[0])
-        let lastPoint = map(series.points[series.points.count - 1])
-        areaPath.addLine(to: CGPoint(x: lastPoint.x, y: plotArea.rect.maxY))
-        areaPath.addLine(to: CGPoint(x: firstPoint.x, y: plotArea.rect.maxY))
+        areaPath.addLine(to: CGPoint(x: linePoints[linePoints.count - 1].x, y: plotArea.rect.maxY))
+        areaPath.addLine(to: CGPoint(x: linePoints[0].x, y: plotArea.rect.maxY))
         areaPath.close()
         var translation = CGAffineTransform(translationX: -plotArea.rect.minX, y: -plotArea.rect.minY)
         let mask = CAShapeLayer()

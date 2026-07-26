@@ -8,6 +8,26 @@ class SeriesSelectionTest {
     // 전체 표시 우선순위(고도 포함) — normalized/assignSlots 폴백에 쓴다.
     private val priority = listOf(0, 1, 2, 3)
 
+    // MARK: PaceSeriesId 우선순위 상수
+
+    @Test fun display_priority_includes_altitude_after_lines() {
+        // normalized의 priority 계약(고도 포함 전체 표시 우선순위)을 코어 상수가 직접 충족해야 한다.
+        assertEquals(PaceSeriesId.LINE_PRIORITY + PaceSeriesId.ALTITUDE, PaceSeriesId.DISPLAY_PRIORITY)
+    }
+
+    @Test fun normalized_with_display_priority_keeps_altitude_only_record() {
+        // 고도만 측정된 기록 + 라인만 저장된 선택 — DISPLAY_PRIORITY면 고도로 폴백돼 빈 선택이 안 된다.
+        // (LINE_PRIORITY를 넘기면 emptyList — 0.20.0 이전 "데이터 없음" 버그 재도입 경로.)
+        assertEquals(
+            listOf(PaceSeriesId.ALTITUDE),
+            SeriesSelection.normalized(
+                current = listOf(PaceSeriesId.PACE, PaceSeriesId.HEART),
+                available = setOf(PaceSeriesId.ALTITUDE),
+                priority = PaceSeriesId.DISPLAY_PRIORITY,
+            ),
+        )
+    }
+
     // MARK: toggled
 
     @Test fun add_metric_appends_in_order() {
