@@ -126,4 +126,25 @@ final class SnapshotTests: XCTestCase {
         view.layoutIfNeeded()
         assertSnapshot(of: view, as: .image)
     }
+
+    // ⑩ 심박존 도넛 — 탭 선택 상태(비선택 디밍 + 센터 존이름/퍼센트 라벨)
+    func testDonutZoneSelected() {
+        let view = RDHeartRateZoneView(frame: CGRect(x: 0, y: 0, width: 300, height: 300))
+        view.backgroundColor = .white
+        view.overrideUserInterfaceStyle = .light
+        view.render(DonutChartData(segments: [
+            DonutSegment(value: 1480, colorRole: .zone5, label: "최대"),
+            DonutSegment(value: 1462, colorRole: .zone4, label: "무산소"),
+            DonutSegment(value: 559, colorRole: .zone3, label: "유산소"),
+            DonutSegment(value: 189, colorRole: .zone2, label: "저강도"),
+        ]))
+        view.layoutIfNeeded()
+        // 두 번째 세그먼트(무산소 ~40%) 위 링 중심선 탭 — fraction 0.55 지점.
+        let ring = ChartStyle.default.donutRingWidth
+        let radius = (min(view.bounds.width, view.bounds.height) - ring) / 2
+        let angle = 0.55 * 2 * CGFloat.pi - .pi / 2
+        view.handleTap(at: CGPoint(x: view.bounds.midX + radius * cos(angle),
+                                   y: view.bounds.midY + radius * sin(angle)))
+        assertSnapshot(of: view, as: .image)
+    }
 }
