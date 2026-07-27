@@ -21,10 +21,21 @@ object DonutEngine {
                 value = seg.value,
                 colorRole = seg.colorRole,
                 sourceIndex = index,
+                label = seg.label,
             )
             cursor += sweep
             layout
         }
         return DonutChartLayout(out, total)
+    }
+
+    /**
+     * 탭 토글 전이(0.26.0). tapped=null(링 밖·구멍)→해제, 같은 조각 재탭→해제, 다른 조각→선택 이동.
+     * 타이머·통지는 플랫폼 관심사 — 여기서는 다음 선택 인덱스만 결정한다.
+     */
+    fun toggleSelection(current: Int?, tapped: Int?): Int? = when {
+        tapped == null -> null
+        tapped == current -> null
+        else -> tapped
     }
 }

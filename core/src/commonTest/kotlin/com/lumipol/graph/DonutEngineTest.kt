@@ -5,6 +5,7 @@ import com.lumipol.graph.model.DonutColorRole
 import com.lumipol.graph.model.DonutSegment
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DonutEngineTest {
@@ -72,5 +73,30 @@ class DonutEngineTest {
             assertTrue(it.startFraction in 0.0..1.0)
             assertTrue(it.sweepFraction in 0.0..1.0)
         }
+    }
+
+    @Test
+    fun layoutCarriesSegmentLabel() {
+        // value<=0 필터 후에도 label이 올바른 세그먼트에 붙어 있어야 한다.
+        val layout = DonutEngine.layout(
+            DonutChartData(
+                listOf(
+                    DonutSegment(0.0, DonutColorRole.ZONE1, "워밍업"),
+                    DonutSegment(30.0, DonutColorRole.ZONE2, "저강도"),
+                    DonutSegment(70.0, DonutColorRole.ZONE3),
+                ),
+            ),
+        )
+        assertEquals("저강도", layout.segments[0].label)
+        assertNull(layout.segments[1].label)
+    }
+
+    @Test
+    fun toggleSelectionTransitions() {
+        assertNull(DonutEngine.toggleSelection(current = null, tapped = null))   // 무선택 + 밖 탭
+        assertEquals(2, DonutEngine.toggleSelection(current = null, tapped = 2)) // 선택
+        assertNull(DonutEngine.toggleSelection(current = 2, tapped = 2))         // 재탭 해제
+        assertEquals(3, DonutEngine.toggleSelection(current = 2, tapped = 3))    // 선택 이동
+        assertNull(DonutEngine.toggleSelection(current = 2, tapped = null))      // 밖 탭 해제
     }
 }

@@ -54,6 +54,7 @@ data class DonutSegmentLayout(
     val value: Double,
     val colorRole: DonutColorRole,
     val sourceIndex: Int = -1,
+    val label: String? = null,
 )
 
 /** total=세그먼트 value 합(0이면 무데이터). */

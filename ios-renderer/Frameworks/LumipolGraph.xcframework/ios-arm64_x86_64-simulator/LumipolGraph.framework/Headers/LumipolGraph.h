@@ -163,6 +163,7 @@ __attribute__((swift_name("DonutEngine")))
 + (instancetype)donutEngine __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphDonutEngine *shared __attribute__((swift_name("shared")));
 - (LumipolGraphDonutChartLayout *)layoutData:(LumipolGraphDonutChartData *)data __attribute__((swift_name("layout(data:)")));
+- (LumipolGraphInt * _Nullable)toggleSelectionCurrent:(LumipolGraphInt * _Nullable)current tapped:(LumipolGraphInt * _Nullable)tapped __attribute__((swift_name("toggleSelection(current:tapped:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -410,23 +411,26 @@ __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("DonutSegment")))
 @interface LumipolGraphDonutSegment : LumipolGraphBase
 - (instancetype)initWithValue:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole __attribute__((swift_name("init(value:colorRole:)"))) __attribute__((objc_designated_initializer));
-- (LumipolGraphDonutSegment *)doCopyValue:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole __attribute__((swift_name("doCopy(value:colorRole:)")));
+- (instancetype)initWithValue:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole label:(NSString * _Nullable)label __attribute__((swift_name("init(value:colorRole:label:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphDonutSegment *)doCopyValue:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole label:(NSString * _Nullable)label __attribute__((swift_name("doCopy(value:colorRole:label:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) LumipolGraphDonutColorRole *colorRole __attribute__((swift_name("colorRole")));
+@property (readonly) NSString * _Nullable label __attribute__((swift_name("label")));
 @property (readonly) double value __attribute__((swift_name("value")));
 @end
 
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("DonutSegmentLayout")))
 @interface LumipolGraphDonutSegmentLayout : LumipolGraphBase
-- (instancetype)initWithStartFraction:(double)startFraction sweepFraction:(double)sweepFraction value:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole sourceIndex:(int32_t)sourceIndex __attribute__((swift_name("init(startFraction:sweepFraction:value:colorRole:sourceIndex:)"))) __attribute__((objc_designated_initializer));
-- (LumipolGraphDonutSegmentLayout *)doCopyStartFraction:(double)startFraction sweepFraction:(double)sweepFraction value:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole sourceIndex:(int32_t)sourceIndex __attribute__((swift_name("doCopy(startFraction:sweepFraction:value:colorRole:sourceIndex:)")));
+- (instancetype)initWithStartFraction:(double)startFraction sweepFraction:(double)sweepFraction value:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole sourceIndex:(int32_t)sourceIndex label:(NSString * _Nullable)label __attribute__((swift_name("init(startFraction:sweepFraction:value:colorRole:sourceIndex:label:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphDonutSegmentLayout *)doCopyStartFraction:(double)startFraction sweepFraction:(double)sweepFraction value:(double)value colorRole:(LumipolGraphDonutColorRole *)colorRole sourceIndex:(int32_t)sourceIndex label:(NSString * _Nullable)label __attribute__((swift_name("doCopy(startFraction:sweepFraction:value:colorRole:sourceIndex:label:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) LumipolGraphDonutColorRole *colorRole __attribute__((swift_name("colorRole")));
+@property (readonly) NSString * _Nullable label __attribute__((swift_name("label")));
 @property (readonly) int32_t sourceIndex __attribute__((swift_name("sourceIndex")));
 @property (readonly) double startFraction __attribute__((swift_name("startFraction")));
 @property (readonly) double sweepFraction __attribute__((swift_name("sweepFraction")));
