@@ -14,6 +14,7 @@ import com.lumipol.graph.model.ChartAxis
 import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.LineChartLayout
 import com.lumipol.graph.model.Point
+import com.lumipol.graph.query.SCRUB_WINDOW_EPSILON
 
 /**
  * 라인차트 상호작용 상태 홀더 — 줌 창, 활성 마커 rawX, 제스처 임시 창을 보유하고 콜백 짝맞춤
@@ -47,11 +48,6 @@ internal class LineChartInteraction(
 
     /** 최대 확대 배율(전체 구간 대비). composable이 파라미터로 주입. */
     var maxZoomScale: Double = 10.0
-
-    // 시리즈 속성 맵(첫 시리즈 우선) — data가 불변이므로 인스턴스당 1회 계산해 스크럽(60~120Hz)
-    // 마다 재구성하지 않는다. 그리기(firstWinsAxis)와 같은 규칙([firstWinsBy]) 공유.
-    val axisBySeriesId = firstWinsBy(data) { it.axis }
-    val roleBySeriesId = firstWinsBy(data) { it.role }
 
     // 콜백 — composable이 `rememberUpdatedState`로 최신 람다를 유지시킨다(stale 방지).
     var onScrub: OnScrub? = null
@@ -103,7 +99,7 @@ internal class LineChartInteraction(
         var x = rawX
         val z = zoom
         if (z != null && z.isZoomed) {
-            val epsilon = (z.window.endInclusive - z.window.start) * TouchMarker.WINDOW_EPSILON
+            val epsilon = (z.window.endInclusive - z.window.start) * SCRUB_WINDOW_EPSILON
             if (x < z.window.start - epsilon || x > z.window.endInclusive + epsilon) return false
             x = x.coerceIn(z.window.start, z.window.endInclusive)
         }

@@ -1,28 +1,25 @@
 // iOS: TouchMarker.swift
 //
-// 근접점 마커(수직선 + 시리즈별 점)를 조립하고 시리즈별 포맷 값을 반환한다. 근접 판정은 코어
-// `LineChartEngine.nearest`(원본 도메인 x) — 양 플랫폼 동일. 순수 조립부([make]/[makeBackgroundOnly])는
+// 근접점 마커(수직선 + 시리즈별 점)를 조립하고 시리즈별 포맷 값을 반환한다. 창 필터·스냅 소스
+// 선택·정규화 좌표는 코어 `LineChartEngine.nearestScrub`(B2)가 확정하고 — 양 플랫폼 동일 —
+// 렌더러는 플랫폼 좌표 변환과 레이어 조립만 한다. 순수 조립부([make]/[makeBackgroundOnly])는
 // DrawScope 미의존이라 JVM 단위테스트로 검증 가능하고, 그리기는 [drawTouchMarker].
 package com.lumipol.graph.renderer
 
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.TextMeasurer
 import com.lumipol.graph.LineChartEngine
-import com.lumipol.graph.model.Axis
 import com.lumipol.graph.model.ChartAxis
 import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.LineChartLayout
 import com.lumipol.graph.model.NormalizedPoint
 import com.lumipol.graph.model.SeriesRole
-import kotlin.math.abs
+import com.lumipol.graph.query.SCRUB_WINDOW_EPSILON
 
 /**
  * 마커 조립 컨텍스트(iOS `TouchMarker.Context`).
  *
  * @param style 이미 밀도 환산된 스타일(터치 점 반경 등). @param density 스타일 밖 상수(터치선 폭)의 dp→px 환산.
- * @param axisBySeriesId,roleBySeriesId 첫 시리즈 우선 속성 맵. 스크럽은 60~120Hz로 호출되므로
- *   데이터가 불변인 동안 재계산하지 않게 호출부([LineChartInteraction])가 캐시본을 주입한다
- *   (기본값은 테스트 등 단발 호출용).
  */
 internal data class TouchMarkerContext(
     val data: LineChartData,
@@ -31,8 +28,6 @@ internal data class TouchMarkerContext(
     val plot: PlotArea,
     val formatter: (ChartAxis, Double) -> String,
     val density: Float = 1f,
-    val axisBySeriesId: Map<String, Axis> = firstWinsBy(data) { it.axis },
-    val roleBySeriesId: Map<String, SeriesRole> = firstWinsBy(data) { it.role },
 )
 
 /**
@@ -49,81 +44,36 @@ internal object TouchMarker {
 
     /**
      * 원본 도메인 [rawX] 기준 마커. 표시 불가(플롯 없음·축 변환 불능·근접점 없음/전부 창밖)면 null.
-     *
-     * - 스냅 소스는 **main 시리즈** 근접점(없으면 첫 시리즈) — 오버레이는 성긴 샘플일 수 있음.
-     * - 스냅/시리즈 근접점이 현재 표시 창 밖이면 마커/점·값을 생략. 단 도메인 양끝은 부동소수 반올림으로
-     *   0/1을 [WINDOW_EPSILON] 이내 벗어날 수 있으므로 그 범위는 창 안으로 간주해 클램프한다.
+     * 스냅 규칙(main 우선·창 epsilon·오버레이 자체 정규화 y)은 코어 [LineChartEngine.nearestScrub] 소관.
      */
     fun make(rawX: Double, context: TouchMarkerContext): TouchMarkerResult? {
         if (!context.plot.isRenderable) return null
-        // 0.30.0: 코어가 계산에 쓴 도메인을 직접 출력한다 — tick 두 점 역산(구 AxisScale) 제거.
-        val xDomain = context.layout.domains.x
-        if (xDomain.max <= xDomain.min) return null // 축퇴 도메인 — 마커 배치 불능(구 AxisScale.from null 동일)
-
-        // 창 안 점만 근접 후보로 — 창 밖 전역 최근접점이 스냅 소스가 되면 창 안 이웃이 있어도
-        // 마커 전체가 null로 떨어진다(줌 가장자리). 경계는 WINDOW_EPSILON만큼 관대하게.
-        val results = LineChartEngine.nearest(
-            context.data,
-            rawX,
-            xMin = xDomain.denormalize(-WINDOW_EPSILON),
-            xMax = xDomain.denormalize(1 + WINDOW_EPSILON),
-        )
-        val axisBySeriesId = context.axisBySeriesId
-        val roleBySeriesId = context.roleBySeriesId
-
-        val snapSource = results.firstOrNull { roleBySeriesId[it.seriesId] == SeriesRole.MAIN }
-            ?: results.firstOrNull()
-        val snappedX = snapSource?.x ?: return null
-
-        val rawNx = xDomain.normalize(snappedX)
-        if (rawNx < -WINDOW_EPSILON || rawNx > 1 + WINDOW_EPSILON) return null
-        val nx = rawNx.coerceIn(0.0, 1.0)
+        val scrub = LineChartEngine.nearestScrub(context.data, context.layout, rawX) ?: return null
 
         val children = mutableListOf<LineChartLayer>()
-        children.add(verticalLine(nx, context))
+        children.add(verticalLine(scrub.snappedNx, context))
 
         val valuesBySeriesId = LinkedHashMap<String, String>()
-        for (result in results) {
-            // 창 밖 근접점은 점·값 모두 생략(짧은 보조 시리즈가 창 밖 값을 스크럽 위치인 양 보고 방지).
-            val seriesNx = xDomain.normalize(result.x)
-            if (seriesNx < -WINDOW_EPSILON || seriesNx > 1 + WINDOW_EPSILON) continue
-
-            if (roleBySeriesId[result.seriesId] == SeriesRole.OVERLAY) {
-                // 오버레이: 축이 없어 도메인이 실리지 않는다 — 코어가 자체 정규화해 둔 layout
-                // 포인트에서 근접점을 찾아, 라인과 같은 반전 무시 매핑으로 도트를 놓는다.
-                overlayDot(result.seriesId, seriesNx, nx, context)?.let { children.add(it) }
-                valuesBySeriesId[result.seriesId] = context.formatter(ChartAxis.Y_OVERLAY, result.y)
-                continue
+        for (p in scrub.perSeries) {
+            valuesBySeriesId[p.seriesId] = context.formatter(p.chartAxis, p.y)
+            val ny = p.ny ?: continue // 도트 불능(오버레이가 layout에 없음) — 값만 전달
+            // 오버레이는 라인과 같은 반전 무시 매핑, 축 시리즈는 해당 축 매핑(코어 ny와 좌표계 일치).
+            val center = if (p.role == SeriesRole.OVERLAY) {
+                context.plot.pointIgnoringInversion(NormalizedPoint(x = p.nx, y = ny))
+            } else {
+                context.plot.point(NormalizedPoint(x = p.nx, y = ny), p.axis)
             }
-            val axis = axisBySeriesId[result.seriesId] ?: continue
-            val chartAxis = chartAxis(axis) ?: continue
-            val yDomain = when (axis) {
-                Axis.PRIMARY -> context.layout.domains.yPrimary
-                Axis.SECONDARY -> context.layout.domains.ySecondary
-            } ?: continue
-            val point = context.plot.point(
-                NormalizedPoint(x = nx, y = yDomain.normalize(result.y)),
-                axis,
-            )
-            // 라인·그라데이션과 같은 seriesColor 리졸버(맵 우선, 축/역할 폴백) — 도트만 다른 색이 되지 않게.
-            val dotColor = seriesColor(
-                result.seriesId,
-                roleBySeriesId[result.seriesId] ?: SeriesRole.MAIN,
-                axis,
-                context.style,
-            )
             children.add(
                 DotLayer(
-                    name = "touch.dot.${result.seriesId}",
-                    center = point,
+                    name = "touch.dot.${p.seriesId}",
+                    center = center,
                     radius = context.style.touchDotRadius,
-                    color = dotColor,
+                    // 라인·그라데이션과 같은 seriesColor 리졸버(맵 우선, 축/역할 폴백) — 도트만 다른 색이 되지 않게.
+                    color = seriesColor(p.seriesId, p.role, p.axis, context.style),
                 ),
             )
-            valuesBySeriesId[result.seriesId] = context.formatter(chartAxis, result.y)
         }
-        if (valuesBySeriesId.isEmpty()) return null
-        return TouchMarkerResult(ContainerLayer("touch.marker", children), valuesBySeriesId, snappedX)
+        return TouchMarkerResult(ContainerLayer("touch.marker", children), valuesBySeriesId, scrub.snappedX)
     }
 
     /**
@@ -135,33 +85,10 @@ internal object TouchMarker {
         val xDomain = context.layout.domains.x
         if (xDomain.max <= xDomain.min) return null
         val rawNx = xDomain.normalize(rawX)
-        if (rawNx < -WINDOW_EPSILON || rawNx > 1 + WINDOW_EPSILON) return null
+        if (rawNx < -SCRUB_WINDOW_EPSILON || rawNx > 1 + SCRUB_WINDOW_EPSILON) return null
         val nx = rawNx.coerceIn(0.0, 1.0)
         val container = ContainerLayer("touch.marker", listOf(verticalLine(nx, context)))
         return TouchMarkerResult(container, emptyMap(), xDomain.denormalize(nx))
-    }
-
-    /**
-     * 오버레이 시리즈 터치 도트 — layout의 자체 정규화 포인트 중 [seriesNx]에 가장 가까운 점의
-     * y를 [pointIgnoringInversion][PlotArea.pointIgnoringInversion]으로 매핑한다(라인과 동일 규칙).
-     * x는 다른 도트처럼 수직선 위치 [nx]. layout에 해당 시리즈/포인트가 없으면 null(값만 전달).
-     */
-    private fun overlayDot(
-        seriesId: String,
-        seriesNx: Double,
-        nx: Double,
-        context: TouchMarkerContext,
-    ): DotLayer? {
-        val layoutSeries = context.layout.series
-            .firstOrNull { it.id == seriesId && it.role == SeriesRole.OVERLAY } ?: return null
-        val layoutPoint = layoutSeries.points.minByOrNull { abs(it.x - seriesNx) } ?: return null
-        val point = context.plot.pointIgnoringInversion(NormalizedPoint(x = nx, y = layoutPoint.y))
-        return DotLayer(
-            name = "touch.dot.$seriesId",
-            center = point,
-            radius = context.style.touchDotRadius,
-            color = seriesColor(seriesId, SeriesRole.OVERLAY, Axis.PRIMARY, context.style),
-        )
     }
 
     private fun verticalLine(nx: Double, context: TouchMarkerContext): StrokeLayer {
@@ -179,13 +106,6 @@ internal object TouchMarker {
         )
     }
 
-    private fun chartAxis(axis: Axis): ChartAxis? = when (axis) {
-        Axis.PRIMARY -> ChartAxis.Y_PRIMARY
-        Axis.SECONDARY -> ChartAxis.Y_SECONDARY
-    }
-
-    /** 창 경계 부동소수 흡수 epsilon(iOS `1e-9`). 엄격 비교로 바꾸면 끝-탭 침묵 드롭 회귀. */
-    const val WINDOW_EPSILON = 1e-9
     private const val TOUCH_LINE_WIDTH = 1f
 }
 

@@ -52,11 +52,7 @@ internal suspend fun PointerInputScope.lineChartGestures(
 
     fun contextFor(): TouchMarkerContext? {
         val plot = plotProvider() ?: return null
-        return TouchMarkerContext(
-            data, layoutProvider(), style, plot, formatter,
-            axisBySeriesId = interaction.axisBySeriesId,
-            roleBySeriesId = interaction.roleBySeriesId,
-        )
+        return TouchMarkerContext(data, layoutProvider(), style, plot, formatter)
     }
 
     /** 손가락 픽셀 x → 원본 도메인 x. 플롯·X스케일 없으면 null. */

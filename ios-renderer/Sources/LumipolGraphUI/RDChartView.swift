@@ -237,7 +237,7 @@ public final class RDChartView: UIView {
             // 창 끝 스크럽은 도메인 역산 반올림으로 상/하한을 수 ulp 벗어날 수 있다 —
             // TouchMarker의 경계 처리와 동일하게 epsilon 이내는 창 안으로 클램프한다
             // (엄격 비교 시 끝 스크럽이 침묵 드롭되고 이전 마커가 얼어붙음).
-            let epsilon = (state.window.upperBound - state.window.lowerBound) * 1e-9
+            let epsilon = (state.window.upperBound - state.window.lowerBound) * ScrubKt.SCRUB_WINDOW_EPSILON
             guard rawX >= state.window.lowerBound - epsilon,
                   rawX <= state.window.upperBound + epsilon else { return }
             rawX = min(max(rawX, state.window.lowerBound), state.window.upperBound)

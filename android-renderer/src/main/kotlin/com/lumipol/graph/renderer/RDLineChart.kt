@@ -190,8 +190,6 @@ fun RDLineChart(
                 val ctx = TouchMarkerContext(
                     data, interaction.layoutForCurrentWindow(), scaledStyle, plot,
                     { axis, value -> currentFormatter(axis, value) }, density,
-                    axisBySeriesId = interaction.axisBySeriesId,
-                    roleBySeriesId = interaction.roleBySeriesId,
                 )
                 interaction.scrubTo(rawX, ctx, notify = true)
             }
@@ -238,8 +236,6 @@ fun RDLineChart(
         interaction.activeMarkerRawX?.let { rawX ->
             val ctx = TouchMarkerContext(
                 data, currentLayout, scaledStyle, plot, currentFormatter, density,
-                axisBySeriesId = interaction.axisBySeriesId,
-                roleBySeriesId = interaction.roleBySeriesId,
             )
             val result = if (data.series.isEmpty()) {
                 TouchMarker.makeBackgroundOnly(rawX, ctx)
