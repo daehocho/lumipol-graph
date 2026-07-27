@@ -37,13 +37,14 @@ enum TestFixtures {
         )
     }
 
-    /// 페이스(primary)+심박(secondary)+케이던스(overlay) — 배경 3장 겹침 검증용.
+    /// 페이스(primary)+심박·케이던스(secondary 공유) — 배경 3장 겹침 검증용.
+    /// 0.29.0 슬롯 규약(0=주축, 1 이후=보조축) 반영: 케이던스도 보조축 도메인으로 정규화된다.
     static let paceHeartCadence = LineChartData(
         series: [
             Series(id: "pace", points: paceAndHeartRate.series[0].points, axis: .primary, role: .main),
             Series(id: "hr", points: paceAndHeartRate.series[1].points, axis: .secondary, role: .main),
             Series(id: "cad", points: paceAndHeartRate.series[0].points.map { Point(x: $0.x, y: 170 + $0.y * 2) },
-                   axis: .primary, role: .overlay),
+                   axis: .secondary, role: .main),
         ],
         referenceBands: [], segmentMarkers: paceAndHeartRate.segmentMarkers,
         config: paceAndHeartRate.config
