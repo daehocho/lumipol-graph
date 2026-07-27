@@ -784,7 +784,8 @@ __attribute__((swift_name("NearestKt")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("NiceScaleKt")))
 @interface LumipolGraphNiceScaleKt : LumipolGraphBase
-+ (LumipolGraphNiceScale *)niceScaleMin:(double)min max:(double)max maxTicks:(int32_t)maxTicks __attribute__((swift_name("niceScale(min:max:maxTicks:)")));
++ (LumipolGraphNiceScale *)niceScaleMin:(double)min max:(double)max maxTicks:(int32_t)maxTicks headroomFraction:(double)headroomFraction __attribute__((swift_name("niceScale(min:max:maxTicks:headroomFraction:)")));
+@property (class, readonly) double Y_AXIS_HEADROOM_FRACTION __attribute__((swift_name("Y_AXIS_HEADROOM_FRACTION")));
 @end
 
 __attribute__((objc_subclassing_restricted))
