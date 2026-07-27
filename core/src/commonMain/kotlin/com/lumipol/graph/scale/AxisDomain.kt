@@ -8,6 +8,10 @@ import com.lumipol.graph.model.SeriesRole
 data class AxisDomain(val min: Double, val max: Double) {
     fun normalize(v: Double): Double =
         if (max == min) 0.5 else (v - min) / (max - min)
+
+    /** [normalize]의 역변환 — 렌더러 스크럽/줌의 픽셀→도메인 경로용. 축퇴(min==max)면 min. */
+    fun denormalize(t: Double): Double =
+        if (max == min) min else min + t * (max - min)
 }
 
 /** 해당 Y축에 걸리는 모든 값(시리즈 점 + 밴드 경계)을 순서대로 모음.

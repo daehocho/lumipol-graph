@@ -177,7 +177,15 @@ object CoreDump {
             }),
             "segmentSeriesId" to jstr(l.stats.segmentSeriesId),
         ),
+        "domains" to jobj(
+            "x" to renderDomain(l.domains.x),
+            "yPrimary" to (l.domains.yPrimary?.let(::renderDomain) ?: "null"),
+            "ySecondary" to (l.domains.ySecondary?.let(::renderDomain) ?: "null"),
+        ),
     )
+
+    private fun renderDomain(d: com.lumipol.graph.scale.AxisDomain): String =
+        jobj("min" to jnum(d.min), "max" to jnum(d.max))
 
     private fun renderBarLayout(l: BarChartLayout): String = jobj(
         "barCount" to jint(l.bars.size),
@@ -194,6 +202,9 @@ object CoreDump {
         "yTickCount" to jint(l.yTicks.size),
         "yTicks" to jarr(l.yTicks.map { jobj("value" to jnum(it.value), "position" to jnum(it.position)) }),
         "referenceLinePosition" to jnum(l.referenceLinePosition),
+        "colorAnchors" to (l.colorAnchors?.let {
+            jobj("fastest" to jnum(it.fastest), "slowest" to jnum(it.slowest), "average" to jnum(it.average))
+        } ?: "null"),
     )
 
     private fun renderDonutLayout(l: DonutChartLayout): String = jobj(

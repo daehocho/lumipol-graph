@@ -45,7 +45,7 @@ object BarChartEngine {
             aggregateByDistance(data, unit) { d, t -> totalDist += d; totalTime += t }
         }
 
-        if (raw.isEmpty()) return BarChartLayout(emptyList(), emptyList(), null)
+        if (raw.isEmpty()) return BarChartLayout(emptyList(), emptyList(), null, null)
 
         // 색 기준(ref): 명시 목표 → 런 총합 평균 → 필터 샘플 합 평균.
         val ref = data.targetPaceSecPerUnit
@@ -66,7 +66,23 @@ object BarChartEngine {
             BarLayout(idx, b.value, 1.0 - dom.normalize(b.value), role, b.isPartial, b.endMinutes)
         }
         val yTicks = ns.ticks.map { AxisTick(it, 1.0 - dom.normalize(it)) }
-        return BarChartLayout(bars, yTicks, 1.0 - dom.normalize(ref))
+        return BarChartLayout(bars, yTicks, 1.0 - dom.normalize(ref), colorAnchors(raw, runTotalsRef(data, unit)))
+    }
+
+    /**
+     * 컬러맵 색 앵커 — 렌더러·앱 4벌 복제를 대체하는 단일 원본(BarColorAnchors KDoc 참조).
+     * 부분 스플릿은 표본 시간이 짧아 극값을 왜곡하므로 온전 스플릿이 범위를 이루면 배제한다.
+     */
+    private fun colorAnchors(raw: List<RawBar>, runAverage: Double?): BarColorAnchors {
+        val full = raw.filter { !it.isPartial }.map { it.value }
+        val hasRange = full.size >= 2 && full.max() > full.min()
+        val anchor = if (hasRange) full else raw.map { it.value }
+        val fastest = anchor.min()
+        val slowest = anchor.max()
+        // 런 총합 평균이 스플릿 극값 밖이면 색 구간이 붕괴하므로 클램프(소비 앱 실사고 대응 규칙 흡수)
+        val average = (runAverage?.takeIf { it > 0.0 } ?: (anchor.sum() / anchor.size))
+            .coerceIn(fastest, slowest)
+        return BarColorAnchors(fastest, slowest, average)
     }
 
     // 런 총합 기반 색 기준(총거리>0일 때만). iOS 시간모드가 넘기던 runningTime/(sumDistance/unit).

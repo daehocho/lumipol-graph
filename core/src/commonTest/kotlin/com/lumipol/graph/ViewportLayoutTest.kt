@@ -4,7 +4,6 @@ import com.lumipol.graph.model.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.test.assertFailsWith
 
 class ViewportLayoutTest {
     // x 0..4 등간격, y는 x=2에서 봉우리(10), 나머지는 1~2.
@@ -81,8 +80,12 @@ class ViewportLayoutTest {
     }
 
     @Test
-    fun invalid_window_throws() {
-        assertFailsWith<IllegalArgumentException> { LineChartEngine.layout(data, 3.0, 3.0) }
+    fun invalid_window_falls_back_to_full_layout() {
+        // 구 계약은 require 예외였으나, 창 폭 0/역전은 제스처 유래 입력이라 ObjC 경계에서
+        // 잡을 수 없는 iOS 크래시가 됐다 — 전체 레이아웃 폴백으로 변경(경계 정책 §4-2, B8).
+        val full = LineChartEngine.layout(data)
+        assertEquals(full, LineChartEngine.layout(data, 3.0, 3.0))
+        assertEquals(full, LineChartEngine.layout(data, 5.0, 3.0))
     }
 
     @Test

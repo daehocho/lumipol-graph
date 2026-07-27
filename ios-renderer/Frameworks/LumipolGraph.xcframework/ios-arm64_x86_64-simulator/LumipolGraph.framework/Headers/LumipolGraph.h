@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSegmentStat, LumipolGraphSeriesRole, LumipolGraphSeriesStat, LumipolGraphAxisDomain, LumipolGraphNiceScale;
+@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorAnchors, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSegmentStat, LumipolGraphSeriesRole, LumipolGraphSeriesStat, LumipolGraphNiceScale;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -287,6 +287,8 @@ __attribute__((swift_name("AxisTicksLayout")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("BarChartData")))
 @interface LumipolGraphBarChartData : LumipolGraphBase
+- (instancetype)initWithSamples:(NSArray<LumipolGraphSplitSample *> *)samples splitDistanceMeters:(double)splitDistanceMeters __attribute__((swift_name("init(samples:splitDistanceMeters:)"))) __attribute__((objc_designated_initializer));
+- (instancetype)initWithSamples:(NSArray<LumipolGraphSplitSample *> *)samples splitDistanceMeters:(double)splitDistanceMeters targetPaceSecPerUnit:(LumipolGraphDouble * _Nullable)targetPaceSecPerUnit toleranceSecPerUnit:(double)toleranceSecPerUnit __attribute__((swift_name("init(samples:splitDistanceMeters:targetPaceSecPerUnit:toleranceSecPerUnit:)"))) __attribute__((objc_designated_initializer));
 - (instancetype)initWithSamples:(NSArray<LumipolGraphSplitSample *> *)samples splitDistanceMeters:(double)splitDistanceMeters targetPaceSecPerUnit:(LumipolGraphDouble * _Nullable)targetPaceSecPerUnit toleranceSecPerUnit:(double)toleranceSecPerUnit maxTicks:(int32_t)maxTicks splitTimeSeconds:(LumipolGraphDouble * _Nullable)splitTimeSeconds totalDurationSeconds:(LumipolGraphDouble * _Nullable)totalDurationSeconds totalDistanceMeters:(LumipolGraphDouble * _Nullable)totalDistanceMeters __attribute__((swift_name("init(samples:splitDistanceMeters:targetPaceSecPerUnit:toleranceSecPerUnit:maxTicks:splitTimeSeconds:totalDurationSeconds:totalDistanceMeters:)"))) __attribute__((objc_designated_initializer));
 - (LumipolGraphBarChartData *)doCopySamples:(NSArray<LumipolGraphSplitSample *> *)samples splitDistanceMeters:(double)splitDistanceMeters targetPaceSecPerUnit:(LumipolGraphDouble * _Nullable)targetPaceSecPerUnit toleranceSecPerUnit:(double)toleranceSecPerUnit maxTicks:(int32_t)maxTicks splitTimeSeconds:(LumipolGraphDouble * _Nullable)splitTimeSeconds totalDurationSeconds:(LumipolGraphDouble * _Nullable)totalDurationSeconds totalDistanceMeters:(LumipolGraphDouble * _Nullable)totalDistanceMeters __attribute__((swift_name("doCopy(samples:splitDistanceMeters:targetPaceSecPerUnit:toleranceSecPerUnit:maxTicks:splitTimeSeconds:totalDurationSeconds:totalDistanceMeters:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
@@ -306,13 +308,28 @@ __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("BarChartLayout")))
 @interface LumipolGraphBarChartLayout : LumipolGraphBase
 - (instancetype)initWithBars:(NSArray<LumipolGraphBarLayout *> *)bars yTicks:(NSArray<LumipolGraphAxisTick *> *)yTicks referenceLinePosition:(LumipolGraphDouble * _Nullable)referenceLinePosition __attribute__((swift_name("init(bars:yTicks:referenceLinePosition:)"))) __attribute__((objc_designated_initializer));
-- (LumipolGraphBarChartLayout *)doCopyBars:(NSArray<LumipolGraphBarLayout *> *)bars yTicks:(NSArray<LumipolGraphAxisTick *> *)yTicks referenceLinePosition:(LumipolGraphDouble * _Nullable)referenceLinePosition __attribute__((swift_name("doCopy(bars:yTicks:referenceLinePosition:)")));
+- (instancetype)initWithBars:(NSArray<LumipolGraphBarLayout *> *)bars yTicks:(NSArray<LumipolGraphAxisTick *> *)yTicks referenceLinePosition:(LumipolGraphDouble * _Nullable)referenceLinePosition colorAnchors:(LumipolGraphBarColorAnchors * _Nullable)colorAnchors __attribute__((swift_name("init(bars:yTicks:referenceLinePosition:colorAnchors:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphBarChartLayout *)doCopyBars:(NSArray<LumipolGraphBarLayout *> *)bars yTicks:(NSArray<LumipolGraphAxisTick *> *)yTicks referenceLinePosition:(LumipolGraphDouble * _Nullable)referenceLinePosition colorAnchors:(LumipolGraphBarColorAnchors * _Nullable)colorAnchors __attribute__((swift_name("doCopy(bars:yTicks:referenceLinePosition:colorAnchors:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) NSArray<LumipolGraphBarLayout *> *bars __attribute__((swift_name("bars")));
+@property (readonly) LumipolGraphBarColorAnchors * _Nullable colorAnchors __attribute__((swift_name("colorAnchors")));
 @property (readonly) LumipolGraphDouble * _Nullable referenceLinePosition __attribute__((swift_name("referenceLinePosition")));
 @property (readonly) NSArray<LumipolGraphAxisTick *> *yTicks __attribute__((swift_name("yTicks")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("BarColorAnchors")))
+@interface LumipolGraphBarColorAnchors : LumipolGraphBase
+- (instancetype)initWithFastest:(double)fastest slowest:(double)slowest average:(double)average __attribute__((swift_name("init(fastest:slowest:average:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphBarColorAnchors *)doCopyFastest:(double)fastest slowest:(double)slowest average:(double)average __attribute__((swift_name("doCopy(fastest:slowest:average:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) double average __attribute__((swift_name("average")));
+@property (readonly) double fastest __attribute__((swift_name("fastest")));
+@property (readonly) double slowest __attribute__((swift_name("slowest")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -361,6 +378,8 @@ __attribute__((swift_name("ChartAxis")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("ChartConfig")))
 @interface LumipolGraphChartConfig : LumipolGraphBase
+- (instancetype)init __attribute__((swift_name("init()"))) __attribute__((objc_designated_initializer));
++ (instancetype)new __attribute__((availability(swift, unavailable, message="use object initializers instead")));
 - (instancetype)initWithSegmentCount:(int32_t)segmentCount maxTicks:(int32_t)maxTicks __attribute__((swift_name("init(segmentCount:maxTicks:)"))) __attribute__((objc_designated_initializer));
 - (LumipolGraphChartConfig *)doCopySegmentCount:(int32_t)segmentCount maxTicks:(int32_t)maxTicks __attribute__((swift_name("doCopy(segmentCount:maxTicks:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
@@ -368,6 +387,19 @@ __attribute__((swift_name("ChartConfig")))
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) int32_t maxTicks __attribute__((swift_name("maxTicks")));
 @property (readonly) int32_t segmentCount __attribute__((swift_name("segmentCount")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ChartDomains")))
+@interface LumipolGraphChartDomains : LumipolGraphBase
+- (instancetype)initWithX:(LumipolGraphAxisDomain *)x yPrimary:(LumipolGraphAxisDomain * _Nullable)yPrimary ySecondary:(LumipolGraphAxisDomain * _Nullable)ySecondary __attribute__((swift_name("init(x:yPrimary:ySecondary:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphChartDomains *)doCopyX:(LumipolGraphAxisDomain *)x yPrimary:(LumipolGraphAxisDomain * _Nullable)yPrimary ySecondary:(LumipolGraphAxisDomain * _Nullable)ySecondary __attribute__((swift_name("doCopy(x:yPrimary:ySecondary:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) LumipolGraphAxisDomain *x __attribute__((swift_name("x")));
+@property (readonly) LumipolGraphAxisDomain * _Nullable yPrimary __attribute__((swift_name("yPrimary")));
+@property (readonly) LumipolGraphAxisDomain * _Nullable ySecondary __attribute__((swift_name("ySecondary")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -468,11 +500,13 @@ __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("LineChartLayout")))
 @interface LumipolGraphLineChartLayout : LumipolGraphBase
 - (instancetype)initWithSeries:(NSArray<LumipolGraphSeriesLayout *> *)series axisTicks:(NSArray<LumipolGraphAxisTicksLayout *> *)axisTicks refBands:(NSArray<LumipolGraphRefBandLayout *> *)refBands markers:(NSArray<LumipolGraphMarkerLayout *> *)markers stats:(LumipolGraphStats *)stats __attribute__((swift_name("init(series:axisTicks:refBands:markers:stats:)"))) __attribute__((objc_designated_initializer));
-- (LumipolGraphLineChartLayout *)doCopySeries:(NSArray<LumipolGraphSeriesLayout *> *)series axisTicks:(NSArray<LumipolGraphAxisTicksLayout *> *)axisTicks refBands:(NSArray<LumipolGraphRefBandLayout *> *)refBands markers:(NSArray<LumipolGraphMarkerLayout *> *)markers stats:(LumipolGraphStats *)stats __attribute__((swift_name("doCopy(series:axisTicks:refBands:markers:stats:)")));
+- (instancetype)initWithSeries:(NSArray<LumipolGraphSeriesLayout *> *)series axisTicks:(NSArray<LumipolGraphAxisTicksLayout *> *)axisTicks refBands:(NSArray<LumipolGraphRefBandLayout *> *)refBands markers:(NSArray<LumipolGraphMarkerLayout *> *)markers stats:(LumipolGraphStats *)stats domains:(LumipolGraphChartDomains *)domains __attribute__((swift_name("init(series:axisTicks:refBands:markers:stats:domains:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphLineChartLayout *)doCopySeries:(NSArray<LumipolGraphSeriesLayout *> *)series axisTicks:(NSArray<LumipolGraphAxisTicksLayout *> *)axisTicks refBands:(NSArray<LumipolGraphRefBandLayout *> *)refBands markers:(NSArray<LumipolGraphMarkerLayout *> *)markers stats:(LumipolGraphStats *)stats domains:(LumipolGraphChartDomains *)domains __attribute__((swift_name("doCopy(series:axisTicks:refBands:markers:stats:domains:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) NSArray<LumipolGraphAxisTicksLayout *> *axisTicks __attribute__((swift_name("axisTicks")));
+@property (readonly) LumipolGraphChartDomains *domains __attribute__((swift_name("domains")));
 @property (readonly) NSArray<LumipolGraphMarkerLayout *> *markers __attribute__((swift_name("markers")));
 @property (readonly) NSArray<LumipolGraphRefBandLayout *> *refBands __attribute__((swift_name("refBands")));
 @property (readonly) NSArray<LumipolGraphSeriesLayout *> *series __attribute__((swift_name("series")));
@@ -630,6 +664,7 @@ __attribute__((swift_name("SegmentStat")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("Series")))
 @interface LumipolGraphSeries : LumipolGraphBase
+- (instancetype)initWithId:(NSString *)id points:(NSArray<LumipolGraphPoint *> *)points __attribute__((swift_name("init(id:points:)"))) __attribute__((objc_designated_initializer));
 - (instancetype)initWithId:(NSString *)id points:(NSArray<LumipolGraphPoint *> *)points axis:(LumipolGraphAxis *)axis role:(LumipolGraphSeriesRole *)role __attribute__((swift_name("init(id:points:axis:role:)"))) __attribute__((objc_designated_initializer));
 - (LumipolGraphSeries *)doCopyId:(NSString *)id points:(NSArray<LumipolGraphPoint *> *)points axis:(LumipolGraphAxis *)axis role:(LumipolGraphSeriesRole *)role __attribute__((swift_name("doCopy(id:points:axis:role:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
@@ -722,6 +757,7 @@ __attribute__((swift_name("AxisDomain")))
 @interface LumipolGraphAxisDomain : LumipolGraphBase
 - (instancetype)initWithMin:(double)min max:(double)max __attribute__((swift_name("init(min:max:)"))) __attribute__((objc_designated_initializer));
 - (LumipolGraphAxisDomain *)doCopyMin:(double)min max:(double)max __attribute__((swift_name("doCopy(min:max:)")));
+- (double)denormalizeT:(double)t __attribute__((swift_name("denormalize(t:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (double)normalizeV:(double)v __attribute__((swift_name("normalize(v:)")));

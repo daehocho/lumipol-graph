@@ -23,4 +23,16 @@ data class BarChartData(
     // 시간모드 색 기준(런 평균) 계산용 런 총합. 둘 다 존재+총거리>0이면 ref로 사용.
     val totalDurationSeconds: Double? = null,
     val totalDistanceMeters: Double? = null,
-)
+) {
+    // ObjC export는 기본 인자를 내보내지 않아 iOS 호출부가 8개 인자를 전부 하드코딩해야 했다
+    // (브릿지 감사 §3 — 코어 기본값 변경이 iOS에 전파되지 않는 사고 지점). 축약 생성자 제공.
+    constructor(samples: List<SplitSample>, splitDistanceMeters: Double) :
+        this(samples, splitDistanceMeters, null, 10.0, 5, null, null, null)
+
+    constructor(
+        samples: List<SplitSample>,
+        splitDistanceMeters: Double,
+        targetPaceSecPerUnit: Double?,
+        toleranceSecPerUnit: Double,
+    ) : this(samples, splitDistanceMeters, targetPaceSecPerUnit, toleranceSecPerUnit, 5, null, null, null)
+}

@@ -524,6 +524,34 @@ X축은 기본값 0.0으로 현행(데이터 끝 밀착) 유지.
 
 **xcframework 재빌드 필요** — 코어 공개 API 추가이므로 재생성 바이너리를 같은 커밋에 포함.
 
+### 경계 리팩토링 1차 — 도메인 출력·색 앵커 코어화·결정론 스케일 (0.30.0, 2026-07-27)
+
+경계 리팩토링(`docs/refactor/`) 트랙 A 완료분 + 트랙 B의 코어 출력 보강. 상세 근거는
+`docs/refactor/40-track-a.md`·`41-track-b.md`.
+
+- **fix: `niceScale` 결정론화(A1)** — `log10`/`pow`(libm)를 10의 거듭제곱 누적 곱셈으로 교체.
+  JVM과 Kotlin/Native의 libm ULP 차이가 tiny-range 입력에서 틱 개수 차이(4vs3)로 증폭되던
+  실측 결함 소거. 이후 코어 골든 덤프는 양 타겟 **비트 동일**이 통과 기준(`scripts/golden-check.sh`).
+- **fix: NaN 페이스가 범위 필터를 통과하던 결함(A2)** — 명시 무효 처리.
+- **feat: `LineChartLayout.domains`(B1)** — 계산에 쓴 X/Y 축 도메인을 출력. 렌더러가 tick
+  두 점에서 선형관계를 역산하던 `AxisScale`(양 플랫폼 중복)의 대체 경로. `AxisDomain.denormalize` 신설.
+- **feat: `BarChartLayout.colorAnchors`(B5)** — fastest/slowest/average 색 앵커의 단일 원본.
+  온전 스플릿 우선·2개 미만 폴백·런 평균 [fastest,slowest] 클램프 규칙 포함 — 렌더러 2벌 +
+  소비 앱 2벌 복제(실사고 2회)의 회수 목표 API.
+- **동작 변경: 퇴화 viewport 창은 예외 대신 전체 레이아웃 폴백(B8)** — `layout(data, xMin, xMax)`의
+  `require(xMax > xMin)` 제거. Kotlin 예외는 ObjC 경계를 못 넘어 iOS에서 크래시였다.
+- **feat: ObjC 축약 생성자(B9)** — `Series(id:points:)`, `ChartConfig()`,
+  `BarChartData(samples:splitDistanceMeters:)` 등 — 기본 인자 소실로 iOS가 코어 기본값을
+  하드코딩하던 사고 지점 완화.
+- **가드레일**: `scripts/check-version-lock.sh` — xcframework에 코어 콘텐츠 해시를 동봉해
+  "체크인 바이너리 == 현재 코어" 검증. `scripts/golden-check.sh` — JVM·iosSimulatorArm64
+  골든 완전 일치 게이트.
+
+**마이그레이션(렌더러/앱)**: 없음(전부 추가·보존). 렌더러의 AxisScale·색 앵커 블록 전환은
+후속 커밋(트랙 B 실행)에서 진행.
+
+**xcframework 재빌드 필요** — 포함됨(CORE_CONTENT_HASH 동봉).
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은

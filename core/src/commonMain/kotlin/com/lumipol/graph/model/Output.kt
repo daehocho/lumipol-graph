@@ -1,7 +1,20 @@
 package com.lumipol.graph.model
 
+import com.lumipol.graph.scale.AxisDomain
+
 /** 출력 전용 축 식별(X + 두 Y축 + 오버레이(축 없음, 실값 표시용)). */
 enum class ChartAxis { X, Y_PRIMARY, Y_SECONDARY, Y_OVERLAY }
+
+/**
+ * 축 도메인 출력 — 렌더러가 tick 두 점에서 선형관계를 역산(구 AxisScale)하지 않도록
+ * 코어가 계산에 쓴 도메인을 그대로 내보낸다(경계 정책 §4-1 "역산 금지").
+ * 값이 없는 Y축은 null. 픽셀→도메인 변환은 [AxisDomain.denormalize]로 한다.
+ */
+data class ChartDomains(
+    val x: AxisDomain,
+    val yPrimary: AxisDomain?,
+    val ySecondary: AxisDomain?,
+)
 
 data class NormalizedPoint(val x: Double, val y: Double) // 각 0.0~1.0
 data class SeriesLayout(val id: String, val role: SeriesRole, val points: List<NormalizedPoint>)
@@ -22,7 +35,18 @@ data class LineChartLayout(
     val refBands: List<RefBandLayout>,
     val markers: List<MarkerLayout>,
     val stats: Stats,
-)
+    val domains: ChartDomains,
+) {
+    // ObjC export는 기본 인자를 내보내지 않는다(DonutSegment 선례) — 기존 호출부(테스트 전용
+    // 직접 생성) 보존용. 프로덕션 레이아웃은 항상 엔진이 만들며 이 폴백 도메인(0~1)을 쓰지 않는다.
+    constructor(
+        series: List<SeriesLayout>,
+        axisTicks: List<AxisTicksLayout>,
+        refBands: List<RefBandLayout>,
+        markers: List<MarkerLayout>,
+        stats: Stats,
+    ) : this(series, axisTicks, refBands, markers, stats, ChartDomains(AxisDomain(0.0, 1.0), null, null))
+}
 
 data class NearestResult(val seriesId: String, val x: Double, val y: Double)
 
@@ -37,11 +61,27 @@ data class BarLayout(
     val endMinutes: Int? = null, // 시간모드 버킷 끝 표시용 정수 분(반올림·최소1). 거리모드 null
 )
 
+/**
+ * 막대 색 앵커 — 컬러맵의 기준 3값. 렌더러 2곳+소비 앱 2곳이 각자 재계산하던 축약
+ * (docs/refactor/21-constants-diff.md §4, 4벌 복제·실사고 2회)의 단일 원본.
+ * 규칙: 온전(비부분) 스플릿이 2개 이상이고 범위가 있으면 온전 스플릿만, 아니면 전체.
+ * average는 런 총합 평균(있고 >0이면)을 우선하되 [fastest, slowest]로 클램프.
+ */
+data class BarColorAnchors(val fastest: Double, val slowest: Double, val average: Double)
+
 data class BarChartLayout(
     val bars: List<BarLayout>,
     val yTicks: List<AxisTick>,
     val referenceLinePosition: Double?,
-)
+    val colorAnchors: BarColorAnchors?,
+) {
+    // ObjC export 기본 인자 소실 대응 — 기존 호출부 보존용(위 LineChartLayout과 동일 선례).
+    constructor(
+        bars: List<BarLayout>,
+        yTicks: List<AxisTick>,
+        referenceLinePosition: Double?,
+    ) : this(bars, yTicks, referenceLinePosition, null)
+}
 
 /**
  * 도넛 한 조각. fraction은 0.0~1.0(12시 0, 시계방향). value=원본 크기.

@@ -41,9 +41,11 @@ object LineChartEngine {
     }
 
     /** [xMin, xMax] 구간만 보이는 viewport layout — X 도메인은 구간 그대로,
-     *  Y 도메인·tick은 보이는 값 기준으로 재계산. 확대/팬 커밋 시 렌더러가 호출한다. */
+     *  Y 도메인·tick은 보이는 값 기준으로 재계산. 확대/팬 커밋 시 렌더러가 호출한다.
+     *  창 폭 0/역전은 데이터(제스처) 유래 입력이라 예외 대신 전체 레이아웃으로 폴백한다 —
+     *  ObjC 경계는 Kotlin 예외를 잡을 수 없어 iOS에서 크래시가 된다(경계 정책 §4-2). */
     fun layout(data: LineChartData, xMin: Double, xMax: Double): LineChartLayout {
-        require(xMax > xMin) { "xMax must be > xMin" }
+        if (!(xMax > xMin)) return layout(data)
         val xNice = niceScale(xMin, xMax, data.config.maxTicks)
         val eps = xNice.step * 1e-6
         val xTicks = xNice.ticks.filter { it >= xMin - eps && it <= xMax + eps }
@@ -123,6 +125,12 @@ object LineChartEngine {
             refBands = refBands,
             markers = markers,
             stats = Stats(perSeries, segments, if (segments.isEmpty()) null else splitBase?.id),
+            // 계산에 실제로 쓴 도메인을 그대로 출력 — 값 없는 Y축은 null(폴백 0~1 도메인을 노출하지 않는다)
+            domains = ChartDomains(
+                x = xDom,
+                yPrimary = if (yNice[Axis.PRIMARY] != null) yDom.getValue(Axis.PRIMARY) else null,
+                ySecondary = if (yNice[Axis.SECONDARY] != null) yDom.getValue(Axis.SECONDARY) else null,
+            ),
         )
     }
 

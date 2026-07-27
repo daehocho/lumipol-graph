@@ -8,6 +8,70 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse
 
+class DomainsAndAnchorsTest {
+    // B1: 레이아웃이 계산에 쓴 도메인을 그대로 내보낸다 — 렌더러 역산(AxisScale) 대체.
+    @Test fun line_layout_exports_domains() {
+        val data = LineChartData(
+            listOf(
+                Series("p", listOf(Point(0.0, 5.0), Point(10.06, 7.0))),
+                Series("h", listOf(Point(0.0, 150.0), Point(10.06, 170.0)), Axis.SECONDARY),
+            ),
+        )
+        val l = LineChartEngine.layout(data)
+        // X: min은 nice 경계, max는 데이터 끝 그대로(플롯 폭 낭비 방지 규칙)
+        assertEquals(10.06, l.domains.x.max, 1e-12)
+        assertNotNull(l.domains.yPrimary)
+        assertNotNull(l.domains.ySecondary)
+        // 도메인 ↔ tick 일관성: 각 tick 위치는 domains로 재현 가능해야 한다
+        val xTicks = l.axisTicks.first { it.axis == ChartAxis.X }.ticks
+        xTicks.forEach { assertEquals(it.position, l.domains.x.normalize(it.value), 1e-12) }
+        // denormalize는 normalize의 역
+        assertEquals(5.03, l.domains.x.denormalize(l.domains.x.normalize(5.03)), 1e-9)
+    }
+
+    @Test fun line_layout_domains_null_for_axis_without_values() {
+        val data = LineChartData(listOf(Series("p", listOf(Point(0.0, 5.0), Point(1.0, 7.0)))))
+        val l = LineChartEngine.layout(data)
+        assertNull(l.domains.ySecondary)
+    }
+
+    // B8: 창 폭 0/역전은 예외가 아니라 전체 레이아웃 폴백(iOS 크래시 경로 제거).
+    @Test fun degenerate_window_falls_back_to_full_layout() {
+        val data = LineChartData(listOf(Series("p", listOf(Point(0.0, 5.0), Point(4.0, 7.0)))))
+        val full = LineChartEngine.layout(data)
+        assertEquals(full, LineChartEngine.layout(data, 2.0, 2.0))
+        assertEquals(full, LineChartEngine.layout(data, 3.0, 1.0))
+    }
+
+    // B5: 색 앵커 단일 원본 — 온전 스플릿 우선, 런 평균 클램프.
+    @Test fun bar_layout_exports_color_anchors() {
+        val samples = List(10) { SplitSample(100.0, 28.0) } +
+            List(10) { SplitSample(100.0, 33.0) } +
+            List(5) { SplitSample(100.0, 60.0) } // 0.5km 부분 스플릿(600s/km) — 앵커에서 배제 기대
+        val l = BarChartEngine.layout(BarChartData(samples, 1000.0))
+        val a = l.colorAnchors!!
+        assertEquals(280.0, a.fastest, 1e-9)
+        assertEquals(330.0, a.slowest, 1e-9)
+        assertTrue(a.average in a.fastest..a.slowest)
+    }
+
+    @Test fun bar_anchors_clamp_run_average_into_range() {
+        // 런 총합 평균(500)이 스플릿 범위(280~330) 밖 → slowest로 클램프(색 구간 붕괴 방지)
+        val samples = List(10) { SplitSample(100.0, 28.0) } + List(10) { SplitSample(100.0, 33.0) }
+        val l = BarChartEngine.layout(
+            BarChartData(
+                samples, 1000.0,
+                totalDurationSeconds = 1000.0, totalDistanceMeters = 2000.0, // 500 s/km
+            ),
+        )
+        assertEquals(330.0, l.colorAnchors!!.average, 1e-9)
+    }
+
+    @Test fun bar_anchors_null_when_empty() {
+        assertNull(BarChartEngine.layout(BarChartData(emptyList(), 1000.0)).colorAnchors)
+    }
+}
+
 class PaceSeriesEngineTest {
     // 균일 10'00"/km(=600s/km): x는 앱이 계산한 값이라 여기선 누적 km를 직접 부여.
     // 결측은 null(센티널 0 아님) — 코어 계약이 nullable이다.
