@@ -87,16 +87,118 @@ final class HeartRateZoneViewTests: XCTestCase {
         }
     }
 
-    func testTouchesCancelledSendsDeselect() {
-        // 스크롤뷰 팬·시스템 제스처가 터치를 가로채면 touchesEnded 대신 touchesCancelled가 온다 —
-        // 이때도 해제(nil)를 보내야 호스트의 존 하이라이트가 고착되지 않는다.
+    // MARK: - 탭 토글 선택 (0.26.0)
+
+    /// 3-세그먼트 표준 데이터: zone2 30%(idx0) + zone3 70%(idx1).
+    private func makeSelectableView(delegate: SpyZoneDelegate? = nil,
+                                    style: ChartStyle = .default) -> RDHeartRateZoneView {
         let view = makeView()
-        view.render(DonutChartData(segments: [DonutSegment(value: 100, colorRole: .zone2)]))
+        view.zoneDelegate = delegate
+        view.render(DonutChartData(segments: [
+            DonutSegment(value: 30, colorRole: .zone2, label: "저강도"),
+            DonutSegment(value: 70, colorRole: .zone3, label: "유산소"),
+        ]), style: style)
         view.layoutIfNeeded()
+        return view
+    }
+
+    func testTapSelectsAndShowsCenterLabel() {
         let spy = SpyZoneDelegate()
-        view.zoneDelegate = spy
+        let view = makeSelectableView(delegate: spy)
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.15))
+        XCTAssertEqual(view.selectedIndex, 0)
+        XCTAssertEqual(spy.selections, [0])
+        XCTAssertEqual(view.zoneNameLabel.text, "저강도")
+        XCTAssertEqual(view.percentLabel.text, "30%")
+        XCTAssertFalse(view.zoneNameLabel.isHidden)
+        XCTAssertFalse(view.percentLabel.isHidden)
+    }
+
+    func testTapSameSegmentTogglesOff() {
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy)
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.15))
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.15))
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(spy.selections, [0, nil])
+        XCTAssertTrue(view.percentLabel.isHidden)
+    }
+
+    func testTapOtherSegmentMovesSelection() {
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy)
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.15))
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.6))
+        XCTAssertEqual(view.selectedIndex, 1)
+        XCTAssertEqual(spy.selections, [0, 1])
+    }
+
+    func testTapOutsideRingClearsSelection() {
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy)
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.15))
+        view.handleTap(at: CGPoint(x: 100, y: 105))  // 도넛 구멍
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(spy.selections, [0, nil])
+    }
+
+    func testTapOutsideWithoutSelectionDoesNotNotify() {
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy)
+        view.handleTap(at: CGPoint(x: 100, y: 105))
+        XCTAssertEqual(spy.selections, [], "무선택 상태의 허공 탭은 통지하지 않는다")
+    }
+
+    func testSelectionDimsUnselectedSegments() {
+        let view = makeSelectableView()
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.15))
+        let base = ChartStyle.default.donutColors[.zone3]!
+        XCTAssertEqual(view.segmentLayers[1].strokeColor,
+                       base.withAlphaComponent(ChartStyle.default.donutDimmedAlpha).cgColor)
+        XCTAssertEqual(view.segmentLayers[0].strokeColor,
+                       ChartStyle.default.donutColors[.zone2]!.cgColor, "선택 조각은 원래 색 유지")
+    }
+
+    func testNilLabelShowsPercentOnly() {
+        let view = makeView()
+        view.render(DonutChartData(segments: [DonutSegment(value: 100, colorRole: .zone5)]))
+        view.layoutIfNeeded()
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.5))
+        XCTAssertTrue(view.zoneNameLabel.isHidden)
+        XCTAssertEqual(view.percentLabel.text, "100%")
+    }
+
+    func testRenderResetsSelectionSilently() {
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy)
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.15))
+        view.render(DonutChartData(segments: [DonutSegment(value: 100, colorRole: .zone1)]))
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(spy.selections, [0], "render 리셋은 델리게이트 통지 없음")
+        XCTAssertTrue(view.percentLabel.isHidden)
+    }
+
+    func testTouchesCancelledKeepsSelection() {
+        // 토글 모델엔 "누르는 동안" 상태가 없다 — 스크롤 가로챔이 선택을 지우면 안 된다.
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy)
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.15))
         view.touchesCancelled(Set<UITouch>(), with: nil)
-        XCTAssertEqual(spy.selections, [nil], "취소 시 해제(nil) 콜백 1회")
+        XCTAssertEqual(view.selectedIndex, 0)
+        XCTAssertEqual(spy.selections, [0])
+    }
+
+    func testAutoDeselectAfterDelay() {
+        var style = ChartStyle.default
+        style.donutAutoDeselectDelay = 0.05
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy, style: style)
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.15))
+        let exp = expectation(description: "auto deselect")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { exp.fulfill() }
+        wait(for: [exp], timeout: 2)
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(spy.selections, [0, nil], "타이머 만료는 해제 통지")
     }
 
     func testTinyBoundsSkipsDrawingInsteadOfNegativeRadius() {

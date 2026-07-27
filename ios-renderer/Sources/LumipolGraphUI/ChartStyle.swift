@@ -75,6 +75,15 @@ public struct ChartStyle {
     public var donutRingWidth: CGFloat = 28
     public var donutEmptyColor: UIColor = UIColor.systemGray4.withAlphaComponent(0.5)
 
+    // 심박존 도넛 — 탭 선택(0.26.0)
+    public var donutDimmedAlpha: CGFloat = 0.3            // 비선택 세그먼트 alpha(원 alpha 대체)
+    public var donutCenterLabelFont: UIFont = .systemFont(ofSize: 13)
+    public var donutCenterLabelColor: UIColor = .secondaryLabel
+    public var donutCenterPercentFont: UIFont = .systemFont(ofSize: 28, weight: .bold)
+    public var donutCenterPercentColor: UIColor = .label
+    public var donutAutoDeselectDelay: TimeInterval = 3.0 // 0 이하면 자동 해제 없음
+    public var donutSelectionHapticsEnabled: Bool = true
+
     // 축 라벨
     public var axisLabelFont: UIFont = .systemFont(ofSize: 10)
     public var axisLabelColor: UIColor = .secondaryLabel

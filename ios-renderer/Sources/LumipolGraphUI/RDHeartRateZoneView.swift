@@ -2,25 +2,48 @@ import UIKit
 import LumipolGraph
 
 public protocol RDHeartRateZoneSelectionDelegate: AnyObject {
-    /// index=nil 이면 선택 해제.
+    /// 탭 토글 선택(0.26.0): 선택 확정·이동 시 원본 인덱스, 재탭·링 밖 탭·자동 해제 시 nil.
+    /// render(데이터 교체)로 인한 리셋은 통지하지 않는다.
     func heartRateZoneView(_ view: RDHeartRateZoneView, didSelectSegmentAt index: Int?)
 }
 
 /// 심박존 분포 도넛. DonutEngine 레이아웃을 arc 스트로크로 렌더. 축/줌 없음.
+/// 탭 토글 선택 → 센터 라벨(존 이름+퍼센트) + 비선택 디밍 + 자동 해제 + 햅틱(0.26.0).
 @objc(RDHeartRateZoneView)
 public final class RDHeartRateZoneView: UIView {
 
     public weak var zoneDelegate: RDHeartRateZoneSelectionDelegate?
     public private(set) var segmentLayers: [CAShapeLayer] = []
+    /// 현재 선택된 **원본 data.segments 인덱스**. nil=선택 없음.
+    public private(set) var selectedIndex: Int?
+
+    let zoneNameLabel = UILabel()   // 센터 위줄: 존 이름(없으면 숨김)
+    let percentLabel = UILabel()    // 센터 아래줄: 퍼센트
 
     private var data: DonutChartData = DonutChartData(segments: [])
     private var style: ChartStyle = .default
     private var currentLayout: DonutChartLayout?
+    private var autoDeselectTimer: Timer?
+    private let haptics = UIImpactFeedbackGenerator(style: .light)
+
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupCenterLabels()
+    }
+
+    public required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupCenterLabels()
+    }
+
+    deinit { autoDeselectTimer?.invalidate() }
 
     public func render(_ data: DonutChartData, style: ChartStyle = .default) {
         self.data = data
         self.style = style
         self.currentLayout = DonutEngine.shared.layout(data: data)
+        // 데이터가 바뀌면 기존 인덱스는 무효 — 조용히 해제(통지 없음, 재렌더 루프 방지).
+        clearSelection(notify: false)
         setNeedsLayout()
         layoutIfNeeded()
     }
@@ -28,7 +51,10 @@ public final class RDHeartRateZoneView: UIView {
     public override func layoutSubviews() {
         super.layoutSubviews()
         redraw()
+        updateSelectionAppearance()
     }
+
+    // MARK: - 그리기 (redraw/arcLayer는 기존 코드 그대로 유지)
 
     private func redraw() {
         segmentLayers.forEach { $0.removeFromSuperlayer() }
@@ -70,22 +96,120 @@ public final class RDHeartRateZoneView: UIView {
         return shape
     }
 
-    public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        handleTouch(touches.first)
-    }
+    // MARK: - 탭 토글
+
     public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        zoneDelegate?.heartRateZoneView(self, didSelectSegmentAt: nil)
+        guard let touch = touches.first else { return }
+        handleTap(at: touch.location(in: self))
     }
-    /// 스크롤뷰 팬·시스템 제스처가 터치를 가로채면 touchesEnded 대신 이쪽이 온다 —
-    /// 해제(nil)를 보내지 않으면 호스트의 존 하이라이트가 고착된다.
-    public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        zoneDelegate?.heartRateZoneView(self, didSelectSegmentAt: nil)
+    // touchesBegan/touchesCancelled 오버라이드 없음 — 토글 모델엔 "누르는 동안" 상태가 없어
+    // 스크롤 가로챔에도 선택을 유지한다(기존 press-and-hold의 고착 문제가 원천적으로 없음).
+
+    /// 탭 좌표 → 토글 전이 → 상태·표시·타이머·통지. 상태가 실제로 바뀔 때만 통지.
+    func handleTap(at point: CGPoint) {
+        let tapped = segmentIndex(at: point)
+        let next = toggled(current: selectedIndex, tapped: tapped)
+        guard next != selectedIndex else { return }
+        if next != nil, style.donutSelectionHapticsEnabled {
+            haptics.impactOccurred()
+        }
+        selectedIndex = next
+        updateSelectionAppearance()
+        scheduleAutoDeselect()
+        zoneDelegate?.heartRateZoneView(self, didSelectSegmentAt: next)
     }
 
-    private func handleTouch(_ touch: UITouch?) {
-        guard let touch = touch else { return }
-        zoneDelegate?.heartRateZoneView(self, didSelectSegmentAt: segmentIndex(at: touch.location(in: self)))
+    /// 코어 전이 함수 브리지 — Int? ↔ KotlinInt?(ObjC export).
+    private func toggled(current: Int?, tapped: Int?) -> Int? {
+        DonutEngine.shared.toggleSelection(
+            current: current.map { KotlinInt(value: Int32($0)) },
+            tapped: tapped.map { KotlinInt(value: Int32($0)) }
+        )?.intValue
     }
+
+    private func scheduleAutoDeselect() {
+        autoDeselectTimer?.invalidate()
+        autoDeselectTimer = nil
+        guard selectedIndex != nil, style.donutAutoDeselectDelay > 0 else { return }
+        autoDeselectTimer = Timer.scheduledTimer(
+            withTimeInterval: style.donutAutoDeselectDelay, repeats: false
+        ) { [weak self] _ in
+            self?.clearSelection(notify: true)
+        }
+    }
+
+    private func clearSelection(notify: Bool) {
+        autoDeselectTimer?.invalidate()
+        autoDeselectTimer = nil
+        let hadSelection = selectedIndex != nil
+        selectedIndex = nil
+        updateSelectionAppearance()
+        if notify && hadSelection {
+            zoneDelegate?.heartRateZoneView(self, didSelectSegmentAt: nil)
+        }
+    }
+
+    // MARK: - 선택 표시(디밍 + 센터 라벨)
+
+    private func setupCenterLabels() {
+        for label in [zoneNameLabel, percentLabel] {
+            label.textAlignment = .center
+            label.lineBreakMode = .byTruncatingTail
+            label.isHidden = true
+            addSubview(label)
+        }
+        isAccessibilityElement = true
+        accessibilityLabel = "심박존 도넛"
+    }
+
+    private func updateSelectionAppearance() {
+        guard let layout = currentLayout, layout.total > 0 else {
+            zoneNameLabel.isHidden = true
+            percentLabel.isHidden = true
+            return
+        }
+        // 디밍: 선택 중이면 비선택 조각의 alpha를 donutDimmedAlpha로 대체.
+        for (i, seg) in layout.segments.enumerated() where i < segmentLayers.count {
+            let base = style.donutColors[seg.colorRole] ?? .systemGray
+            let dimmed = selectedIndex != nil && Int(seg.sourceIndex) != selectedIndex
+            segmentLayers[i].strokeColor =
+                dimmed ? base.withAlphaComponent(style.donutDimmedAlpha).cgColor : base.cgColor
+        }
+        guard let selected = selectedIndex,
+              let seg = layout.segments.first(where: { Int($0.sourceIndex) == selected }) else {
+            zoneNameLabel.isHidden = true
+            percentLabel.isHidden = true
+            accessibilityLabel = "심박존 도넛"
+            return
+        }
+        let percentText = "\(Int((seg.sweepFraction * 100).rounded()))%"
+        zoneNameLabel.font = style.donutCenterLabelFont
+        zoneNameLabel.textColor = style.donutCenterLabelColor
+        zoneNameLabel.text = seg.label
+        zoneNameLabel.isHidden = (seg.label == nil)
+        percentLabel.font = style.donutCenterPercentFont
+        percentLabel.textColor = style.donutCenterPercentColor
+        percentLabel.text = percentText
+        percentLabel.isHidden = false
+        accessibilityLabel = [seg.label, percentText].compactMap { $0 }.joined(separator: " ")
+        layoutCenterLabels()
+    }
+
+    /// 센터 라벨 프레임: 내접원 90% 폭, 이름+퍼센트를 세로로 쌓아 중앙 정렬.
+    private func layoutCenterLabels() {
+        let ring = style.donutRingWidth
+        let radius = (min(bounds.width, bounds.height) - ring) / 2
+        let maxWidth = max(0, (radius - ring / 2) * 2 * 0.9)
+        let nameH = zoneNameLabel.isHidden ? 0 : zoneNameLabel.font.lineHeight
+        let pctH = percentLabel.font.lineHeight
+        let totalH = nameH + pctH
+        var y = bounds.midY - totalH / 2
+        zoneNameLabel.frame = CGRect(x: bounds.midX - maxWidth / 2, y: y, width: maxWidth, height: nameH)
+        y += nameH
+        percentLabel.frame = CGRect(x: bounds.midX - maxWidth / 2, y: y, width: maxWidth, height: pctH)
+    }
+
+    // MARK: - 히트 테스트 (segmentIndex는 기존 코드 그대로 유지)
 
     /// 터치 좌표 → **원본 `data.segments` 인덱스**. 매칭 없으면 nil.
     /// DonutEngine은 value<=0 세그먼트를 레이아웃에서 제외하므로,
