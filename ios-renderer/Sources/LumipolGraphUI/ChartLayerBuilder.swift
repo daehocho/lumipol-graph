@@ -14,7 +14,7 @@ enum ChartLayerBuilder {
     ) -> [CALayer] {
         guard plotArea.isRenderable else { return [] }
         // 코어 API가 시리즈 id 유일성을 강제하지 않으므로 중복 시 첫 시리즈 우선(fatalError 방지).
-        let axisBySeriesId = Dictionary(data.series.map { ($0.id, $0.axis) }, uniquingKeysWith: { first, _ in first })
+        // B10: 항목별 축은 코어 출력(SeriesLayout.axis) — id→축 맵(첫 우선) 재구성 제거.
         var layers: [CALayer] = []
 
         if let gridColor = style.gridLineColor,
@@ -31,9 +31,8 @@ enum ChartLayerBuilder {
         // (build는 제스처 중 프레임 단위 핫패스 — 시리즈당 최대 3회 재계산 방지).
         let drawableSeries: [(series: SeriesLayout, axis: Axis, points: [CGPoint], path: UIBezierPath)] =
             layout.series.compactMap { series in
-                let axis = axisBySeriesId[series.id] ?? .primary
-                guard let points = mappedPoints(series, axis: axis, plotArea: plotArea) else { return nil }
-                return (series, axis, points, polylinePath(points))
+                guard let points = mappedPoints(series, axis: series.axis, plotArea: plotArea) else { return nil }
+                return (series, series.axis, points, polylinePath(points))
             }
         // 알파 감쇠 분모 n = 그라데이션을 그릴 시리즈(2점 이상 라인 경로가 나오는 것) 수.
         let n = drawableSeries.count

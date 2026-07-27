@@ -323,6 +323,7 @@ object CoreDump {
             jobj(
                 "id" to jstr(s.id),
                 "role" to jstr(s.role.name),
+                "axis" to jstr(s.axis.name),
                 "pointCount" to jint(s.points.size),
                 "points" to renderNormPoints(s.points),
             )

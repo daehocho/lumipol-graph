@@ -72,7 +72,10 @@
   롱프레스 0.5s(D10 T3))만 렌더러 잔류
 - [x] **B8** — 0.30.0. 퇴화 창 폴백 + 기존 예외 테스트를 새 계약으로 갱신
 - [x] **B9** — 0.30.0. Series/ChartConfig/BarChartData 축약 생성자
-- [ ] B10~B14 — 미착수
+- [x] **B10** — 0.36.0. `SeriesLayout.axis` 신설 — 코어가 항목별 축을 확정해 출력(맵 방식 대신
+  항목 내장 — 중복 id 모호성 자체가 소멸). 렌더러 firstWinsBy/firstWinsAxis(AOS)·
+  Dictionary(uniquingKeysWith:)(iOS 드로잉) 삭제. 골든 라인 섹션에 axis 키 추가(의도 델타 26건)
+- [ ] B11~B14 — 미착수
 
 ## 실행 순서 권장
 

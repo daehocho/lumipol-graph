@@ -888,10 +888,12 @@ __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("SeriesLayout")))
 @interface LumipolGraphSeriesLayout : LumipolGraphBase
 - (instancetype)initWithId:(NSString *)id role:(LumipolGraphSeriesRole *)role points:(NSArray<LumipolGraphNormalizedPoint *> *)points __attribute__((swift_name("init(id:role:points:)"))) __attribute__((objc_designated_initializer));
-- (LumipolGraphSeriesLayout *)doCopyId:(NSString *)id role:(LumipolGraphSeriesRole *)role points:(NSArray<LumipolGraphNormalizedPoint *> *)points __attribute__((swift_name("doCopy(id:role:points:)")));
+- (instancetype)initWithId:(NSString *)id role:(LumipolGraphSeriesRole *)role points:(NSArray<LumipolGraphNormalizedPoint *> *)points axis:(LumipolGraphAxis *)axis __attribute__((swift_name("init(id:role:points:axis:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphSeriesLayout *)doCopyId:(NSString *)id role:(LumipolGraphSeriesRole *)role points:(NSArray<LumipolGraphNormalizedPoint *> *)points axis:(LumipolGraphAxis *)axis __attribute__((swift_name("doCopy(id:role:points:axis:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) LumipolGraphAxis *axis __attribute__((swift_name("axis")));
 @property (readonly) NSString *id __attribute__((swift_name("id")));
 @property (readonly) NSArray<LumipolGraphNormalizedPoint *> *points __attribute__((swift_name("points")));
 @property (readonly) LumipolGraphSeriesRole *role __attribute__((swift_name("role")));

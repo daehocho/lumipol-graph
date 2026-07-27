@@ -146,7 +146,6 @@ internal fun buildLineChartLayers(
 ): List<LineChartLayer> {
     if (!plot.isRenderable) return emptyList()
 
-    val axisBySeriesId = firstWinsAxis(data)
     val layers = mutableListOf<LineChartLayer>()
 
     style.gridLineColor?.let { gridColor ->
@@ -171,9 +170,9 @@ internal fun buildLineChartLayers(
     }
     // 시리즈별 매핑 포인트를 한 번만 계산해 그라데이션·라인 양 패스가 공유한다
     // (build는 제스처 중 프레임 단위 핫패스 — 시리즈당 최대 3회 재계산 방지).
+    // B10: 항목별 축은 코어 출력(SeriesLayout.axis) — id→축 맵(첫 우선) 재구성 제거.
     val drawableSeries = layout.series.mapNotNull { s ->
-        val axis = axisBySeriesId[s.id] ?: Axis.PRIMARY
-        seriesPoints(s, axis, plot)?.let { Triple(s, axis, it) }
+        seriesPoints(s, s.axis, plot)?.let { Triple(s, s.axis, it) }
     }
     // 알파 감쇠 분모 n = 그라데이션을 그릴 시리즈(2점 이상 라인 경로가 나오는 것) 수.
     val n = drawableSeries.size
@@ -215,22 +214,6 @@ internal fun buildLineChartLayers(
     }
     return layers
 }
-
-/**
- * iOS `Dictionary(uniquingKeysWith: first)` — 첫 시리즈 우선 속성 매핑. 코어가 시리즈 id 유일성을
- * 강제하지 않으므로 그리기·터치마커가 **같은 규칙**을 공유해야 중복 id 시리즈의 점이 라인과 다른
- * 축에 붙지 않는다(단일 구현 유지).
- */
-internal inline fun <T> firstWinsBy(
-    data: LineChartData,
-    selector: (com.lumipol.graph.model.Series) -> T,
-): Map<String, T> {
-    val map = LinkedHashMap<String, T>()
-    for (series in data.series) map.putIfAbsent(series.id, selector(series))
-    return map
-}
-
-private fun firstWinsAxis(data: LineChartData): Map<String, Axis> = firstWinsBy(data) { it.axis }
 
 /** 시리즈 색 — 맵 우선, 없으면 역할/축 폴백. 라인·그라데이션 공용 단일 소스. */
 internal fun seriesColor(id: String, role: SeriesRole, axis: Axis, style: ChartStyle): Color {

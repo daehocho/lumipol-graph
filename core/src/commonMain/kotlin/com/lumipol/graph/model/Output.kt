@@ -17,7 +17,22 @@ data class ChartDomains(
 )
 
 data class NormalizedPoint(val x: Double, val y: Double) // 각 0.0~1.0
-data class SeriesLayout(val id: String, val role: SeriesRole, val points: List<NormalizedPoint>)
+
+/**
+ * 시리즈 1개의 정규화 출력. [axis]는 이 항목의 y 정규화에 쓴 축(B10) — 렌더러가 data에서
+ * id→축 맵(첫 우선 규칙)을 재구성하지 않도록 코어가 항목별로 확정해 실어 보낸다.
+ * 오버레이는 자체 정규화라 축 미사용(PRIMARY 고정).
+ */
+data class SeriesLayout(
+    val id: String,
+    val role: SeriesRole,
+    val points: List<NormalizedPoint>,
+    val axis: Axis,
+) {
+    // ObjC export 기본 인자 소실 대응 + 기존 직접 생성 호출부(테스트) 보존용.
+    constructor(id: String, role: SeriesRole, points: List<NormalizedPoint>) :
+        this(id, role, points, Axis.PRIMARY)
+}
 
 data class AxisTick(val value: Double, val position: Double) // position 0.0~1.0
 data class AxisTicksLayout(val axis: ChartAxis, val ticks: List<AxisTick>)

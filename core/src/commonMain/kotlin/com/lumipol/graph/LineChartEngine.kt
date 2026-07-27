@@ -90,6 +90,7 @@ object LineChartEngine {
                 id = s.id,
                 role = s.role,
                 points = normPoints,
+                axis = s.axis,
             )
         }
 
