@@ -5,6 +5,7 @@
 // derivedStateOf 파생(줌 창→재계산), 상호작용 상태는 [LineChartInteraction] 홀더가 소유한다.
 package com.lumipol.graph.renderer
 
+import com.lumipol.graph.ChartA11y
 import com.lumipol.graph.ChartDefaults
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -83,6 +84,7 @@ private fun trimTrailingZeros(text: String): String =
  * @param animateEntrance main 라인 등장 애니(첫 layout 1회). 스냅샷/테스트에선 false.
  * @param onScrub 스크럽 근접점 값(seriesId→포맷문자열). @param onScrubBackground 배경 area 보간 실값.
  * @param onScrubEnd 스크럽 종료(마커가 표시 중이었을 때만). 짝맞춤 불변식은 [LineChartInteraction] 참조.
+ * @param chartContentDescription TalkBack 요약 주입(앱 로컬라이즈 — B12/D9). null이면 코어 기본([ChartA11y.lineChart]).
  */
 @Composable
 fun RDLineChart(
@@ -101,6 +103,7 @@ fun RDLineChart(
     onScrub: OnScrub? = null,
     onScrubBackground: OnScrubBackground? = null,
     onScrubEnd: OnScrubEnd? = null,
+    chartContentDescription: String? = null,
 ) {
     // 코어 interpolatedY 이진탐색은 x 오름차순 전제 — 저장 시 정규화(실루엣 렌더는 순서 무관).
     val sortedArea = remember(backgroundArea) { backgroundArea?.sortedBy { it.x } }
@@ -158,7 +161,8 @@ fun RDLineChart(
     }
 
     // TalkBack 요약(UX Major-1): 캔버스는 불투명하므로 컨테이너에 시리즈 구성을 노출한다.
-    val description = remember(data, sortedArea) { lineChartDescription(data, sortedArea) }
+    val description = chartContentDescription
+        ?: remember(data, sortedArea) { ChartA11y.lineChart(data.series.size, !sortedArea.isNullOrEmpty()) }
 
     // 정적 그리기 캐시 — interaction 수명(데이터 교체 시 새로 생성돼 이전 Path 해제).
     val drawCache = remember(interaction) { LineChartDrawCache() }

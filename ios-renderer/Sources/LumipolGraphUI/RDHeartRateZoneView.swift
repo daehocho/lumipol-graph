@@ -14,6 +14,10 @@ public protocol RDHeartRateZoneSelectionDelegate: AnyObject {
 public final class RDHeartRateZoneView: UIView {
 
     public weak var zoneDelegate: RDHeartRateZoneSelectionDelegate?
+    /// VoiceOver 낭독 문자열 주입(로컬라이즈는 앱 소유 — B12/D9). nil이면 코어 기본(ChartA11y).
+    public var accessibilityDescriptionOverride: String? {
+        didSet { updateSelectionAppearance() }
+    }
     public private(set) var segmentLayers: [CAShapeLayer] = []
     /// 현재 선택된 **원본 data.segments 인덱스**. nil=선택 없음.
     public private(set) var selectedIndex: Int?
@@ -178,14 +182,20 @@ public final class RDHeartRateZoneView: UIView {
             addSubview(label)
         }
         isAccessibilityElement = true
-        accessibilityLabel = "심박존 도넛"
+        accessibilityLabel = baseAccessibilityLabel()
+    }
+
+    /// 무선택 상태의 낭독 — 전체 분포(D9, 코어 기본) 또는 앱 주입 문자열.
+    private func baseAccessibilityLabel() -> String {
+        accessibilityDescriptionOverride
+            ?? ChartA11y.shared.donut(layout: currentLayout ?? DonutEngine.shared.layout(data: DonutChartData(segments: [])))
     }
 
     private func updateSelectionAppearance() {
         guard let layout = currentLayout, layout.total > 0 else {
             zoneNameLabel.isHidden = true
             percentLabel.isHidden = true
-            accessibilityLabel = "심박존 도넛"
+            accessibilityLabel = baseAccessibilityLabel()
             return
         }
         // 디밍: 선택 중이면 비선택 조각의 alpha를 donutDimmedAlpha로 대체.
@@ -199,7 +209,7 @@ public final class RDHeartRateZoneView: UIView {
               let seg = layout.segments.first(where: { Int($0.sourceIndex) == selected }) else {
             zoneNameLabel.isHidden = true
             percentLabel.isHidden = true
-            accessibilityLabel = "심박존 도넛"
+            accessibilityLabel = baseAccessibilityLabel()
             return
         }
         let percentText = "\(Int((seg.sweepFraction * 100).rounded()))%"
@@ -211,7 +221,8 @@ public final class RDHeartRateZoneView: UIView {
         percentLabel.textColor = style.donutCenterPercentColor
         percentLabel.text = percentText
         percentLabel.isHidden = false
-        accessibilityLabel = [seg.label, percentText].compactMap { $0 }.joined(separator: " ")
+        // 선택 낭독도 코어 규칙(B12) — 렌더러는 문자열을 만들지 않는다.
+        accessibilityLabel = ChartA11y.shared.donutSelection(label: seg.label, sweepFraction: seg.sweepFraction)
         layoutCenterLabels()
     }
 

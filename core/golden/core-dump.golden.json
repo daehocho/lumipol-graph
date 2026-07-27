@@ -218,6 +218,19 @@
     "N05_single_p5": null,
     "N05_single_p6": 0
   },
+  "chartA11y": {
+    "line_0_noArea": "라인 차트, 데이터 없음",
+    "line_3_area": "라인 차트, 시리즈 3개, 배경 고도 영역 포함",
+    "bar_0": "막대 차트, 데이터 없음",
+    "bar_2_labeled": "막대 차트, 구간 2개. 구간 1 5'10\", 구간 2 5'30\"",
+    "donut_N01_empty": "심박존 도넛, 데이터 없음",
+    "donut_N02_all_nonpositive": "심박존 도넛, 데이터 없음",
+    "donut_N03_five_zones": "심박존 분포 도넛. 존1 3%, 존2 16%, 존3 49%, 존4 23%, 존5 9%",
+    "donut_N04_filtered_source_index": "심박존 분포 도넛. 유산소 25%, 무산소 75%",
+    "donut_N05_single": "심박존 분포 도넛. ZONE5 100%",
+    "donutSelection_labeled": "저강도 32%",
+    "donutSelection_unlabeled": "32%"
+  },
   "paceColormap": {
     "rgba_250.000000000000": "#FF0099FF",
     "rgba_cb_250.000000000000": "#FF0000FF",

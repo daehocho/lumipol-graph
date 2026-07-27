@@ -78,7 +78,11 @@
 - [x] **B11** — AOS `DonutSelectionState.toggle()`도 탭과 동일 경로로 햅틱+`onSelectSegment` 발화
   (iOS `selectSegment(at:)` 패리티, 30 문서 §3-7 비대칭 해소). 재진입은 전이 규칙상 1스텝 수렴.
   구 무통지 계약을 검증하던 테스트를 새 계약으로 갱신. 렌더러 내부 — 코어 무변경
-- [ ] B12~B14 — 미착수
+- [x] **B12** — 0.37.0. 코어 `ChartA11y`(line/bar/donut/donutSelection, ko-KR 기본 문자열) +
+  각 차트 주입점(`chartContentDescription`/AOS, `accessibilityDescriptionOverride`/iOS).
+  D9 반영: iOS도 3차트 낭독(라인·막대 뷰 a11y 라벨 신설), 도넛은 전체 분포. AOS 도넛 낭독이
+  colorRole 이름 대신 라벨 우선으로 개선. 렌더러 하드코딩 한국어 소거(내용은 앱 주입 가능)
+- [ ] B13~B14 — 미착수
 
 ## 실행 순서 권장
 

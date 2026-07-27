@@ -28,6 +28,9 @@ public final class RDChartView: UIView {
     /// 스크럽 값 소비자. 미설정 시 값 전달 없음(기존 동작).
     public weak var scrubDelegate: RDChartScrubDelegate?
 
+    /// VoiceOver 낭독 문자열 주입(로컬라이즈는 앱 소유 — B12/D9). nil이면 코어 기본(ChartA11y.lineChart).
+    public var accessibilityDescriptionOverride: String?
+
     // MARK: - Zoom (X축 확대/팬)
 
     /// X축 핀치 줌 + 확대 상태 좌우 팬. 기본 꺼짐 — 기존 사용처 무영향.
@@ -133,6 +136,13 @@ public final class RDChartView: UIView {
         self.invertedAxes = invertedAxes
         self.labelFormatter = labelFormatter ?? RDChartView.defaultFormatter
         self.chartLayout = makeFullLayout(data: data)
+        // VoiceOver 요약(B12/D9 — 3차트 낭독을 SDK 기본으로). 문자열 규칙은 코어 ChartA11y.
+        isAccessibilityElement = true
+        accessibilityLabel = accessibilityDescriptionOverride
+            ?? ChartA11y.shared.lineChart(
+                seriesCount: Int32(data.series.count),
+                hasBackgroundArea: !(self.backgroundArea?.isEmpty ?? true)
+            )
         needsEntranceAnimation = isAnimationEnabled && isFirstRender
         isFirstRender = false
         setNeedsLayout()

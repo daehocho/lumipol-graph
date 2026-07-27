@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphChartDefaults, LumipolGraphChartDefaultsDarkPalette, LumipolGraphChartDefaultsLightPalette, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceColormap, LumipolGraphBarColorAnchors, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphZoomWindow, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
+@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphChartA11y, LumipolGraphDonutChartLayout, LumipolGraphChartDefaults, LumipolGraphChartDefaultsDarkPalette, LumipolGraphChartDefaultsLightPalette, LumipolGraphDonutEngine, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceColormap, LumipolGraphBarColorAnchors, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphZoomWindow, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -153,6 +153,19 @@ __attribute__((swift_name("BarChartEngine")))
 @property (class, readonly, getter=shared) LumipolGraphBarChartEngine *shared __attribute__((swift_name("shared")));
 - (double)chooseTimeBucketSecondsRunningSeconds:(double)runningSeconds __attribute__((swift_name("chooseTimeBucketSeconds(runningSeconds:)")));
 - (LumipolGraphBarChartLayout *)layoutData:(LumipolGraphBarChartData *)data __attribute__((swift_name("layout(data:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ChartA11y")))
+@interface LumipolGraphChartA11y : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)chartA11y __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphChartA11y *shared __attribute__((swift_name("shared")));
+- (NSString *)barChartBarCount:(int32_t)barCount barLabels:(NSArray<NSString *> *)barLabels __attribute__((swift_name("barChart(barCount:barLabels:)")));
+- (NSString *)donutLayout:(LumipolGraphDonutChartLayout *)layout __attribute__((swift_name("donut(layout:)")));
+- (NSString *)donutSelectionLabel:(NSString * _Nullable)label sweepFraction:(double)sweepFraction __attribute__((swift_name("donutSelection(label:sweepFraction:)")));
+- (NSString *)lineChartSeriesCount:(int32_t)seriesCount hasBackgroundArea:(BOOL)hasBackgroundArea __attribute__((swift_name("lineChart(seriesCount:hasBackgroundArea:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))

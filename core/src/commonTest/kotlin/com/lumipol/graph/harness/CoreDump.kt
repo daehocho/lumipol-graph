@@ -1,6 +1,7 @@
 package com.lumipol.graph.harness
 
 import com.lumipol.graph.BarChartEngine
+import com.lumipol.graph.ChartA11y
 import com.lumipol.graph.ChartDefaults
 import com.lumipol.graph.DonutEngine
 import com.lumipol.graph.HeartRateZoneEngine
@@ -206,6 +207,17 @@ object CoreDump {
                         add("${name}_p$i" to (DonutEngine.hitTest(dx, dy, band, layout)?.let(::jint) ?: "null"))
                     }
                 }
+            }),
+            section("chartA11y", buildList {
+                add("line_0_noArea" to jstr(ChartA11y.lineChart(0, false)))
+                add("line_3_area" to jstr(ChartA11y.lineChart(3, true)))
+                add("bar_0" to jstr(ChartA11y.barChart(0, emptyList())))
+                add("bar_2_labeled" to jstr(ChartA11y.barChart(2, listOf("5'10\"", "5'30\""))))
+                HarnessFixtures.donutCases.forEach { (name, data) ->
+                    add("donut_$name" to jstr(ChartA11y.donut(DonutEngine.layout(data))))
+                }
+                add("donutSelection_labeled" to jstr(ChartA11y.donutSelection("저강도", 0.32)))
+                add("donutSelection_unlabeled" to jstr(ChartA11y.donutSelection(null, 0.316)))
             }),
             section("paceColormap", buildList {
                 // f=300/s=400/a=350 — pace1=315, pace2=362.5. 값 그리드는 경계 정확점 포함(이산 규칙 관측).

@@ -9,6 +9,8 @@ public final class RDBarChartView: UIView {
     private static let labelMinGap = ChartDefaults.shared.BAR_LABEL_MIN_GAP
 
     public var style: ChartStyle = .default
+    /// VoiceOver 낭독 문자열 주입(로컬라이즈는 앱 소유 — B12/D9). nil이면 코어 기본(ChartA11y.barChart).
+    public var accessibilityDescriptionOverride: String?
     public private(set) var barLayers: [CALayer] = []
     public private(set) var selectedIndex: Int?
     private var selectionLayers: [CALayer] = []
@@ -52,6 +54,10 @@ public final class RDBarChartView: UIView {
         self.yLabelFormatter = yLabelFormatter
         selectedIndex = nil
         selectionLayers = []
+        // VoiceOver 요약(B12/D9 — 3차트 낭독을 SDK 기본으로). 문자열 규칙은 코어 ChartA11y.
+        isAccessibilityElement = true
+        accessibilityLabel = accessibilityDescriptionOverride
+            ?? ChartA11y.shared.barChart(barCount: Int32(layout.bars.count), barLabels: barLabels ?? [])
         setNeedsLayout()
         layoutIfNeeded()  // layoutSubviews()→redraw()를 1회 유발 (테스트가 render 직후 barLayers 동기 접근)
     }

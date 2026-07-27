@@ -5,6 +5,7 @@
 // JVM 단위테스트로 검증하고, composable [RDBarChart]는 그 결과를 Canvas로 렌더한다.
 package com.lumipol.graph.renderer
 
+import com.lumipol.graph.ChartA11y
 import com.lumipol.graph.ChartDefaults
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.Canvas
@@ -50,6 +51,8 @@ import kotlin.math.roundToInt
  * @param yLabelFormatter y틱 값 포매터. null이면 정수 반올림.
  * @param animateEntrance baseline→값 높이 성장 애니. iOS는 정적이라 기본 off(UX 패리티).
  * @param onSelectedIndexChange 롱프레스 스크럽 선택 인덱스 변경 통지(해제 시 null). null이면 미통지.
+ * @param chartContentDescription TalkBack 요약 문자열 주입(로컬라이즈는 앱 소유 — B12/D9).
+ *   null이면 코어 기본 문자열([ChartA11y.barChart]).
  */
 @Composable
 fun RDBarChart(
@@ -61,6 +64,7 @@ fun RDBarChart(
     yLabelFormatter: ((Double) -> String)? = null,
     animateEntrance: Boolean = false,
     onSelectedIndexChange: ((Int?) -> Unit)? = null,
+    chartContentDescription: String? = null,
 ) {
     val measurer = rememberTextMeasurer()
     // 성장 등장 애니 — layout 교체·animateEntrance 토글 시 0부터 재생(공용 헬퍼).
@@ -75,7 +79,8 @@ fun RDBarChart(
         maxLabelWidthPx(measurer, xAxisLabels, scaledStyle, fontScale)
     }
     // TalkBack 요약(UX Major-1): 캔버스는 불투명하므로 컨테이너에 막대 수·값 요약을 노출한다.
-    val description = remember(layout, barLabels) { barChartDescription(layout, barLabels) }
+    val description = chartContentDescription
+        ?: remember(layout, barLabels) { ChartA11y.barChart(layout.bars.size, barLabels.orEmpty()) }
 
     // 롱프레스 스크럽 선택 상태. layout이 바뀌면 initial 리멤버 값은 이미 null이지만, 재사용되는 remember
     // 슬롯은 layout 키를 두지 않는다 — 리셋 통지는 아래 LaunchedEffect(layout)가 명시적으로 담당한다
@@ -152,14 +157,6 @@ fun RDBarChart(
         }
         layers.forEach { render(it, measurer) }
     }
-}
-
-/** 막대 차트 TalkBack 요약 문자열(UX Major-1). 라벨이 있으면 구간별 값을 함께 낭독. */
-private fun barChartDescription(layout: BarChartLayout, barLabels: List<String>?): String {
-    if (layout.bars.isEmpty()) return "막대 차트, 데이터 없음"
-    val detail = barLabels?.takeIf { it.isNotEmpty() }
-        ?.let { labels -> layout.bars.indices.joinToString(", ") { "구간 ${it + 1} ${labels.getOrNull(it) ?: ""}".trim() } }
-    return "막대 차트, 구간 ${layout.bars.size}개" + (detail?.let { ". $it" } ?: "")
 }
 
 /** 라벨 목록 중 가장 넓은 폭(px). 비었으면 0. 솎아내기 stride 입력(리뷰 #3: 그리기 밖에서 1회 측정·memoize). */

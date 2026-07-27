@@ -5,6 +5,7 @@
 // composable [RDHeartRateZoneChart]는 그리기 + pointerInput 배선만 담당한다.
 package com.lumipol.graph.renderer
 
+import com.lumipol.graph.ChartA11y
 import com.lumipol.graph.ChartDefaults
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -81,6 +82,7 @@ fun RDHeartRateZoneChart(
     // 선택 상태 홀더(0.27.0). 앱이 레전드 등과 공유하려면 rememberDonutSelectionState로 만들어 넘긴다.
     // 파라미터를 맨 끝에 둔 것은 기존 위치 인자 호출자를 깨지 않기 위해서다.
     selection: DonutSelectionState = rememberDonutSelectionState(data),
+    chartContentDescription: String? = null,
 ) {
     val layout = remember(data) { DonutEngine.layout(data) }
     // sweep 등장 애니 — data 교체·animateEntrance 토글 시 0부터 재생(공용 헬퍼).
@@ -146,7 +148,7 @@ fun RDHeartRateZoneChart(
     }
 
     // TalkBack 요약(UX Major-1): 존별 %를 낭독해 시각장애 사용자도 분포에 도달.
-    val description = remember(layout) { donutDescription(layout) }
+    val description = chartContentDescription ?: remember(layout) { ChartA11y.donut(layout) }
     val measurer = rememberTextMeasurer()
     Canvas(modifier.semantics { contentDescription = description }.then(gesture)) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
@@ -189,15 +191,6 @@ fun RDHeartRateZoneChart(
         }
         drawText(percentLayout, topLeft = Offset((size.width - percentLayout.size.width) / 2f, top))
     }
-}
-
-/** 심박존 도넛 TalkBack 요약(UX Major-1). 존별 퍼센트를 낭독. */
-private fun donutDescription(layout: DonutChartLayout): String {
-    if (layout.total <= 0.0 || layout.segments.isEmpty()) return "심박존 도넛, 데이터 없음"
-    val zones = layout.segments.joinToString(", ") { seg ->
-        "${seg.colorRole.name} ${(seg.sweepFraction * 100).roundToInt()}%"
-    }
-    return "심박존 분포 도넛. $zones"
 }
 
 /**
