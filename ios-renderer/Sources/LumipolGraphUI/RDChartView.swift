@@ -48,7 +48,7 @@ public final class RDChartView: UIView {
         }
     }
     /// 최대 확대 배율 (전체 구간 대비)
-    @objc public var maxZoomScale: CGFloat = 10
+    @objc public var maxZoomScale: CGFloat = CGFloat(ChartDefaults.shared.MAX_ZOOM_SCALE)
 
     // 산술은 코어 ZoomWindow(B3 이관, 불변 값) — 상태 보유·재대입만 뷰 소관.
     private var zoomState: ZoomWindow?
@@ -217,7 +217,7 @@ public final class RDChartView: UIView {
             let animation = CABasicAnimation(keyPath: "strokeEnd")
             animation.fromValue = 0
             animation.toValue = 1
-            animation.duration = 0.6
+            animation.duration = ChartDefaults.shared.ENTRANCE_DURATION_SECONDS
             animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
             shape.add(animation, forKey: "strokeEnd")
         }

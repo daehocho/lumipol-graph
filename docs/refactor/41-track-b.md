@@ -62,7 +62,14 @@
   폐기 예고 — 정식 @Deprecated는 C4 앱 전환 시). 색약 이산 4색 규칙은 앱 2벌이 상이해 D12 신설,
   iOS안 채택. 골든 paceColormap 섹션(색은 hex 문자열 = T1). 색 8비트 반올림 양자화 —
   렌더러 float 대비 ≤0.5/255, 스냅샷 테스트 무변화 확인
-- [ ] B7 — 미착수
+- [x] **B7** — 0.35.0. 코어 `ChartDefaults`: 정책 수치(라인·막대·도넛·여백·터치·maxZoomScale·
+  등장 애니 파라미터(D5 easeOut 계수·기본 off·지속시간)·알파 9종) + Light/DarkPalette RGBA
+  (AOS 실측 24쌍 이관). AOS: ChartStyle 기본값·팔레트 + 인라인 상수 8파일 코어 참조 전환.
+  iOS: ChartStyle 수치 기본값 코어 참조 + `barWidthRatio` 필드 신설(주입 비대칭 해소) +
+  ChartLayerBuilder/RDBarChartView/RDChartView 리터럴 소거. 알파는 base RGB와 분리
+  (8비트 사전 합성 시 float 알파와 ±1/255 어긋남 방지). 골든 chartDefaults 섹션 —
+  상수 변경이 골든 갱신(의도 선언)을 강제. 플랫폼 보정(HAIRLINE_MIN_PX·MAX_FONT_SCALE·
+  롱프레스 0.5s(D10 T3))만 렌더러 잔류
 - [x] **B8** — 0.30.0. 퇴화 창 폴백 + 기존 예외 테스트를 새 계약으로 갱신
 - [x] **B9** — 0.30.0. Series/ChartConfig/BarChartData 축약 생성자
 - [ ] B10~B14 — 미착수

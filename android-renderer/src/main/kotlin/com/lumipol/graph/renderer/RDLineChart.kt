@@ -5,6 +5,7 @@
 // derivedStateOf 파생(줌 창→재계산), 상호작용 상태는 [LineChartInteraction] 홀더가 소유한다.
 package com.lumipol.graph.renderer
 
+import com.lumipol.graph.ChartDefaults
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -34,7 +35,7 @@ import com.lumipol.graph.model.Point
 import java.util.Locale
 
 /** 라인 등장 애니 지속시간(ms) — Material Emphasized(iOS strokeEnd 0.6s). */
-private const val ENTRANCE_DURATION_MS = 600
+private val ENTRANCE_DURATION_MS = (ChartDefaults.ENTRANCE_DURATION_SECONDS * 1000).toInt()
 
 /**
  * 기본 축 라벨 포매터(iOS `defaultFormatter` = `String(format: "%g", value)`와 동일 출력).
@@ -92,7 +93,7 @@ fun RDLineChart(
     backgroundArea: List<Point>? = null,
     labelFormatter: (ChartAxis, Double) -> String = ::defaultLineChartFormatter,
     isZoomEnabled: Boolean = false,
-    maxZoomScale: Float = 10f,
+    maxZoomScale: Float = ChartDefaults.MAX_ZOOM_SCALE.toFloat(),
     zoomXRange: ClosedRange<Double>? = null,
     zoomController: LineChartZoomController? = null,
     markerController: LineChartMarkerController? = null,

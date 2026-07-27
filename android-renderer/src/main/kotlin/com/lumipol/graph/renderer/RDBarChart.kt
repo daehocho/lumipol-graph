@@ -5,6 +5,7 @@
 // JVM 단위테스트로 검증하고, composable [RDBarChart]는 그 결과를 Canvas로 렌더한다.
 package com.lumipol.graph.renderer
 
+import com.lumipol.graph.ChartDefaults
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -394,14 +395,14 @@ internal fun applyBarSelection(
     return dimmed
 }
 
-private const val BAR_LABEL_GAP = 4.0               // y틱 라벨과 축 사이(iOS insets.left-4)
-private const val BAR_X_LABEL_GAP = 4.0             // x축 라벨과 막대 바닥 사이(iOS maxY+4)
-private const val BAR_LABEL_MIN_GAP = 6.0           // 솎아낸 이웃 라벨 사이 최소 여백(dp) — 겹침 방지
-private const val BAR_CALLOUT_PAD_H = 8.0           // 선택 말풍선 좌우 내부 여백(dp)
-private const val BAR_CALLOUT_PAD_V = 4.0           // 선택 말풍선 상하 내부 여백(dp)
-private const val BAR_CALLOUT_CORNER = 6f           // 선택 말풍선 모서리 반경(dp)
+private val BAR_LABEL_GAP = ChartDefaults.BAR_LABEL_GAP               // y틱 라벨과 축 사이(iOS insets.left-4)
+private val BAR_X_LABEL_GAP = ChartDefaults.BAR_X_LABEL_GAP             // x축 라벨과 막대 바닥 사이(iOS maxY+4)
+private val BAR_LABEL_MIN_GAP = ChartDefaults.BAR_LABEL_MIN_GAP           // 솎아낸 이웃 라벨 사이 최소 여백(dp) — 겹침 방지
+private val BAR_CALLOUT_PAD_H = ChartDefaults.CALLOUT_PAD_H           // 선택 말풍선 좌우 내부 여백(dp)
+private val BAR_CALLOUT_PAD_V = ChartDefaults.CALLOUT_PAD_V           // 선택 말풍선 상하 내부 여백(dp)
+private val BAR_CALLOUT_CORNER = ChartDefaults.CALLOUT_CORNER_RADIUS.toFloat()           // 선택 말풍선 모서리 반경(dp)
 
 /** 바 성장 등장 애니 지속시간(ms). Material Emphasized. */
-private const val BAR_GROWTH_DURATION_MS = 300
+private val BAR_GROWTH_DURATION_MS = (ChartDefaults.BAR_GROWTH_DURATION_SECONDS * 1000).toInt()
 /** Material Emphasized Decelerate 이징(라인/바/도넛 등장 공용). */
 internal val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)

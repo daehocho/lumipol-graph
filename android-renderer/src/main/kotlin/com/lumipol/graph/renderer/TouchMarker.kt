@@ -6,6 +6,7 @@
 // DrawScope 미의존이라 JVM 단위테스트로 검증 가능하고, 그리기는 [drawTouchMarker].
 package com.lumipol.graph.renderer
 
+import com.lumipol.graph.ChartDefaults
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.TextMeasurer
 import com.lumipol.graph.LineChartEngine
@@ -106,7 +107,7 @@ internal object TouchMarker {
         )
     }
 
-    private const val TOUCH_LINE_WIDTH = 1f
+    private val TOUCH_LINE_WIDTH = ChartDefaults.TOUCH_LINE_WIDTH.toFloat()
 }
 
 /** 마커(수직선 + 점) 그리기. 배치3 라인차트가 스크럽 상태에서 호출. */

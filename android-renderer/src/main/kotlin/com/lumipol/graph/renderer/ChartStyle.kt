@@ -5,6 +5,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import com.lumipol.graph.ChartDefaults
 import com.lumipol.graph.model.BarColorRole
 import com.lumipol.graph.model.DonutColorRole
 
@@ -34,7 +35,7 @@ data class Insets(
 @Immutable
 data class ChartStyle(
     // 시리즈 라인
-    val lineWidth: Float = 2f,
+    val lineWidth: Float = ChartDefaults.LINE_WIDTH.toFloat(),
     val primaryLineColor: Color,
     val secondaryLineColor: Color,
     /**
@@ -47,7 +48,7 @@ data class ChartStyle(
      * `1-(1-α/√n)^n`로 n과 함께 서서히 는다(α=0.25: n=2→0.33, n=9→0.54). 선택 상한이 없으므로
      * 동시 선택이 많은 화면은 이 값을 낮추거나 0으로 끄는 편이 안전하다.
      */
-    val gradientMaxAlpha: Float = 0.25f,
+    val gradientMaxAlpha: Float = ChartDefaults.GRADIENT_MAX_ALPHA.toFloat(),
     /**
      * 시리즈 id → 색. 지정되면 라인·배경 그라데이션이 이 색을 쓴다(축 슬롯 색보다 우선).
      * 비어 있으면 종전대로 축/역할 기반 색으로 폴백. 클로저가 아니라 Map인 이유는
@@ -57,24 +58,24 @@ data class ChartStyle(
 
     // 그리드 (X tick 세로선 + Y tick 가로선). null이면 그리드 없음.
     val gridLineColor: Color?,
-    val gridLineDashPattern: FloatArray = floatArrayOf(3f, 3f),
-    val gridLineWidth: Float = 0.5f,
+    val gridLineDashPattern: FloatArray = floatArrayOf(ChartDefaults.GRID_DASH_ON.toFloat(), ChartDefaults.GRID_DASH_OFF.toFloat()),
+    val gridLineWidth: Float = ChartDefaults.GRID_LINE_WIDTH.toFloat(),
 
     // 오버레이(코어가 자체 정규화한 시리즈) — 축 라벨 없는 가는 실선 라인(0.23.0부터 점선 제거).
     // 배경 그라데이션은 다른 시리즈와 동일하게 gradientMaxAlpha 규칙을 따른다(0.21.0부터).
     val overlayLineColor: Color,
-    val overlayLineWidth: Float = 1.5f,
+    val overlayLineWidth: Float = ChartDefaults.OVERLAY_LINE_WIDTH.toFloat(),
 
     // 기준선/밴드 (refLineDashPattern은 BarChart 평균/목표 점선이 재사용)
-    val refLineDashPattern: FloatArray = floatArrayOf(6f, 3f),
+    val refLineDashPattern: FloatArray = floatArrayOf(ChartDefaults.REF_DASH_ON.toFloat(), ChartDefaults.REF_DASH_OFF.toFloat()),
     val refBandColor: Color,
 
     // 배경 고도 실루엣 (장식 area — 축/스크럽 없음)
     val areaFillColor: Color,
-    val areaHeightFraction: Float = 0.35f,
+    val areaHeightFraction: Float = ChartDefaults.AREA_HEIGHT_FRACTION.toFloat(),
     // 실루엣 높이 정규화 분모의 하한(도메인 단위 — 고도면 m). 실측 고저차가 이보다 작으면
     // 그만큼 납작하게 그려져 센서 노이즈가 산맥으로 보이지 않는다. 0이면 하한 없음.
-    val areaMinValueSpan: Double = 0.5,
+    val areaMinValueSpan: Double = ChartDefaults.AREA_MIN_VALUE_SPAN,
 
     // 구간(km) 마커
     val markerLineColor: Color,
@@ -82,14 +83,14 @@ data class ChartStyle(
 
     // 스플릿 막대
     val barColors: Map<BarColorRole, Color>,
-    val barWidthRatio: Float = 0.6f,   // 슬롯 폭 대비 막대 폭(iOS slot*0.6)
-    val partialBarAlpha: Float = 0.6f, // 부분 스플릿 막대 흐림
-    val barCornerRadius: Float = 3f,
+    val barWidthRatio: Float = ChartDefaults.BAR_WIDTH_RATIO.toFloat(),   // 슬롯 폭 대비 막대 폭(iOS slot*0.6)
+    val partialBarAlpha: Float = ChartDefaults.PARTIAL_BAR_ALPHA.toFloat(), // 부분 스플릿 막대 흐림
+    val barCornerRadius: Float = ChartDefaults.BAR_CORNER_RADIUS.toFloat(),
     val barShowYAxisLabels: Boolean = true, // false면 y틱 라벨 숨김(그리드·참조선은 유지)
     val barShowXAxisLabels: Boolean = true, // false면 x축 하단 라벨 숨김
     val barReferenceLineColor: Color,
-    val barMinHeight: Float = 2f, // 가장 빠른(짧은) 막대도 최소 가시 높이
-    val barDimOpacity: Float = 0.35f, // 롱프레스 선택 시 미선택 막대 흐림 배율(iOS barDimOpacity)
+    val barMinHeight: Float = ChartDefaults.BAR_MIN_HEIGHT.toFloat(), // 가장 빠른(짧은) 막대도 최소 가시 높이
+    val barDimOpacity: Float = ChartDefaults.BAR_DIM_OPACITY.toFloat(), // 롱프레스 선택 시 미선택 막대 흐림 배율(iOS barDimOpacity)
     /**
      * 막대별 색 오버라이드. null이면 코어 [com.lumipol.graph.PaceColormap] 사용.
      * 앱은 stable 람다를 넘길 것(리컴포지션 방지).
@@ -101,40 +102,45 @@ data class ChartStyle(
     val barSelectionLineColor: Color, // 선택 막대 세로 가이드선(iOS label α0.55)
     val barCalloutBackgroundColor: Color, // 말풍선 배경(iOS .label)
     val barCalloutTextColor: Color, // 말풍선 텍스트(iOS .systemBackground)
-    val barCalloutFontSize: Float = 12f, // 말풍선 폰트 크기(sp) — iOS systemFont(12, .semibold)
+    val barCalloutFontSize: Float = ChartDefaults.BAR_CALLOUT_FONT_SIZE.toFloat(), // 말풍선 폰트 크기(sp) — iOS systemFont(12, .semibold)
     val barCalloutFontWeight: FontWeight = FontWeight.SemiBold,
 
     // 심박존 도넛
     val donutColors: Map<DonutColorRole, Color>,
-    val donutRingWidth: Float = 28f,
+    val donutRingWidth: Float = ChartDefaults.DONUT_RING_WIDTH.toFloat(),
     val donutEmptyColor: Color,
 
     // 심박존 도넛 — 탭 선택(0.26.0). 색은 라이트/다크 팔레트에서 주입.
-    val donutDimmedAlpha: Float = 0.3f,                 // 비선택 세그먼트 alpha(원 alpha 대체)
-    val donutCenterLabelFontSize: Float = 13f,          // 센터 존 이름(sp)
+    val donutDimmedAlpha: Float = ChartDefaults.DONUT_DIMMED_ALPHA.toFloat(),                 // 비선택 세그먼트 alpha(원 alpha 대체)
+    val donutCenterLabelFontSize: Float = ChartDefaults.DONUT_CENTER_LABEL_FONT_SIZE.toFloat(),          // 센터 존 이름(sp)
     val donutCenterLabelColor: Color,                   // iOS .secondaryLabel 대응
-    val donutCenterPercentFontSize: Float = 28f,        // 센터 퍼센트(sp)
+    val donutCenterPercentFontSize: Float = ChartDefaults.DONUT_CENTER_PERCENT_FONT_SIZE.toFloat(),        // 센터 퍼센트(sp)
     val donutCenterPercentFontWeight: FontWeight = FontWeight.Bold,
     val donutCenterPercentColor: Color,                 // iOS .label 대응
-    val donutAutoDeselectDelaySeconds: Float = 3f,      // 0 이하면 자동 해제 없음
+    val donutAutoDeselectDelaySeconds: Float = ChartDefaults.DONUT_AUTO_DESELECT_SECONDS.toFloat(),      // 0 이하면 자동 해제 없음
     val donutSelectionHapticsEnabled: Boolean = true,
 
     // 축 라벨 (iOS `axisLabelFont: UIFont` → 크기·패밀리·웨이트로 분해 보관, TextStyle 조립은 draw 경계.
     // 모든 라벨 TextLayer(축/마커/기준선/바)가 공유한다 — iOS도 전부 axisLabelFont 단일 폰트.)
-    val axisLabelFontSize: Float = 10f,
+    val axisLabelFontSize: Float = ChartDefaults.AXIS_LABEL_FONT_SIZE.toFloat(),
     val axisLabelFontFamily: FontFamily? = null, // null = 시스템 기본(iOS systemFont 대응)
     val axisLabelFontWeight: FontWeight? = null, // null = 기본 웨이트(regular)
     val axisLabelColor: Color,
 
     // 플롯 여백
-    val plotInsets: Insets = Insets(top = 16f, left = 44f, bottom = 20f, right = 44f),
+    val plotInsets: Insets = Insets(
+        top = ChartDefaults.PLOT_INSET_TOP.toFloat(),
+        left = ChartDefaults.PLOT_INSET_LEFT.toFloat(),
+        bottom = ChartDefaults.PLOT_INSET_BOTTOM.toFloat(),
+        right = ChartDefaults.PLOT_INSET_RIGHT.toFloat(),
+    ),
 
     // 터치 마커
     val touchLineColor: Color,
-    val touchDotRadius: Float = 4f,
+    val touchDotRadius: Float = ChartDefaults.TOUCH_DOT_RADIUS.toFloat(),
 
     // 데이터 색 role이 주입 맵(barColors/donutColors)에 없을 때의 폴백(iOS .systemGray).
-    val fallbackDataColor: Color = Color(0xFF8E8E93),
+    val fallbackDataColor: Color = Color(ChartDefaults.FALLBACK_DATA_COLOR),
 ) {
     companion object {
         /** 헤어라인 하한(px). 저밀도(1x)에서 0.5dp 그리드가 서브픽셀로 소실되는 것 방지(UX Minor-1). */
@@ -143,70 +149,76 @@ data class ChartStyle(
         /** 다크 여부에 따른 기본 스타일. [darkTheme] 판정은 호출부(`isSystemInDarkTheme()`)가 넘긴다. */
         fun defaults(darkTheme: Boolean): ChartStyle = if (darkTheme) Dark else Light
 
-        // Apple 시스템색 실측 RGB(sRGB) — 라이트/다크 쌍. 브랜드 데이터 색은 이 값을 고정 소유한다.
-        private val Light: ChartStyle = ChartStyle(
-            primaryLineColor = Color(0xFF007AFF),                    // systemBlue
-            secondaryLineColor = Color(0xFFFF3B30),                  // systemRed
-            gridLineColor = Color(0xFFD1D1D6).copy(alpha = 0.7f),    // systemGray4 α0.7
-            overlayLineColor = Color(0xFFAF52DE).copy(alpha = 0.8f), // systemPurple α0.8
-            refBandColor = Color(0xFFFF9500).copy(alpha = 0.12f),    // systemOrange α0.12
-            areaFillColor = Color(0xFFC7C7CC).copy(alpha = 0.35f),   // systemGray3 α0.35
-            markerLineColor = Color(0xFFD1D1D6),                     // systemGray4
-            markerEmphasisLineColor = Color(0xFF8E8E93),             // systemGray
+        // 팔레트 RGBA·수치의 단일 원본은 코어 ChartDefaults(B7) — 여기서는 Compose Color 변환만.
+        private val Light: ChartStyle = run {
+            val P = ChartDefaults.LightPalette
+            ChartStyle(
+            primaryLineColor = Color(P.PRIMARY_LINE),
+            secondaryLineColor = Color(P.SECONDARY_LINE),
+            gridLineColor = Color(P.GRID_LINE).copy(alpha = ChartDefaults.GRID_LINE_ALPHA.toFloat()),
+            overlayLineColor = Color(P.OVERLAY_LINE).copy(alpha = ChartDefaults.OVERLAY_LINE_ALPHA.toFloat()),
+            refBandColor = Color(P.REF_BAND).copy(alpha = ChartDefaults.REF_BAND_ALPHA.toFloat()),
+            areaFillColor = Color(P.AREA_FILL).copy(alpha = ChartDefaults.AREA_FILL_ALPHA.toFloat()),
+            markerLineColor = Color(P.MARKER_LINE),
+            markerEmphasisLineColor = Color(P.MARKER_EMPHASIS_LINE),
             barColors = mapOf(
-                BarColorRole.FASTER to Color(0xFF34C759),            // systemGreen
-                BarColorRole.ON_TARGET to Color(0xFF8E8E93),         // systemGray
-                BarColorRole.SLOWER to Color(0xFFFF9500),            // systemOrange
+                BarColorRole.FASTER to Color(P.BAR_FASTER),
+                BarColorRole.ON_TARGET to Color(P.BAR_ON_TARGET),
+                BarColorRole.SLOWER to Color(P.BAR_SLOWER),
             ),
-            barReferenceLineColor = Color(0xFF000000).copy(alpha = 0.6f), // label α0.6
-            barSelectionLineColor = Color(0xFF000000).copy(alpha = 0.55f), // label α0.55
-            barCalloutBackgroundColor = Color(0xFF000000),                 // label
-            barCalloutTextColor = Color(0xFFFFFFFF),                       // systemBackground
+            barReferenceLineColor = Color(P.BAR_REFERENCE_LINE).copy(alpha = ChartDefaults.BAR_REFERENCE_LINE_ALPHA.toFloat()),
+            barSelectionLineColor = Color(P.BAR_SELECTION_LINE).copy(alpha = ChartDefaults.BAR_SELECTION_LINE_ALPHA.toFloat()),
+            barCalloutBackgroundColor = Color(P.BAR_CALLOUT_BACKGROUND),
+            barCalloutTextColor = Color(P.BAR_CALLOUT_TEXT),
             donutColors = mapOf(
-                DonutColorRole.ZONE1 to Color(0xFF007AFF),                     // systemBlue
-                DonutColorRole.ZONE2 to Color(0xFF34C759).copy(alpha = 0.7f),  // systemGreen α0.7
-                DonutColorRole.ZONE3 to Color(0xFFFFCC00),                     // systemYellow
-                DonutColorRole.ZONE4 to Color(0xFFFF9500),                     // systemOrange
-                DonutColorRole.ZONE5 to Color(0xFFFF3B30),                     // systemRed
+                DonutColorRole.ZONE1 to Color(P.DONUT_ZONE1),
+                DonutColorRole.ZONE2 to Color(P.DONUT_ZONE2).copy(alpha = ChartDefaults.DONUT_ZONE2_ALPHA.toFloat()),
+                DonutColorRole.ZONE3 to Color(P.DONUT_ZONE3),
+                DonutColorRole.ZONE4 to Color(P.DONUT_ZONE4),
+                DonutColorRole.ZONE5 to Color(P.DONUT_ZONE5),
             ),
-            donutEmptyColor = Color(0xFFD1D1D6).copy(alpha = 0.5f),   // systemGray4 α0.5
-            donutCenterLabelColor = Color(0xFF3C3C43).copy(alpha = 0.6f),  // secondaryLabel
-            donutCenterPercentColor = Color(0xFF000000),                    // label
-            axisLabelColor = Color(0xFF3C3C43).copy(alpha = 0.6f),   // secondaryLabel
-            touchLineColor = Color(0xFF000000),                      // label
-        )
+            donutEmptyColor = Color(P.DONUT_EMPTY).copy(alpha = ChartDefaults.DONUT_EMPTY_ALPHA.toFloat()),
+            donutCenterLabelColor = Color(P.DONUT_CENTER_LABEL).copy(alpha = ChartDefaults.SECONDARY_LABEL_ALPHA.toFloat()),
+            donutCenterPercentColor = Color(P.DONUT_CENTER_PERCENT),
+            axisLabelColor = Color(P.AXIS_LABEL).copy(alpha = ChartDefaults.SECONDARY_LABEL_ALPHA.toFloat()),
+            touchLineColor = Color(P.TOUCH_LINE),
+            )
+        }
 
-        private val Dark: ChartStyle = ChartStyle(
-            primaryLineColor = Color(0xFF0A84FF),
-            secondaryLineColor = Color(0xFFFF453A),
-            gridLineColor = Color(0xFF3A3A3C).copy(alpha = 0.7f),
-            overlayLineColor = Color(0xFFBF5AF2).copy(alpha = 0.8f),
-            refBandColor = Color(0xFFFF9F0A).copy(alpha = 0.12f),
-            areaFillColor = Color(0xFF48484A).copy(alpha = 0.35f),
-            markerLineColor = Color(0xFF3A3A3C),
-            markerEmphasisLineColor = Color(0xFF8E8E93),
+        private val Dark: ChartStyle = run {
+            val D = ChartDefaults.DarkPalette
+            ChartStyle(
+            primaryLineColor = Color(D.PRIMARY_LINE),
+            secondaryLineColor = Color(D.SECONDARY_LINE),
+            gridLineColor = Color(D.GRID_LINE).copy(alpha = ChartDefaults.GRID_LINE_ALPHA.toFloat()),
+            overlayLineColor = Color(D.OVERLAY_LINE).copy(alpha = ChartDefaults.OVERLAY_LINE_ALPHA.toFloat()),
+            refBandColor = Color(D.REF_BAND).copy(alpha = ChartDefaults.REF_BAND_ALPHA.toFloat()),
+            areaFillColor = Color(D.AREA_FILL).copy(alpha = ChartDefaults.AREA_FILL_ALPHA.toFloat()),
+            markerLineColor = Color(D.MARKER_LINE),
+            markerEmphasisLineColor = Color(D.MARKER_EMPHASIS_LINE),
             barColors = mapOf(
-                BarColorRole.FASTER to Color(0xFF30D158),
-                BarColorRole.ON_TARGET to Color(0xFF8E8E93),
-                BarColorRole.SLOWER to Color(0xFFFF9F0A),
+                BarColorRole.FASTER to Color(D.BAR_FASTER),
+                BarColorRole.ON_TARGET to Color(D.BAR_ON_TARGET),
+                BarColorRole.SLOWER to Color(D.BAR_SLOWER),
             ),
-            barReferenceLineColor = Color(0xFFFFFFFF).copy(alpha = 0.6f),
-            barSelectionLineColor = Color(0xFFFFFFFF).copy(alpha = 0.55f),
-            barCalloutBackgroundColor = Color(0xFFFFFFFF),
-            barCalloutTextColor = Color(0xFF000000),
+            barReferenceLineColor = Color(D.BAR_REFERENCE_LINE).copy(alpha = ChartDefaults.BAR_REFERENCE_LINE_ALPHA.toFloat()),
+            barSelectionLineColor = Color(D.BAR_SELECTION_LINE).copy(alpha = ChartDefaults.BAR_SELECTION_LINE_ALPHA.toFloat()),
+            barCalloutBackgroundColor = Color(D.BAR_CALLOUT_BACKGROUND),
+            barCalloutTextColor = Color(D.BAR_CALLOUT_TEXT),
             donutColors = mapOf(
-                DonutColorRole.ZONE1 to Color(0xFF0A84FF),
-                DonutColorRole.ZONE2 to Color(0xFF30D158).copy(alpha = 0.7f),
-                DonutColorRole.ZONE3 to Color(0xFFFFD60A),
-                DonutColorRole.ZONE4 to Color(0xFFFF9F0A),
-                DonutColorRole.ZONE5 to Color(0xFFFF453A),
+                DonutColorRole.ZONE1 to Color(D.DONUT_ZONE1),
+                DonutColorRole.ZONE2 to Color(D.DONUT_ZONE2).copy(alpha = ChartDefaults.DONUT_ZONE2_ALPHA.toFloat()),
+                DonutColorRole.ZONE3 to Color(D.DONUT_ZONE3),
+                DonutColorRole.ZONE4 to Color(D.DONUT_ZONE4),
+                DonutColorRole.ZONE5 to Color(D.DONUT_ZONE5),
             ),
-            donutEmptyColor = Color(0xFF3A3A3C).copy(alpha = 0.5f),
-            donutCenterLabelColor = Color(0xFFEBEBF5).copy(alpha = 0.6f),  // secondaryLabel
-            donutCenterPercentColor = Color(0xFFFFFFFF),                    // label
-            axisLabelColor = Color(0xFFEBEBF5).copy(alpha = 0.6f),
-            touchLineColor = Color(0xFFFFFFFF),
-        )
+            donutEmptyColor = Color(D.DONUT_EMPTY).copy(alpha = ChartDefaults.DONUT_EMPTY_ALPHA.toFloat()),
+            donutCenterLabelColor = Color(D.DONUT_CENTER_LABEL).copy(alpha = ChartDefaults.SECONDARY_LABEL_ALPHA.toFloat()),
+            donutCenterPercentColor = Color(D.DONUT_CENTER_PERCENT),
+            axisLabelColor = Color(D.AXIS_LABEL).copy(alpha = ChartDefaults.SECONDARY_LABEL_ALPHA.toFloat()),
+            touchLineColor = Color(D.TOUCH_LINE),
+            )
+        }
     }
 }
 

@@ -5,8 +5,8 @@ import LumipolGraph
 /// 페이스는 "낮을수록 빠름" — 코어가 축을 반전해 빠른 스플릿일수록 막대가 길고 맨 위 틱이 가장 빠르다.
 public final class RDBarChartView: UIView {
 
-    /// 솎아낸 이웃 라벨 사이 최소 여백(pt) — Android BAR_LABEL_MIN_GAP과 동일.
-    private static let labelMinGap = 6.0
+    /// 솎아낸 이웃 라벨 사이 최소 여백(pt) — 코어 정책 상수(B7, Android와 동일 원본).
+    private static let labelMinGap = ChartDefaults.shared.BAR_LABEL_MIN_GAP
 
     public var style: ChartStyle = .default
     public private(set) var barLayers: [CALayer] = []
@@ -87,7 +87,7 @@ public final class RDBarChartView: UIView {
             }
             if style.barShowYAxisLabels {
                 let text = yLabelFormatter?(tick.value) ?? yTickLabel(tick.value)
-                addLabel(text: text, at: CGPoint(x: insets.left - 4, y: y),
+                addLabel(text: text, at: CGPoint(x: insets.left - CGFloat(ChartDefaults.shared.BAR_LABEL_GAP), y: y),
                          align: .right)
             }
         }
@@ -95,7 +95,7 @@ public final class RDBarChartView: UIView {
         // 막대
         let n = layout.bars.count
         let slot = plot.width / CGFloat(n)
-        let barWidth = slot * 0.6
+        let barWidth = slot * style.barWidthRatio
 
         // 연속 색상 앵커 — 규칙 원본은 코어 `BarChartEngine`(0.30.0, `layout.colorAnchors`).
         // 렌더러·앱이 각자 재계산하던 4벌 복제를 회수한 단일 원본이다. 코어를 안 거치고 직접
@@ -150,7 +150,7 @@ public final class RDBarChartView: UIView {
 
             if style.barShowXAxisLabels, let xLabels = xAxisLabels, i < xLabels.count,
                LabelThinningKt.isLabelVisible(index: Int32(i), count: Int32(n), stride: Int32(xLabelStride)) {
-                let baseline = plot.maxY + 4  // 막대 바닥 축선 아래 여백
+                let baseline = plot.maxY + CGFloat(ChartDefaults.shared.BAR_X_LABEL_GAP)  // 막대 바닥 축선 아래 여백
                 addLabel(text: xLabels[i], at: CGPoint(x: rect.midX, y: baseline), align: .topCenter)
             }
         }
@@ -243,7 +243,7 @@ public final class RDBarChartView: UIView {
             let text = ChartLayerBuilder.textLayer(
                 labels[sel], font: style.barCalloutFont,
                 color: style.barCalloutTextColor.resolvedColor(with: traitCollection))
-            let padH: CGFloat = 8, padV: CGFloat = 4
+            let padH = CGFloat(ChartDefaults.shared.CALLOUT_PAD_H), padV = CGFloat(ChartDefaults.shared.CALLOUT_PAD_V)
             let tSize = text.frame.size
             let bw = tSize.width + padH * 2
             let bh = tSize.height + padV * 2
@@ -257,7 +257,8 @@ public final class RDBarChartView: UIView {
             bubble.name = "bar.selection.bubble"
             bubble.frame = bubbleRect
             bubble.path = UIBezierPath(
-                roundedRect: CGRect(origin: .zero, size: bubbleRect.size), cornerRadius: 6
+                roundedRect: CGRect(origin: .zero, size: bubbleRect.size),
+                cornerRadius: CGFloat(ChartDefaults.shared.CALLOUT_CORNER_RADIUS)
             ).cgPath
             bubble.fillColor = style.barCalloutBackgroundColor.resolvedColor(with: traitCollection).cgColor
             contentLayer.addSublayer(bubble)

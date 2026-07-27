@@ -6,6 +6,7 @@
 // 짝맞춤·줌 수학을 JVM 단위테스트로 검증한다. 그리기·제스처 배선은 각각 [RDLineChart]/[LineGestures].
 package com.lumipol.graph.renderer
 
+import com.lumipol.graph.ChartDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -48,7 +49,7 @@ internal class LineChartInteraction(
         private set
 
     /** 최대 확대 배율(전체 구간 대비). composable이 파라미터로 주입. */
-    var maxZoomScale: Double = 10.0
+    var maxZoomScale: Double = ChartDefaults.MAX_ZOOM_SCALE
 
     // 콜백 — composable이 `rememberUpdatedState`로 최신 람다를 유지시킨다(stale 방지).
     var onScrub: OnScrub? = null

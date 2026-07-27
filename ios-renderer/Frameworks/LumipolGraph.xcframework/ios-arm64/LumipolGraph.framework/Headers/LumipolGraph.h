@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceColormap, LumipolGraphBarColorAnchors, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphZoomWindow, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
+@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphChartDefaults, LumipolGraphChartDefaultsDarkPalette, LumipolGraphChartDefaultsLightPalette, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceColormap, LumipolGraphBarColorAnchors, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphZoomWindow, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -153,6 +153,142 @@ __attribute__((swift_name("BarChartEngine")))
 @property (class, readonly, getter=shared) LumipolGraphBarChartEngine *shared __attribute__((swift_name("shared")));
 - (double)chooseTimeBucketSecondsRunningSeconds:(double)runningSeconds __attribute__((swift_name("chooseTimeBucketSeconds(runningSeconds:)")));
 - (LumipolGraphBarChartLayout *)layoutData:(LumipolGraphBarChartData *)data __attribute__((swift_name("layout(data:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ChartDefaults")))
+@interface LumipolGraphChartDefaults : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)chartDefaults __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphChartDefaults *shared __attribute__((swift_name("shared")));
+@property (readonly) double AREA_FILL_ALPHA __attribute__((swift_name("AREA_FILL_ALPHA")));
+@property (readonly) double AREA_HEIGHT_FRACTION __attribute__((swift_name("AREA_HEIGHT_FRACTION")));
+@property (readonly) double AREA_MIN_VALUE_SPAN __attribute__((swift_name("AREA_MIN_VALUE_SPAN")));
+@property (readonly) double AXIS_LABEL_FONT_SIZE __attribute__((swift_name("AXIS_LABEL_FONT_SIZE")));
+@property (readonly) double AXIS_LABEL_GAP __attribute__((swift_name("AXIS_LABEL_GAP")));
+@property (readonly) double BAR_CALLOUT_FONT_SIZE __attribute__((swift_name("BAR_CALLOUT_FONT_SIZE")));
+@property (readonly) double BAR_CORNER_RADIUS __attribute__((swift_name("BAR_CORNER_RADIUS")));
+@property (readonly) double BAR_DIM_OPACITY __attribute__((swift_name("BAR_DIM_OPACITY")));
+@property (readonly) double BAR_GROWTH_DURATION_SECONDS __attribute__((swift_name("BAR_GROWTH_DURATION_SECONDS")));
+@property (readonly) double BAR_LABEL_GAP __attribute__((swift_name("BAR_LABEL_GAP")));
+@property (readonly) double BAR_LABEL_MIN_GAP __attribute__((swift_name("BAR_LABEL_MIN_GAP")));
+@property (readonly) double BAR_MIN_HEIGHT __attribute__((swift_name("BAR_MIN_HEIGHT")));
+@property (readonly) double BAR_REFERENCE_LINE_ALPHA __attribute__((swift_name("BAR_REFERENCE_LINE_ALPHA")));
+@property (readonly) double BAR_SELECTION_LINE_ALPHA __attribute__((swift_name("BAR_SELECTION_LINE_ALPHA")));
+@property (readonly) double BAR_WIDTH_RATIO __attribute__((swift_name("BAR_WIDTH_RATIO")));
+@property (readonly) double BAR_X_LABEL_GAP __attribute__((swift_name("BAR_X_LABEL_GAP")));
+@property (readonly) double CALLOUT_CORNER_RADIUS __attribute__((swift_name("CALLOUT_CORNER_RADIUS")));
+@property (readonly) double CALLOUT_PAD_H __attribute__((swift_name("CALLOUT_PAD_H")));
+@property (readonly) double CALLOUT_PAD_V __attribute__((swift_name("CALLOUT_PAD_V")));
+@property (readonly) double DONUT_AUTO_DESELECT_SECONDS __attribute__((swift_name("DONUT_AUTO_DESELECT_SECONDS")));
+@property (readonly) double DONUT_CENTER_LABEL_FONT_SIZE __attribute__((swift_name("DONUT_CENTER_LABEL_FONT_SIZE")));
+@property (readonly) double DONUT_CENTER_PERCENT_FONT_SIZE __attribute__((swift_name("DONUT_CENTER_PERCENT_FONT_SIZE")));
+@property (readonly) double DONUT_CENTER_WIDTH_RATIO __attribute__((swift_name("DONUT_CENTER_WIDTH_RATIO")));
+@property (readonly) double DONUT_DIMMED_ALPHA __attribute__((swift_name("DONUT_DIMMED_ALPHA")));
+@property (readonly) double DONUT_EMPTY_ALPHA __attribute__((swift_name("DONUT_EMPTY_ALPHA")));
+@property (readonly) double DONUT_RING_WIDTH __attribute__((swift_name("DONUT_RING_WIDTH")));
+@property (readonly) double DONUT_START_DEGREES __attribute__((swift_name("DONUT_START_DEGREES")));
+@property (readonly) double DONUT_SWEEP_DURATION_SECONDS __attribute__((swift_name("DONUT_SWEEP_DURATION_SECONDS")));
+@property (readonly) double DONUT_ZONE2_ALPHA __attribute__((swift_name("DONUT_ZONE2_ALPHA")));
+@property (readonly) double ENTRANCE_DURATION_SECONDS __attribute__((swift_name("ENTRANCE_DURATION_SECONDS")));
+@property (readonly) double ENTRANCE_EASING_X1 __attribute__((swift_name("ENTRANCE_EASING_X1")));
+@property (readonly) double ENTRANCE_EASING_X2 __attribute__((swift_name("ENTRANCE_EASING_X2")));
+@property (readonly) double ENTRANCE_EASING_Y1 __attribute__((swift_name("ENTRANCE_EASING_Y1")));
+@property (readonly) double ENTRANCE_EASING_Y2 __attribute__((swift_name("ENTRANCE_EASING_Y2")));
+@property (readonly) BOOL ENTRANCE_ENABLED_DEFAULT __attribute__((swift_name("ENTRANCE_ENABLED_DEFAULT")));
+@property (readonly) int64_t FALLBACK_DATA_COLOR __attribute__((swift_name("FALLBACK_DATA_COLOR")));
+@property (readonly) double GRADIENT_MAX_ALPHA __attribute__((swift_name("GRADIENT_MAX_ALPHA")));
+@property (readonly) double GRID_DASH_OFF __attribute__((swift_name("GRID_DASH_OFF")));
+@property (readonly) double GRID_DASH_ON __attribute__((swift_name("GRID_DASH_ON")));
+@property (readonly) double GRID_LINE_ALPHA __attribute__((swift_name("GRID_LINE_ALPHA")));
+@property (readonly) double GRID_LINE_WIDTH __attribute__((swift_name("GRID_LINE_WIDTH")));
+@property (readonly) double LABEL_GAP __attribute__((swift_name("LABEL_GAP")));
+@property (readonly) double LINE_WIDTH __attribute__((swift_name("LINE_WIDTH")));
+@property (readonly) double MARKER_EMPHASIS_LINE_WIDTH __attribute__((swift_name("MARKER_EMPHASIS_LINE_WIDTH")));
+@property (readonly) double MARKER_LINE_WIDTH __attribute__((swift_name("MARKER_LINE_WIDTH")));
+@property (readonly) double MAX_ZOOM_SCALE __attribute__((swift_name("MAX_ZOOM_SCALE")));
+@property (readonly) double OVERLAY_LINE_ALPHA __attribute__((swift_name("OVERLAY_LINE_ALPHA")));
+@property (readonly) double OVERLAY_LINE_WIDTH __attribute__((swift_name("OVERLAY_LINE_WIDTH")));
+@property (readonly) double PARTIAL_BAR_ALPHA __attribute__((swift_name("PARTIAL_BAR_ALPHA")));
+@property (readonly) double PLOT_INSET_BOTTOM __attribute__((swift_name("PLOT_INSET_BOTTOM")));
+@property (readonly) double PLOT_INSET_LEFT __attribute__((swift_name("PLOT_INSET_LEFT")));
+@property (readonly) double PLOT_INSET_RIGHT __attribute__((swift_name("PLOT_INSET_RIGHT")));
+@property (readonly) double PLOT_INSET_TOP __attribute__((swift_name("PLOT_INSET_TOP")));
+@property (readonly) double REF_BAND_ALPHA __attribute__((swift_name("REF_BAND_ALPHA")));
+@property (readonly) double REF_DASH_OFF __attribute__((swift_name("REF_DASH_OFF")));
+@property (readonly) double REF_DASH_ON __attribute__((swift_name("REF_DASH_ON")));
+@property (readonly) double SECONDARY_LABEL_ALPHA __attribute__((swift_name("SECONDARY_LABEL_ALPHA")));
+@property (readonly) double TOUCH_DOT_RADIUS __attribute__((swift_name("TOUCH_DOT_RADIUS")));
+@property (readonly) double TOUCH_LINE_WIDTH __attribute__((swift_name("TOUCH_LINE_WIDTH")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ChartDefaults.DarkPalette")))
+@interface LumipolGraphChartDefaultsDarkPalette : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)darkPalette __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphChartDefaultsDarkPalette *shared __attribute__((swift_name("shared")));
+@property (readonly) int64_t AREA_FILL __attribute__((swift_name("AREA_FILL")));
+@property (readonly) int64_t AXIS_LABEL __attribute__((swift_name("AXIS_LABEL")));
+@property (readonly) int64_t BAR_CALLOUT_BACKGROUND __attribute__((swift_name("BAR_CALLOUT_BACKGROUND")));
+@property (readonly) int64_t BAR_CALLOUT_TEXT __attribute__((swift_name("BAR_CALLOUT_TEXT")));
+@property (readonly) int64_t BAR_FASTER __attribute__((swift_name("BAR_FASTER")));
+@property (readonly) int64_t BAR_ON_TARGET __attribute__((swift_name("BAR_ON_TARGET")));
+@property (readonly) int64_t BAR_REFERENCE_LINE __attribute__((swift_name("BAR_REFERENCE_LINE")));
+@property (readonly) int64_t BAR_SELECTION_LINE __attribute__((swift_name("BAR_SELECTION_LINE")));
+@property (readonly) int64_t BAR_SLOWER __attribute__((swift_name("BAR_SLOWER")));
+@property (readonly) int64_t DONUT_CENTER_LABEL __attribute__((swift_name("DONUT_CENTER_LABEL")));
+@property (readonly) int64_t DONUT_CENTER_PERCENT __attribute__((swift_name("DONUT_CENTER_PERCENT")));
+@property (readonly) int64_t DONUT_EMPTY __attribute__((swift_name("DONUT_EMPTY")));
+@property (readonly) int64_t DONUT_ZONE1 __attribute__((swift_name("DONUT_ZONE1")));
+@property (readonly) int64_t DONUT_ZONE2 __attribute__((swift_name("DONUT_ZONE2")));
+@property (readonly) int64_t DONUT_ZONE3 __attribute__((swift_name("DONUT_ZONE3")));
+@property (readonly) int64_t DONUT_ZONE4 __attribute__((swift_name("DONUT_ZONE4")));
+@property (readonly) int64_t DONUT_ZONE5 __attribute__((swift_name("DONUT_ZONE5")));
+@property (readonly) int64_t GRID_LINE __attribute__((swift_name("GRID_LINE")));
+@property (readonly) int64_t MARKER_EMPHASIS_LINE __attribute__((swift_name("MARKER_EMPHASIS_LINE")));
+@property (readonly) int64_t MARKER_LINE __attribute__((swift_name("MARKER_LINE")));
+@property (readonly) int64_t OVERLAY_LINE __attribute__((swift_name("OVERLAY_LINE")));
+@property (readonly) int64_t PRIMARY_LINE __attribute__((swift_name("PRIMARY_LINE")));
+@property (readonly) int64_t REF_BAND __attribute__((swift_name("REF_BAND")));
+@property (readonly) int64_t SECONDARY_LINE __attribute__((swift_name("SECONDARY_LINE")));
+@property (readonly) int64_t TOUCH_LINE __attribute__((swift_name("TOUCH_LINE")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ChartDefaults.LightPalette")))
+@interface LumipolGraphChartDefaultsLightPalette : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)lightPalette __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphChartDefaultsLightPalette *shared __attribute__((swift_name("shared")));
+@property (readonly) int64_t AREA_FILL __attribute__((swift_name("AREA_FILL")));
+@property (readonly) int64_t AXIS_LABEL __attribute__((swift_name("AXIS_LABEL")));
+@property (readonly) int64_t BAR_CALLOUT_BACKGROUND __attribute__((swift_name("BAR_CALLOUT_BACKGROUND")));
+@property (readonly) int64_t BAR_CALLOUT_TEXT __attribute__((swift_name("BAR_CALLOUT_TEXT")));
+@property (readonly) int64_t BAR_FASTER __attribute__((swift_name("BAR_FASTER")));
+@property (readonly) int64_t BAR_ON_TARGET __attribute__((swift_name("BAR_ON_TARGET")));
+@property (readonly) int64_t BAR_REFERENCE_LINE __attribute__((swift_name("BAR_REFERENCE_LINE")));
+@property (readonly) int64_t BAR_SELECTION_LINE __attribute__((swift_name("BAR_SELECTION_LINE")));
+@property (readonly) int64_t BAR_SLOWER __attribute__((swift_name("BAR_SLOWER")));
+@property (readonly) int64_t DONUT_CENTER_LABEL __attribute__((swift_name("DONUT_CENTER_LABEL")));
+@property (readonly) int64_t DONUT_CENTER_PERCENT __attribute__((swift_name("DONUT_CENTER_PERCENT")));
+@property (readonly) int64_t DONUT_EMPTY __attribute__((swift_name("DONUT_EMPTY")));
+@property (readonly) int64_t DONUT_ZONE1 __attribute__((swift_name("DONUT_ZONE1")));
+@property (readonly) int64_t DONUT_ZONE2 __attribute__((swift_name("DONUT_ZONE2")));
+@property (readonly) int64_t DONUT_ZONE3 __attribute__((swift_name("DONUT_ZONE3")));
+@property (readonly) int64_t DONUT_ZONE4 __attribute__((swift_name("DONUT_ZONE4")));
+@property (readonly) int64_t DONUT_ZONE5 __attribute__((swift_name("DONUT_ZONE5")));
+@property (readonly) int64_t GRID_LINE __attribute__((swift_name("GRID_LINE")));
+@property (readonly) int64_t MARKER_EMPHASIS_LINE __attribute__((swift_name("MARKER_EMPHASIS_LINE")));
+@property (readonly) int64_t MARKER_LINE __attribute__((swift_name("MARKER_LINE")));
+@property (readonly) int64_t OVERLAY_LINE __attribute__((swift_name("OVERLAY_LINE")));
+@property (readonly) int64_t PRIMARY_LINE __attribute__((swift_name("PRIMARY_LINE")));
+@property (readonly) int64_t REF_BAND __attribute__((swift_name("REF_BAND")));
+@property (readonly) int64_t SECONDARY_LINE __attribute__((swift_name("SECONDARY_LINE")));
+@property (readonly) int64_t TOUCH_LINE __attribute__((swift_name("TOUCH_LINE")));
 @end
 
 __attribute__((objc_subclassing_restricted))

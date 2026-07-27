@@ -206,13 +206,15 @@ enum ChartLayerBuilder {
         path.addLine(to: CGPoint(x: x, y: plotArea.rect.maxY))
         line.path = path.cgPath
         line.strokeColor = (marker.emphasis ? style.markerEmphasisLineColor : style.markerLineColor).cgColor
-        line.lineWidth = marker.emphasis ? 1.5 : 1
+        line.lineWidth = marker.emphasis
+            ? CGFloat(ChartDefaults.shared.MARKER_EMPHASIS_LINE_WIDTH)
+            : CGFloat(ChartDefaults.shared.MARKER_LINE_WIDTH)
         container.addSublayer(line)
         if let label = marker.label {
             let text = textLayer(label, font: style.axisLabelFont, color: style.axisLabelColor)
             text.frame.origin = CGPoint(
                 x: x - text.frame.width / 2,
-                y: plotArea.rect.minY - text.frame.height - 2
+                y: plotArea.rect.minY - text.frame.height - CGFloat(ChartDefaults.shared.LABEL_GAP)
             )
             container.addSublayer(text)
         }
@@ -236,17 +238,20 @@ enum ChartLayerBuilder {
             if ticksLayout.axis == .x {
                 text.frame.origin = CGPoint(
                     x: plotArea.x(tick.position) - size.width / 2,
-                    y: plotArea.rect.maxY + 4
+                    y: plotArea.rect.maxY + CGFloat(ChartDefaults.shared.AXIS_LABEL_GAP)
                 )
             } else if ticksLayout.axis == .yPrimary {
                 let y = plotArea.y(tick.position, axis: .primary)
                 text.frame.origin = CGPoint(
-                    x: plotArea.rect.minX - size.width - 4,
+                    x: plotArea.rect.minX - size.width - CGFloat(ChartDefaults.shared.AXIS_LABEL_GAP),
                     y: y - size.height / 2
                 )
             } else {
                 let y = plotArea.y(tick.position, axis: .secondary)
-                text.frame.origin = CGPoint(x: plotArea.rect.maxX + 4, y: y - size.height / 2)
+                text.frame.origin = CGPoint(
+                    x: plotArea.rect.maxX + CGFloat(ChartDefaults.shared.AXIS_LABEL_GAP),
+                    y: y - size.height / 2
+                )
             }
             container.addSublayer(text)
         }

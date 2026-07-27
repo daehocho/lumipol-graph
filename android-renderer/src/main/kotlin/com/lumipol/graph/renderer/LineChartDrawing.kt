@@ -6,6 +6,7 @@
 // [drawLineChart]는 그 모델을 `DrawScope`로 렌더한다. (arch 계약 6 대응)
 package com.lumipol.graph.renderer
 
+import com.lumipol.graph.ChartDefaults
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -714,9 +715,9 @@ internal fun measureLabelWidthPx(
 ).size.width.toDouble()
 
 // 매직 넘버(iOS 원본 상수) — 라벨 여백·선 폭.
-private const val LABEL_GAP = 2.0            // 마커/기준선 라벨과 선 사이 여백(iOS -2)
-private const val AXIS_LABEL_GAP = 4.0       // 축 라벨과 플롯 경계 여백(iOS ±4)
-private const val MARKER_WIDTH = 1f
-private const val MARKER_EMPHASIS_WIDTH = 1.5f
+private val LABEL_GAP = ChartDefaults.LABEL_GAP            // 마커/기준선 라벨과 선 사이 여백(iOS -2)
+private val AXIS_LABEL_GAP = ChartDefaults.AXIS_LABEL_GAP       // 축 라벨과 플롯 경계 여백(iOS ±4)
+private val MARKER_WIDTH = ChartDefaults.MARKER_LINE_WIDTH.toFloat()
+private val MARKER_EMPHASIS_WIDTH = ChartDefaults.MARKER_EMPHASIS_LINE_WIDTH.toFloat()
 /** 접근성 글꼴 배율 상한(UX Minor-1) — 라벨이 플롯 여백을 넘지 않게 1.3까지만 키운다. */
 private const val MAX_FONT_SCALE = 1.3f

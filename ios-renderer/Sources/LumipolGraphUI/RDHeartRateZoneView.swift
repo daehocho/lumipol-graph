@@ -219,7 +219,7 @@ public final class RDHeartRateZoneView: UIView {
     private func layoutCenterLabels() {
         let ring = style.donutRingWidth
         let radius = (min(bounds.width, bounds.height) - ring) / 2
-        let maxWidth = max(0, (radius - ring / 2) * 2 * 0.9)
+        let maxWidth = max(0, (radius - ring / 2) * 2 * CGFloat(ChartDefaults.shared.DONUT_CENTER_WIDTH_RATIO))
         let nameH = zoneNameLabel.isHidden ? 0 : zoneNameLabel.font.lineHeight
         let pctH = percentLabel.font.lineHeight
         let totalH = nameH + pctH

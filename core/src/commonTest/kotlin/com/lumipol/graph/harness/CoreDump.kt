@@ -1,6 +1,7 @@
 package com.lumipol.graph.harness
 
 import com.lumipol.graph.BarChartEngine
+import com.lumipol.graph.ChartDefaults
 import com.lumipol.graph.DonutEngine
 import com.lumipol.graph.HeartRateZoneEngine
 import com.lumipol.graph.LineChartEngine
@@ -42,6 +43,89 @@ object CoreDump {
                 "LINE_PRIORITY" to jarr(PaceSeriesId.LINE_PRIORITY.map { jint(it) }),
                 "DISPLAY_PRIORITY" to jarr(PaceSeriesId.DISPLAY_PRIORITY.map { jint(it) }),
             )),
+            // B7 — 정책 상수 잠금: 값 변경은 골든 갱신(=의도 선언)을 강제한다.
+            section("chartDefaults", buildList {
+                add("LINE_WIDTH" to jnum(ChartDefaults.LINE_WIDTH))
+                add("OVERLAY_LINE_WIDTH" to jnum(ChartDefaults.OVERLAY_LINE_WIDTH))
+                add("GRADIENT_MAX_ALPHA" to jnum(ChartDefaults.GRADIENT_MAX_ALPHA))
+                add("GRID_LINE_WIDTH" to jnum(ChartDefaults.GRID_LINE_WIDTH))
+                add("GRID_DASH" to jarr(listOf(jnum(ChartDefaults.GRID_DASH_ON), jnum(ChartDefaults.GRID_DASH_OFF))))
+                add("REF_DASH" to jarr(listOf(jnum(ChartDefaults.REF_DASH_ON), jnum(ChartDefaults.REF_DASH_OFF))))
+                add("AREA_HEIGHT_FRACTION" to jnum(ChartDefaults.AREA_HEIGHT_FRACTION))
+                add("AREA_MIN_VALUE_SPAN" to jnum(ChartDefaults.AREA_MIN_VALUE_SPAN))
+                add("MARKER_LINE_WIDTH" to jnum(ChartDefaults.MARKER_LINE_WIDTH))
+                add("MARKER_EMPHASIS_LINE_WIDTH" to jnum(ChartDefaults.MARKER_EMPHASIS_LINE_WIDTH))
+                add("BAR_WIDTH_RATIO" to jnum(ChartDefaults.BAR_WIDTH_RATIO))
+                add("PARTIAL_BAR_ALPHA" to jnum(ChartDefaults.PARTIAL_BAR_ALPHA))
+                add("BAR_CORNER_RADIUS" to jnum(ChartDefaults.BAR_CORNER_RADIUS))
+                add("BAR_MIN_HEIGHT" to jnum(ChartDefaults.BAR_MIN_HEIGHT))
+                add("BAR_DIM_OPACITY" to jnum(ChartDefaults.BAR_DIM_OPACITY))
+                add("BAR_CALLOUT_FONT_SIZE" to jnum(ChartDefaults.BAR_CALLOUT_FONT_SIZE))
+                add("BAR_LABEL_GAP" to jnum(ChartDefaults.BAR_LABEL_GAP))
+                add("BAR_X_LABEL_GAP" to jnum(ChartDefaults.BAR_X_LABEL_GAP))
+                add("BAR_LABEL_MIN_GAP" to jnum(ChartDefaults.BAR_LABEL_MIN_GAP))
+                add("CALLOUT_PAD_H" to jnum(ChartDefaults.CALLOUT_PAD_H))
+                add("CALLOUT_PAD_V" to jnum(ChartDefaults.CALLOUT_PAD_V))
+                add("CALLOUT_CORNER_RADIUS" to jnum(ChartDefaults.CALLOUT_CORNER_RADIUS))
+                add("DONUT_RING_WIDTH" to jnum(ChartDefaults.DONUT_RING_WIDTH))
+                add("DONUT_DIMMED_ALPHA" to jnum(ChartDefaults.DONUT_DIMMED_ALPHA))
+                add("DONUT_CENTER_LABEL_FONT_SIZE" to jnum(ChartDefaults.DONUT_CENTER_LABEL_FONT_SIZE))
+                add("DONUT_CENTER_PERCENT_FONT_SIZE" to jnum(ChartDefaults.DONUT_CENTER_PERCENT_FONT_SIZE))
+                add("DONUT_AUTO_DESELECT_SECONDS" to jnum(ChartDefaults.DONUT_AUTO_DESELECT_SECONDS))
+                add("DONUT_START_DEGREES" to jnum(ChartDefaults.DONUT_START_DEGREES))
+                add("DONUT_CENTER_WIDTH_RATIO" to jnum(ChartDefaults.DONUT_CENTER_WIDTH_RATIO))
+                add("MIN_HIT_TARGET_DP" to jnum(DonutEngine.MIN_HIT_TARGET_DP))
+                add("AXIS_LABEL_FONT_SIZE" to jnum(ChartDefaults.AXIS_LABEL_FONT_SIZE))
+                add("LABEL_GAP" to jnum(ChartDefaults.LABEL_GAP))
+                add("AXIS_LABEL_GAP" to jnum(ChartDefaults.AXIS_LABEL_GAP))
+                add("PLOT_INSETS" to jarr(listOf(
+                    jnum(ChartDefaults.PLOT_INSET_TOP), jnum(ChartDefaults.PLOT_INSET_LEFT),
+                    jnum(ChartDefaults.PLOT_INSET_BOTTOM), jnum(ChartDefaults.PLOT_INSET_RIGHT),
+                )))
+                add("TOUCH_LINE_WIDTH" to jnum(ChartDefaults.TOUCH_LINE_WIDTH))
+                add("TOUCH_DOT_RADIUS" to jnum(ChartDefaults.TOUCH_DOT_RADIUS))
+                add("MAX_ZOOM_SCALE" to jnum(ChartDefaults.MAX_ZOOM_SCALE))
+                add("SCRUB_WINDOW_EPSILON" to jnum(com.lumipol.graph.query.SCRUB_WINDOW_EPSILON))
+                add("ENTRANCE_EASING" to jarr(listOf(
+                    jnum(ChartDefaults.ENTRANCE_EASING_X1), jnum(ChartDefaults.ENTRANCE_EASING_Y1),
+                    jnum(ChartDefaults.ENTRANCE_EASING_X2), jnum(ChartDefaults.ENTRANCE_EASING_Y2),
+                )))
+                add("ENTRANCE_ENABLED_DEFAULT" to jbool(ChartDefaults.ENTRANCE_ENABLED_DEFAULT))
+                add("ENTRANCE_DURATION_SECONDS" to jnum(ChartDefaults.ENTRANCE_DURATION_SECONDS))
+                add("BAR_GROWTH_DURATION_SECONDS" to jnum(ChartDefaults.BAR_GROWTH_DURATION_SECONDS))
+                add("DONUT_SWEEP_DURATION_SECONDS" to jnum(ChartDefaults.DONUT_SWEEP_DURATION_SECONDS))
+                add("FALLBACK_DATA_COLOR" to jstr(hex(ChartDefaults.FALLBACK_DATA_COLOR)))
+                val alphas = listOf(
+                    "GRID_LINE_ALPHA" to ChartDefaults.GRID_LINE_ALPHA,
+                    "OVERLAY_LINE_ALPHA" to ChartDefaults.OVERLAY_LINE_ALPHA,
+                    "REF_BAND_ALPHA" to ChartDefaults.REF_BAND_ALPHA,
+                    "AREA_FILL_ALPHA" to ChartDefaults.AREA_FILL_ALPHA,
+                    "BAR_REFERENCE_LINE_ALPHA" to ChartDefaults.BAR_REFERENCE_LINE_ALPHA,
+                    "BAR_SELECTION_LINE_ALPHA" to ChartDefaults.BAR_SELECTION_LINE_ALPHA,
+                    "DONUT_ZONE2_ALPHA" to ChartDefaults.DONUT_ZONE2_ALPHA,
+                    "DONUT_EMPTY_ALPHA" to ChartDefaults.DONUT_EMPTY_ALPHA,
+                    "SECONDARY_LABEL_ALPHA" to ChartDefaults.SECONDARY_LABEL_ALPHA,
+                )
+                alphas.forEach { (k, v) -> add(k to jnum(v)) }
+                val lp = ChartDefaults.LightPalette
+                val dp = ChartDefaults.DarkPalette
+                add("paletteLight" to jarr(listOf(
+                    lp.PRIMARY_LINE, lp.SECONDARY_LINE, lp.GRID_LINE, lp.OVERLAY_LINE, lp.REF_BAND,
+                    lp.AREA_FILL, lp.MARKER_LINE, lp.MARKER_EMPHASIS_LINE, lp.BAR_FASTER, lp.BAR_ON_TARGET,
+                    lp.BAR_SLOWER, lp.BAR_REFERENCE_LINE, lp.BAR_SELECTION_LINE, lp.BAR_CALLOUT_BACKGROUND,
+                    lp.BAR_CALLOUT_TEXT, lp.DONUT_ZONE1, lp.DONUT_ZONE2, lp.DONUT_ZONE3, lp.DONUT_ZONE4,
+                    lp.DONUT_ZONE5, lp.DONUT_EMPTY, lp.DONUT_CENTER_LABEL, lp.DONUT_CENTER_PERCENT,
+                    lp.AXIS_LABEL, lp.TOUCH_LINE,
+                ).map { jstr(hex(it)) }))
+                add("paletteDark" to jarr(listOf(
+                    dp.PRIMARY_LINE, dp.SECONDARY_LINE, dp.GRID_LINE, dp.OVERLAY_LINE, dp.REF_BAND,
+                    dp.AREA_FILL, dp.MARKER_LINE, dp.MARKER_EMPHASIS_LINE, dp.BAR_FASTER, dp.BAR_ON_TARGET,
+                    dp.BAR_SLOWER, dp.BAR_REFERENCE_LINE, dp.BAR_SELECTION_LINE, dp.BAR_CALLOUT_BACKGROUND,
+                    dp.BAR_CALLOUT_TEXT, dp.DONUT_ZONE1, dp.DONUT_ZONE2, dp.DONUT_ZONE3, dp.DONUT_ZONE4,
+                    dp.DONUT_ZONE5, dp.DONUT_EMPTY, dp.DONUT_CENTER_LABEL, dp.DONUT_CENTER_PERCENT,
+                    dp.AXIS_LABEL, dp.TOUCH_LINE,
+                ).map { jstr(hex(it)) }))
+            }),
             section("niceScale", HarnessFixtures.niceScaleCases.map { (name, a) ->
                 val ns = niceScale(a[0], a[1], a[2].toInt(), a[3])
                 name to jobj(

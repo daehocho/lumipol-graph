@@ -5,6 +5,7 @@
 // composable [RDHeartRateZoneChart]는 그리기 + pointerInput 배선만 담당한다.
 package com.lumipol.graph.renderer
 
+import com.lumipol.graph.ChartDefaults
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -147,7 +148,7 @@ fun RDHeartRateZoneChart(
         val radius = (min(size.width, size.height) - ring) / 2f
         val innerRadius = radius - ring / 2f
         if (innerRadius <= 0f) return@Canvas
-        val maxWidthPx = (innerRadius * 2f * 0.9f).toInt().coerceAtLeast(1)
+        val maxWidthPx = (innerRadius * 2f * ChartDefaults.DONUT_CENTER_WIDTH_RATIO.toFloat()).toInt().coerceAtLeast(1)
         val constraints = Constraints(maxWidth = maxWidthPx)
 
         val percentLayout = measurer.measure(
@@ -283,8 +284,8 @@ private fun DrawScope.drawDonutArc(arc: DonutArc) {
     )
 }
 
-private const val DONUT_START_DEG = -90f       // 12시 시작(0°=3시 → −90°)
+private val DONUT_START_DEG = ChartDefaults.DONUT_START_DEGREES.toFloat()       // 12시 시작(0°=3시 → −90°)
 private const val FULL_CIRCLE_DEG = 360f
 
 /** 도넛 arc 등장 애니 지속시간(ms). Material Emphasized. */
-private const val DONUT_SWEEP_DURATION_MS = 550
+private val DONUT_SWEEP_DURATION_MS = (ChartDefaults.DONUT_SWEEP_DURATION_SECONDS * 1000).toInt()
