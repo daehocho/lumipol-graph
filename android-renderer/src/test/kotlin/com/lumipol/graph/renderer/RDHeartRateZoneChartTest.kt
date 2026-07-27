@@ -4,12 +4,14 @@ import com.lumipol.graph.DonutEngine
 import com.lumipol.graph.model.DonutChartData
 import com.lumipol.graph.model.DonutColorRole
 import com.lumipol.graph.model.DonutSegment
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 // iOS: HeartRateZoneViewTests.swift — arc 조립 + 히트테스트 순수부 검증.
 class RDHeartRateZoneChartTest {
@@ -116,5 +118,52 @@ class RDHeartRateZoneChartTest {
             style, 10f, 10f,
         )
         assertEquals(0, arcs.size)
+    }
+
+    @Test
+    fun selectedIndexDimsOtherSegmentsOnly() {
+        // 선택 조각은 원째 색, 나머지는 alpha=donutDimmedAlpha로 교체(iOS withAlphaComponent 대응).
+        val layout = DonutEngine.layout(
+            DonutChartData(
+                listOf(
+                    DonutSegment(30.0, DonutColorRole.ZONE1),
+                    DonutSegment(70.0, DonutColorRole.ZONE3),
+                ),
+            ),
+        )
+        val arcs = buildDonutArcs(layout, style, width, height, selectedIndex = 1)
+        // Float comparison with tolerance for color precision (Color stores as byte internally)
+        assertTrue(abs(style.donutDimmedAlpha - arcs[0].color.alpha) < 0.01f)
+        assertEquals(style.donutColors[DonutColorRole.ZONE3], arcs[1].color)
+    }
+
+    @Test
+    fun noSelectionKeepsAllSegmentColors() {
+        val layout = DonutEngine.layout(DonutChartData(listOf(DonutSegment(100.0, DonutColorRole.ZONE4))))
+        val arcs = buildDonutArcs(layout, style, width, height, selectedIndex = null)
+        assertEquals(style.donutColors[DonutColorRole.ZONE4], arcs[0].color)
+    }
+
+    @Test
+    fun centerLinesForSelectedSegment() {
+        // sourceIndex 기준 매칭 — value<=0 필터로 레이아웃 인덱스와 어긋나도 원본 인덱스로 찾는다.
+        val layout = DonutEngine.layout(
+            DonutChartData(
+                listOf(
+                    DonutSegment(0.0, DonutColorRole.ZONE1, "워밍업"),
+                    DonutSegment(30.0, DonutColorRole.ZONE2, "저강도"),
+                    DonutSegment(70.0, DonutColorRole.ZONE3, "유산소"),
+                ),
+            ),
+        )
+        assertEquals(DonutCenterLines("유산소", "70%"), donutCenterLines(layout, 2))
+        assertNull(donutCenterLines(layout, null))       // 선택 없음
+        assertNull(donutCenterLines(layout, 0))          // 필터된(0값) 인덱스 → 매칭 없음
+    }
+
+    @Test
+    fun centerLinesWithNullLabelShowsPercentOnly() {
+        val layout = DonutEngine.layout(DonutChartData(listOf(DonutSegment(100.0, DonutColorRole.ZONE5))))
+        assertEquals(DonutCenterLines(null, "100%"), donutCenterLines(layout, 0))
     }
 }

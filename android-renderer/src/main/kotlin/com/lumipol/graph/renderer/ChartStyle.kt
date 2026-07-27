@@ -103,6 +103,16 @@ data class ChartStyle(
     val donutRingWidth: Float = 28f,
     val donutEmptyColor: Color,
 
+    // 심박존 도넛 — 탭 선택(0.26.0). 색은 라이트/다크 팔레트에서 주입.
+    val donutDimmedAlpha: Float = 0.3f,                 // 비선택 세그먼트 alpha(원 alpha 대체)
+    val donutCenterLabelFontSize: Float = 13f,          // 센터 존 이름(sp)
+    val donutCenterLabelColor: Color,                   // iOS .secondaryLabel 대응
+    val donutCenterPercentFontSize: Float = 28f,        // 센터 퍼센트(sp)
+    val donutCenterPercentFontWeight: FontWeight = FontWeight.Bold,
+    val donutCenterPercentColor: Color,                 // iOS .label 대응
+    val donutAutoDeselectDelaySeconds: Float = 3f,      // 0 이하면 자동 해제 없음
+    val donutSelectionHapticsEnabled: Boolean = true,
+
     // 축 라벨 (iOS `axisLabelFont: UIFont` → 크기·패밀리·웨이트로 분해 보관, TextStyle 조립은 draw 경계.
     // 모든 라벨 TextLayer(축/마커/기준선/바)가 공유한다 — iOS도 전부 axisLabelFont 단일 폰트.)
     val axisLabelFontSize: Float = 10f,
@@ -154,6 +164,8 @@ data class ChartStyle(
                 DonutColorRole.ZONE5 to Color(0xFFFF3B30),                     // systemRed
             ),
             donutEmptyColor = Color(0xFFD1D1D6).copy(alpha = 0.5f),   // systemGray4 α0.5
+            donutCenterLabelColor = Color(0xFF3C3C43).copy(alpha = 0.6f),  // secondaryLabel
+            donutCenterPercentColor = Color(0xFF000000),                    // label
             axisLabelColor = Color(0xFF3C3C43).copy(alpha = 0.6f),   // secondaryLabel
             touchLineColor = Color(0xFF000000),                      // label
         )
@@ -184,6 +196,8 @@ data class ChartStyle(
                 DonutColorRole.ZONE5 to Color(0xFFFF453A),
             ),
             donutEmptyColor = Color(0xFF3A3A3C).copy(alpha = 0.5f),
+            donutCenterLabelColor = Color(0xFFEBEBF5).copy(alpha = 0.6f),  // secondaryLabel
+            donutCenterPercentColor = Color(0xFFFFFFFF),                    // label
             axisLabelColor = Color(0xFFEBEBF5).copy(alpha = 0.6f),
             touchLineColor = Color(0xFFFFFFFF),
         )

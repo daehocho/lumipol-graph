@@ -124,6 +124,7 @@ internal fun buildDonutArcs(
     width: Float,
     height: Float,
     sweepProgress: Float = 1f,
+    selectedIndex: Int? = null,
 ): List<DonutArc> {
     val ring = style.donutRingWidth
     val radius = (min(width, height) - ring) / 2f
@@ -138,16 +139,30 @@ internal fun buildDonutArcs(
         )
     }
     return layout.segments.map { seg ->
+        val base = style.donutColors[seg.colorRole] ?: style.fallbackDataColor
+        // 선택 중이면 비선택 조각만 디밍 — alpha를 donutDimmedAlpha로 대체(iOS withAlphaComponent 패리티).
+        val color = if (selectedIndex != null && seg.sourceIndex != selectedIndex) {
+            base.copy(alpha = style.donutDimmedAlpha)
+        } else base
         DonutArc(
             startAngleDeg = DONUT_START_DEG + FULL_CIRCLE_DEG * seg.startFraction.toFloat(),
             sweepAngleDeg = FULL_CIRCLE_DEG * seg.sweepFraction.toFloat() * progress,
-            color = style.donutColors[seg.colorRole] ?: style.fallbackDataColor,
+            color = color,
             centerX = cx,
             centerY = cy,
             radius = radius,
             strokeWidth = ring,
         )
     }
+}
+
+/** 센터 라벨 2줄(존 이름/퍼센트) 조립. 선택 없음·매칭 없음 → null. label null이면 퍼센트만. */
+internal data class DonutCenterLines(val label: String?, val percentText: String)
+
+internal fun donutCenterLines(layout: DonutChartLayout, selectedIndex: Int?): DonutCenterLines? {
+    if (selectedIndex == null || layout.total <= 0.0) return null
+    val seg = layout.segments.firstOrNull { it.sourceIndex == selectedIndex } ?: return null
+    return DonutCenterLines(seg.label, "${(seg.sweepFraction * 100).roundToInt()}%")
 }
 
 /**
