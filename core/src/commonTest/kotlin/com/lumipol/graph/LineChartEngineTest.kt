@@ -168,4 +168,30 @@ class LineChartEngineTest {
         assertEquals(80.0, ticks.first().value, 1e-9)
         assertEquals(200.0, ticks.last().value, 1e-9)
     }
+
+    @Test
+    fun secondary_axis_merges_heart_and_cadence_domain() {
+        // 0.29.0 슬롯 규약의 전제: 심박(110~177)+케이던스(60~180)가 보조축 하나를 공유하면
+        // 병합 min/max 60~180에 5% 헤드룸(54~186) → step 50 → 축 50~200 하나가 나오고,
+        // 두 시리즈 모두 그 도메인으로 정규화된다(축 눈금으로 읽힘).
+        val d = LineChartData(
+            series = listOf(
+                Series("hr", listOf(Point(0.0, 110.0), Point(1.0, 177.0)), axis = Axis.SECONDARY),
+                Series("cad", listOf(Point(0.0, 60.0), Point(1.0, 180.0)), axis = Axis.SECONDARY),
+            ),
+        )
+        val layout = LineChartEngine.layout(d)
+        val secondaryTicks = layout.axisTicks.filter { it.axis == ChartAxis.Y_SECONDARY }
+        assertEquals(1, secondaryTicks.size)
+        val ticks = secondaryTicks.single().ticks
+        assertEquals(50.0, ticks.first().value, 1e-9)
+        assertEquals(200.0, ticks.last().value, 1e-9)
+        // 정규화 y = (값 - 50) / 150 — 두 시리즈가 같은 선형 관계를 쓴다.
+        val hr = layout.series.first { it.id == "hr" }.points
+        val cad = layout.series.first { it.id == "cad" }.points
+        assertEquals((110.0 - 50.0) / 150.0, hr[0].y, 1e-9)
+        assertEquals((177.0 - 50.0) / 150.0, hr[1].y, 1e-9)
+        assertEquals((60.0 - 50.0) / 150.0, cad[0].y, 1e-9)
+        assertEquals((180.0 - 50.0) / 150.0, cad[1].y, 1e-9)
+    }
 }
