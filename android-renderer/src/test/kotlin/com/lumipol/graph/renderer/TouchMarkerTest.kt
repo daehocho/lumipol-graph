@@ -109,7 +109,27 @@ class TouchMarkerTest {
         )
         assertEquals("OV:1500", result!!.valuesBySeriesId["o"])
         assertTrue(seenOverlayAxis)
-        assertFalse(childNames(result).contains("touch.dot.o"))
+        assertTrue(childNames(result).contains("touch.dot.o"))
+    }
+
+    @Test
+    fun overlayDotSitsOnOverlayLineIgnoringInversion() {
+        // 오버레이 도트는 코어가 자체 정규화한 layout 포인트를 라인과 같은 반전 무시 매핑으로 쓴다.
+        // 근접점 (0, 0) → 자체 정규화 y=0 → 플롯 바닥(maxY). plot이 PRIMARY 반전이어도 무시.
+        val overlayData = LineChartData(
+            series = listOf(
+                TestFixtures.series("pace", TestFixtures.paceValues, Axis.PRIMARY, SeriesRole.MAIN),
+                Series("o", listOf(Point(0.0, 0.0), Point(5.0, 100.0)), Axis.PRIMARY, SeriesRole.OVERLAY),
+            ),
+            config = ChartConfig(segmentCount = 0, maxTicks = 5),
+        )
+        val result = makeResult(0.0, LineChartEngine.layout(overlayData), overlayData)!!
+        val dot = result.layer.children.first { it.name == "touch.dot.o" } as DotLayer
+        assertEquals(plot.maxY, dot.center.y, 1e-6)
+        // 도트 색도 라인과 같은 seriesColor 리졸버(역할 폴백 = overlayLineColor).
+        assertEquals(style.overlayLineColor, dot.color)
+        val line = result.layer.children.first { it.name == "touch.line" } as StrokeLayer
+        assertEquals(line.segments.first().first().x, dot.center.x, 0.5)
     }
 
     @Test

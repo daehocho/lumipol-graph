@@ -83,7 +83,13 @@ enum TouchMarker {
             let seriesNx = xScale.position(ofValue: result.x)
             guard seriesNx >= -1e-9, seriesNx <= 1 + 1e-9 else { continue }
             if roleBySeriesId[result.seriesId] == .overlay {
-                // 오버레이: 축 없음 — 실값만 툴팁에 표시(터치 점은 생략).
+                // 오버레이: 축이 없어 tick 스케일 역산이 불가 — 코어가 자체 정규화해 둔 layout
+                // 포인트에서 근접점을 찾아, 라인과 같은 반전 무시 매핑으로 도트를 놓는다.
+                if let dot = overlayDot(
+                    seriesId: result.seriesId, seriesNx: seriesNx, nx: nx, context: context
+                ) {
+                    container.addSublayer(dot)
+                }
                 valuesBySeriesId[result.seriesId] = context.formatter(.yOverlay, result.y)
                 continue
             }
@@ -115,6 +121,32 @@ enum TouchMarker {
         }
         guard !valuesBySeriesId.isEmpty else { return nil }
         return Result(layer: container, valuesBySeriesId: valuesBySeriesId, snappedX: snappedX)
+    }
+
+    /// 오버레이 시리즈 터치 도트 — layout의 자체 정규화 포인트 중 `seriesNx`에 가장 가까운 점의
+    /// y를 `pointIgnoringInversion`으로 매핑한다(라인과 동일 규칙). x는 다른 도트처럼 수직선
+    /// 위치 `nx`. layout에 해당 시리즈/포인트가 없으면 nil(값만 전달).
+    private static func overlayDot(
+        seriesId: String, seriesNx: Double, nx: Double, context: Context
+    ) -> CAShapeLayer? {
+        guard let layoutSeries = context.layout.series
+            .first(where: { $0.id == seriesId && $0.role == .overlay }),
+              let layoutPoint = layoutSeries.points
+            .min(by: { abs($0.x - seriesNx) < abs($1.x - seriesNx) })
+        else { return nil }
+        let point = context.plotArea.pointIgnoringInversion(
+            NormalizedPoint(x: nx, y: layoutPoint.y)
+        )
+        let dot = CAShapeLayer()
+        dot.name = "touch.dot.\(seriesId)"
+        dot.path = UIBezierPath(
+            arcCenter: point, radius: context.style.touchDotRadius,
+            startAngle: 0, endAngle: .pi * 2, clockwise: true
+        ).cgPath
+        dot.fillColor = ChartLayerBuilder.seriesColor(
+            id: seriesId, role: .overlay, axis: .primary, style: context.style
+        ).cgColor
+        return dot
     }
 
     private static func verticalLine(atNx nx: Double, context: Context) -> CAShapeLayer {

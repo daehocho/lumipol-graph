@@ -14,6 +14,7 @@ import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.LineChartLayout
 import com.lumipol.graph.model.NormalizedPoint
 import com.lumipol.graph.model.SeriesRole
+import kotlin.math.abs
 
 /**
  * 마커 조립 컨텍스트(iOS `TouchMarker.Context`).
@@ -87,7 +88,9 @@ internal object TouchMarker {
             if (seriesNx < -WINDOW_EPSILON || seriesNx > 1 + WINDOW_EPSILON) continue
 
             if (roleBySeriesId[result.seriesId] == SeriesRole.OVERLAY) {
-                // 오버레이: 축 없음 — 실값만 전달, 터치 점은 생략.
+                // 오버레이: 축이 없어 tick 스케일 역산이 불가 — 코어가 자체 정규화해 둔 layout
+                // 포인트에서 근접점을 찾아, 라인과 같은 반전 무시 매핑으로 도트를 놓는다.
+                overlayDot(result.seriesId, seriesNx, nx, context)?.let { children.add(it) }
                 valuesBySeriesId[result.seriesId] = context.formatter(ChartAxis.Y_OVERLAY, result.y)
                 continue
             }
@@ -133,6 +136,29 @@ internal object TouchMarker {
         val nx = rawNx.coerceIn(0.0, 1.0)
         val container = ContainerLayer("touch.marker", listOf(verticalLine(nx, context)))
         return TouchMarkerResult(container, emptyMap(), xScale.value(nx))
+    }
+
+    /**
+     * 오버레이 시리즈 터치 도트 — layout의 자체 정규화 포인트 중 [seriesNx]에 가장 가까운 점의
+     * y를 [pointIgnoringInversion][PlotArea.pointIgnoringInversion]으로 매핑한다(라인과 동일 규칙).
+     * x는 다른 도트처럼 수직선 위치 [nx]. layout에 해당 시리즈/포인트가 없으면 null(값만 전달).
+     */
+    private fun overlayDot(
+        seriesId: String,
+        seriesNx: Double,
+        nx: Double,
+        context: TouchMarkerContext,
+    ): DotLayer? {
+        val layoutSeries = context.layout.series
+            .firstOrNull { it.id == seriesId && it.role == SeriesRole.OVERLAY } ?: return null
+        val layoutPoint = layoutSeries.points.minByOrNull { abs(it.x - seriesNx) } ?: return null
+        val point = context.plot.pointIgnoringInversion(NormalizedPoint(x = nx, y = layoutPoint.y))
+        return DotLayer(
+            name = "touch.dot.$seriesId",
+            center = point,
+            radius = context.style.touchDotRadius,
+            color = seriesColor(seriesId, SeriesRole.OVERLAY, Axis.PRIMARY, context.style),
+        )
     }
 
     private fun verticalLine(nx: Double, context: TouchMarkerContext): StrokeLayer {

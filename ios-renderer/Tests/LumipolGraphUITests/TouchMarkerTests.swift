@@ -97,7 +97,36 @@ final class TouchMarkerTests: XCTestCase {
         XCTAssertEqual(result?.valuesBySeriesId["o"], "OV:1500")
         XCTAssertTrue(seenOverlayAxis)
         let names = result?.layer.sublayers?.compactMap(\.name) ?? []
-        XCTAssertFalse(names.contains("touch.dot.o"), "오버레이는 터치 점을 그리지 않음")
+        XCTAssertTrue(names.contains("touch.dot.o"), "오버레이도 터치 점을 그린다")
+    }
+
+    func testOverlayDotSitsOnOverlayLineIgnoringInversion() {
+        // 오버레이 도트는 코어가 자체 정규화한 layout 포인트를 라인과 같은 반전 무시 매핑으로 쓴다.
+        // 근접점 (0, 0) → 자체 정규화 y=0 → 플롯 바닥(rect.maxY). plot이 PRIMARY 반전이어도 무시.
+        let overlayData = LineChartData(
+            series: [
+                TestFixtures.series(id: "pace", values: TestFixtures.paceValues, axis: .primary, role: .main),
+                Series(
+                    id: "o",
+                    points: [Point(x: 0, y: 0), Point(x: 5, y: 100)],
+                    axis: .primary, role: .overlay
+                ),
+            ],
+            referenceBands: [], segmentMarkers: [],
+            config: ChartConfig(segmentCount: 0, maxTicks: 5)
+        )
+        let overlayLayout = LineChartEngine.shared.layout(data: overlayData)
+        let result = TouchMarker.make(atRawX: 0.0, context: TouchMarker.Context(
+            data: overlayData, layout: overlayLayout, style: .default, plotArea: plotArea,
+            formatter: TestFixtures.format
+        ))
+        let dot = result?.layer.sublayers?.first { $0.name == "touch.dot.o" } as? CAShapeLayer
+        XCTAssertNotNil(dot)
+        XCTAssertEqual(dot!.path!.boundingBox.midY, plotArea.rect.maxY, accuracy: 1e-6)
+        // 도트 색도 라인과 같은 seriesColor 리졸버(역할 폴백 = overlayLineColor).
+        XCTAssertEqual(dot?.fillColor, ChartStyle.default.overlayLineColor.cgColor)
+        let line = result?.layer.sublayers?.first { $0.name == "touch.line" } as? CAShapeLayer
+        XCTAssertEqual(dot!.path!.boundingBox.midX, line!.path!.boundingBox.midX, accuracy: 0.5)
     }
 
     func testZoomedEdgeSnapsToInWindowPointWhenGlobalNearestIsOutsideWindow() {
