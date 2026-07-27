@@ -22,6 +22,7 @@ import com.lumipol.graph.scale.niceScale
  */
 object CoreDump {
 
+    @Suppress("DEPRECATION") // nearest 섹션은 deprecated 경로의 골든 관측을 유지한다(제거 시점까지)
     fun build(): String {
         val sections = listOf(
             section("meta", listOf(
@@ -65,6 +66,15 @@ object CoreDump {
                     add("x_${jnum(x)}" to jarr(LineChartEngine.nearest(l09, x).map { renderNearest(it) }))
                 }
                 add("windowed_1.0_2.0_x_2.4" to jarr(LineChartEngine.nearest(l09, 2.4, 1.0, 2.0).map { renderNearest(it) }))
+            }),
+            section("nearestScrub", buildList {
+                val l09 = HarnessFixtures.lineCases.first { it.first == "L09_pace_hr_markers" }.second
+                val fullLayout = LineChartEngine.layout(l09)
+                HarnessFixtures.nearestXs.forEach { x ->
+                    add("x_${jnum(x)}" to renderScrub(LineChartEngine.nearestScrub(l09, fullLayout, x)))
+                }
+                val windowLayout = LineChartEngine.layout(l09, 1.0, 2.0)
+                add("windowed_1.0_2.0_x_2.4" to renderScrub(LineChartEngine.nearestScrub(l09, windowLayout, 2.4)))
             }),
             section("interpolatedY", HarnessFixtures.interpolationCases.flatMap { (name, points, xs) ->
                 xs.map { x -> "${name}_x_${jnum(x)}" to jnum(LineChartEngine.interpolatedY(points, x)) }
@@ -145,6 +155,26 @@ object CoreDump {
 
     private fun renderNearest(n: NearestResult): String =
         jobj("seriesId" to jstr(n.seriesId), "x" to jnum(n.x), "y" to jnum(n.y))
+
+    private fun renderScrub(r: ScrubResult?): String = r?.let {
+        jobj(
+            "snappedX" to jnum(it.snappedX),
+            "snappedNx" to jnum(it.snappedNx),
+            "snapSourceId" to jstr(it.snapSourceId),
+            "perSeries" to jarr(it.perSeries.map { p ->
+                jobj(
+                    "seriesId" to jstr(p.seriesId),
+                    "x" to jnum(p.x),
+                    "y" to jnum(p.y),
+                    "nx" to jnum(p.nx),
+                    "ny" to (p.ny?.let(::jnum) ?: "null"),
+                    "role" to jstr(p.role.name),
+                    "axis" to jstr(p.axis.name),
+                    "chartAxis" to jstr(p.chartAxis.name),
+                )
+            }),
+        )
+    } ?: "null"
 
     private fun renderLineLayout(l: LineChartLayout): String = jobj(
         "series" to jarr(l.series.map { s ->

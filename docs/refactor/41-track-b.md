@@ -36,7 +36,12 @@
 
 - [x] **B1** — 코어 0.30.0(`e03a26f`) + 양 렌더러 채택(`026497a`). AxisScale.swift/kt·테스트 삭제(−263줄),
   줌 초기화의 tick 외삽도 정확한 도메인으로 대체. 양 플랫폼 전체 테스트·골든 게이트 통과
-- [ ] B2 — 미착수 (스냅 T1 승격 포함)
+- [x] **B2 코어** — 0.31.0. `nearestScrub(data, layout, x): ScrubResult` — 창 필터(±1e-9 코어 상수
+  `SCRUB_WINDOW_EPSILON`)·스냅 소스(main 우선)·정규화 좌표(nx/ny)·오버레이 자체 정규화 y·포맷 축까지
+  코어 확정. 기존 `nearest` 2종 `@Deprecated(ReplaceWith)`. 스냅 x/y T1 승격을 05 문서에 확정 기록.
+  API 편차: 명세의 `window?` 인자 대신 `layout`을 받는다 — 창은 항상 `layout.domains.x`이고(줌은
+  창 layout을 다시 만듦) 오버레이 ny에 layout이 어차피 필요하다. 골든에 nearestScrub 섹션 추가.
+  렌더러 전환은 후속 커밋
 - [ ] B3, B4 — 미착수
 - [x] **B5** — 코어 0.30.0 + 양 렌더러 채택(`d6f14ca`). 규칙 검증은 코어 테스트로 이동.
   앱 복사본 2벌 삭제는 C4(앱 커밋)에서

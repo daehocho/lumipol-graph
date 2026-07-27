@@ -58,6 +58,13 @@
     "x_100.000000000000": [{"seriesId":"pace","x":5.000000000000,"y":5.400000000000},{"seriesId":"hr","x":5.000000000000,"y":171.000000000000}],
     "windowed_1.0_2.0_x_2.4": [{"seriesId":"pace","x":2.000000000000,"y":5.700000000000},{"seriesId":"hr","x":2.000000000000,"y":163.000000000000}]
   },
+  "nearestScrub": {
+    "x_2.400000000000": {"snappedX":2.500000000000,"snappedNx":0.500000000000,"snapSourceId":"pace","perSeries":[{"seriesId":"pace","x":2.500000000000,"y":5.500000000000,"nx":0.500000000000,"ny":0.416666666667,"role":"MAIN","axis":"PRIMARY","chartAxis":"Y_PRIMARY"},{"seriesId":"hr","x":2.500000000000,"y":166.000000000000,"nx":0.500000000000,"ny":0.650000000000,"role":"MAIN","axis":"SECONDARY","chartAxis":"Y_SECONDARY"}]},
+    "x_2.250000000000": {"snappedX":2.000000000000,"snappedNx":0.400000000000,"snapSourceId":"pace","perSeries":[{"seriesId":"pace","x":2.000000000000,"y":5.700000000000,"nx":0.400000000000,"ny":0.583333333333,"role":"MAIN","axis":"PRIMARY","chartAxis":"Y_PRIMARY"},{"seriesId":"hr","x":2.000000000000,"y":163.000000000000,"nx":0.400000000000,"ny":0.575000000000,"role":"MAIN","axis":"SECONDARY","chartAxis":"Y_SECONDARY"}]},
+    "x_-5.000000000000": {"snappedX":0.000000000000,"snappedNx":0.000000000000,"snapSourceId":"pace","perSeries":[{"seriesId":"pace","x":0.000000000000,"y":6.100000000000,"nx":0.000000000000,"ny":0.916666666667,"role":"MAIN","axis":"PRIMARY","chartAxis":"Y_PRIMARY"},{"seriesId":"hr","x":0.000000000000,"y":148.000000000000,"nx":0.000000000000,"ny":0.200000000000,"role":"MAIN","axis":"SECONDARY","chartAxis":"Y_SECONDARY"}]},
+    "x_100.000000000000": {"snappedX":5.000000000000,"snappedNx":1.000000000000,"snapSourceId":"pace","perSeries":[{"seriesId":"pace","x":5.000000000000,"y":5.400000000000,"nx":1.000000000000,"ny":0.333333333333,"role":"MAIN","axis":"PRIMARY","chartAxis":"Y_PRIMARY"},{"seriesId":"hr","x":5.000000000000,"y":171.000000000000,"nx":1.000000000000,"ny":0.775000000000,"role":"MAIN","axis":"SECONDARY","chartAxis":"Y_SECONDARY"}]},
+    "windowed_1.0_2.0_x_2.4": {"snappedX":2.000000000000,"snappedNx":1.000000000000,"snapSourceId":"pace","perSeries":[{"seriesId":"pace","x":2.000000000000,"y":5.700000000000,"nx":1.000000000000,"ny":0.600000000000,"role":"MAIN","axis":"PRIMARY","chartAxis":"Y_PRIMARY"},{"seriesId":"hr","x":2.000000000000,"y":163.000000000000,"nx":1.000000000000,"ny":0.875000000000,"role":"MAIN","axis":"SECONDARY","chartAxis":"Y_SECONDARY"}]}
+  },
   "interpolatedY": {
     "ip_empty_x_1.000000000000": null,
     "ip_single_x_0.000000000000": 5.000000000000,

@@ -552,6 +552,23 @@ X축은 기본값 0.0으로 현행(데이터 끝 밀착) 유지.
 
 **xcframework 재빌드 필요** — 포함됨(CORE_CONTENT_HASH 동봉).
 
+### 스크럽 결과 코어 확정 — nearestScrub (0.31.0, 2026-07-28)
+
+경계 리팩토링 트랙 B2. 상세 근거는 `docs/refactor/41-track-b.md`.
+
+- **feat: `LineChartEngine.nearestScrub(data, layout, x): ScrubResult?`** — 창 필터
+  (도메인 ± `SCRUB_WINDOW_EPSILON`=1e-9, 렌더러 리터럴의 코어 승격)·스냅 소스 선택(main 우선,
+  없으면 첫 시리즈)·정규화 좌표(`nx`/`ny`)·오버레이 자체 정규화 y·포맷 축(`chartAxis`)까지
+  코어가 확정해 출력. 렌더러 TouchMarker는 플랫폼 좌표 변환+그리기만 남는다.
+- **deprecated: `LineChartEngine.nearest` 2종** — `ReplaceWith(nearestScrub)`. 두 앱 전환
+  릴리스 +1 후 제거 예정(43 호환 전략).
+- 스냅 x/y 값 동등성 티어 T2→**T1 승격 확정**(05 문서) — 원본 포인트 복사(보간 없음) 확인.
+- 골든에 `nearestScrub` 섹션 추가(JVM·iosSimulatorArm64 비트 동일 통과).
+
+**마이그레이션(렌더러/앱)**: 없음(추가·보존). 렌더러 TouchMarker 전환은 후속 커밋.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은

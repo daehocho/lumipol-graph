@@ -50,6 +50,44 @@ data class LineChartLayout(
 
 data class NearestResult(val seriesId: String, val x: Double, val y: Double)
 
+/**
+ * 스크럽 마커의 시리즈 1건 — 렌더러가 재탐색·정규화 재계산 없이 도트를 놓을 수 있는 완전한 출력
+ * (경계 정책 §4-1 "역산 금지"의 스크럽 적용, B2).
+ *
+ * @property x,y 원본 도메인 근접점 — 콜백·포맷 값. 원본 포인트의 복사(보간 없음)라 동등성 T1.
+ * @property nx 도트 x 위치(수직선과 동일, 0..1 클램프) — 모든 도트는 스냅 수직선 위에 놓인다.
+ * @property ny 도트 y 위치. 축 시리즈는 축 도메인 정규화, 오버레이는 layout 자체 정규화 y
+ *   (렌더러는 반전 무시 매핑을 써야 한다 — 라인과 동일 규칙). null이면 도트 생략(값만 전달) —
+ *   오버레이가 layout에 없는 경우.
+ * @property axis 도트 매핑 축. 오버레이는 PRIMARY(반전 무시 매핑이라 미사용).
+ * @property chartAxis 포맷 축(Y_PRIMARY/Y_SECONDARY/Y_OVERLAY).
+ */
+data class ScrubPoint(
+    val seriesId: String,
+    val x: Double,
+    val y: Double,
+    val nx: Double,
+    val ny: Double?,
+    val role: SeriesRole,
+    val axis: Axis,
+    val chartAxis: ChartAxis,
+)
+
+/**
+ * 스크럽(근접 질의) 결과 — 스냅 소스 선택(main 우선)·창 필터·정규화 좌표까지 코어가 확정한다.
+ * 렌더러의 TouchMarker는 이 값을 플랫폼 좌표로 옮겨 그리기만 한다.
+ *
+ * @property snappedX 수직선 기준 원본 도메인 x(스냅 소스 근접점) — 배경 area 보간에 사용.
+ * @property snappedNx 수직선 위치(0..1 클램프).
+ * @property snapSourceId 스냅 소스 시리즈 id(main 우선, 없으면 첫 시리즈).
+ */
+data class ScrubResult(
+    val snappedX: Double,
+    val snappedNx: Double,
+    val snapSourceId: String,
+    val perSeries: List<ScrubPoint>,
+)
+
 /** 막대 1칸. value=스플릿 평균 페이스(sec/unit, 시간가중).
  *  heightFraction·position은 0.0~1.0, 반전 축 — 값이 작을수록(빠를수록) 크다. */
 data class BarLayout(

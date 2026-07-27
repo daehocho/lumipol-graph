@@ -3,6 +3,7 @@ package com.lumipol.graph
 import com.lumipol.graph.model.*
 import com.lumipol.graph.query.interpolatedY as interpolatedYQuery
 import com.lumipol.graph.query.nearest as nearestQuery
+import com.lumipol.graph.query.nearestScrub as nearestScrubQuery
 import com.lumipol.graph.scale.AxisDomain
 import com.lumipol.graph.scale.NiceScale
 import com.lumipol.graph.scale.Y_AXIS_HEADROOM_FRACTION
@@ -150,11 +151,27 @@ object LineChartEngine {
     }
 
     /** [x]는 원시 데이터-도메인 단위(0..1 정규화 아님) — 렌더러는 터치 위치를 원시 x로 변환한 뒤 호출해야 한다. */
+    @Deprecated(
+        "스냅 소스 선택·창 필터·정규화 좌표를 렌더러가 재구성해야 한다 — 코어가 확정하는 nearestScrub로 대체(B2)",
+        ReplaceWith("nearestScrub(data, layout, x)"),
+    )
     fun nearest(data: LineChartData, x: Double): List<NearestResult> = nearestQuery(data, x)
 
     /** 표시 창 [xMin, xMax] 안 점만 고려하는 근접 질의 — 줌 상태 스크럽용. */
+    @Deprecated(
+        "스냅 소스 선택·창 필터·정규화 좌표를 렌더러가 재구성해야 한다 — 코어가 확정하는 nearestScrub로 대체(B2)",
+        ReplaceWith("nearestScrub(data, layout, x)"),
+    )
     fun nearest(data: LineChartData, x: Double, xMin: Double, xMax: Double): List<NearestResult> =
         nearestQuery(data, x, xMin, xMax)
+
+    /**
+     * 스크럽 근접 질의 — 창 필터(도메인 ± [com.lumipol.graph.query.SCRUB_WINDOW_EPSILON])·
+     * 스냅 소스 선택(main 우선)·정규화 좌표 산출까지 코어가 확정한다(B2).
+     * [layout]은 같은 [data]로 만든 현재 표시 레이아웃(줌 창이면 창 layout).
+     */
+    fun nearestScrub(data: LineChartData, layout: LineChartLayout, x: Double): ScrubResult? =
+        nearestScrubQuery(data, layout, x)
 
     /** 배경 area(고도 등) 스크럽 실값 — x 오름차순 [points]의 [x] 위치 y를 선형 보간(범위 밖 클램프). */
     fun interpolatedY(points: List<Point>, x: Double): Double? = interpolatedYQuery(points, x)

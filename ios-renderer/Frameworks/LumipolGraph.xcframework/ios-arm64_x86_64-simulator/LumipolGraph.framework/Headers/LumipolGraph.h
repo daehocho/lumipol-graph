@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorAnchors, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSegmentStat, LumipolGraphSeriesRole, LumipolGraphSeriesStat, LumipolGraphNiceScale;
+@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorAnchors, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -188,8 +188,9 @@ __attribute__((swift_name("LineChartEngine")))
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data __attribute__((swift_name("layout(data:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data backgroundArea:(NSArray<LumipolGraphPoint *> * _Nullable)backgroundArea __attribute__((swift_name("layout(data:backgroundArea:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("layout(data:xMin:xMax:)")));
-- (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x __attribute__((swift_name("nearest(data:x:)")));
-- (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("nearest(data:x:xMin:xMax:)")));
+- (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x __attribute__((swift_name("nearest(data:x:)"))) __attribute__((deprecated("스냅 소스 선택·창 필터·정규화 좌표를 렌더러가 재구성해야 한다 — 코어가 확정하는 nearestScrub로 대체(B2)")));
+- (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("nearest(data:x:xMin:xMax:)"))) __attribute__((deprecated("스냅 소스 선택·창 필터·정규화 좌표를 렌더러가 재구성해야 한다 — 코어가 확정하는 nearestScrub로 대체(B2)")));
+- (LumipolGraphScrubResult * _Nullable)nearestScrubData:(LumipolGraphLineChartData *)data layout:(LumipolGraphLineChartLayout *)layout x:(double)x __attribute__((swift_name("nearestScrub(data:layout:x:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -648,6 +649,38 @@ __attribute__((swift_name("RefBandLayout")))
 @end
 
 __attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ScrubPoint")))
+@interface LumipolGraphScrubPoint : LumipolGraphBase
+- (instancetype)initWithSeriesId:(NSString *)seriesId x:(double)x y:(double)y nx:(double)nx ny:(LumipolGraphDouble * _Nullable)ny role:(LumipolGraphSeriesRole *)role axis:(LumipolGraphAxis *)axis chartAxis:(LumipolGraphChartAxis *)chartAxis __attribute__((swift_name("init(seriesId:x:y:nx:ny:role:axis:chartAxis:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphScrubPoint *)doCopySeriesId:(NSString *)seriesId x:(double)x y:(double)y nx:(double)nx ny:(LumipolGraphDouble * _Nullable)ny role:(LumipolGraphSeriesRole *)role axis:(LumipolGraphAxis *)axis chartAxis:(LumipolGraphChartAxis *)chartAxis __attribute__((swift_name("doCopy(seriesId:x:y:nx:ny:role:axis:chartAxis:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) LumipolGraphAxis *axis __attribute__((swift_name("axis")));
+@property (readonly) LumipolGraphChartAxis *chartAxis __attribute__((swift_name("chartAxis")));
+@property (readonly) double nx __attribute__((swift_name("nx")));
+@property (readonly) LumipolGraphDouble * _Nullable ny __attribute__((swift_name("ny")));
+@property (readonly) LumipolGraphSeriesRole *role __attribute__((swift_name("role")));
+@property (readonly) NSString *seriesId __attribute__((swift_name("seriesId")));
+@property (readonly) double x __attribute__((swift_name("x")));
+@property (readonly) double y __attribute__((swift_name("y")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ScrubResult")))
+@interface LumipolGraphScrubResult : LumipolGraphBase
+- (instancetype)initWithSnappedX:(double)snappedX snappedNx:(double)snappedNx snapSourceId:(NSString *)snapSourceId perSeries:(NSArray<LumipolGraphScrubPoint *> *)perSeries __attribute__((swift_name("init(snappedX:snappedNx:snapSourceId:perSeries:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphScrubResult *)doCopySnappedX:(double)snappedX snappedNx:(double)snappedNx snapSourceId:(NSString *)snapSourceId perSeries:(NSArray<LumipolGraphScrubPoint *> *)perSeries __attribute__((swift_name("doCopy(snappedX:snappedNx:snapSourceId:perSeries:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) NSArray<LumipolGraphScrubPoint *> *perSeries __attribute__((swift_name("perSeries")));
+@property (readonly) NSString *snapSourceId __attribute__((swift_name("snapSourceId")));
+@property (readonly) double snappedNx __attribute__((swift_name("snappedNx")));
+@property (readonly) double snappedX __attribute__((swift_name("snappedX")));
+@end
+
+__attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("SegmentStat")))
 @interface LumipolGraphSegmentStat : LumipolGraphBase
 - (instancetype)initWithMin:(double)min max:(double)max avg:(double)avg count:(int32_t)count __attribute__((swift_name("init(min:max:avg:count:)"))) __attribute__((objc_designated_initializer));
@@ -823,6 +856,13 @@ __attribute__((swift_name("NiceScaleKt")))
 @interface LumipolGraphNiceScaleKt : LumipolGraphBase
 + (LumipolGraphNiceScale *)niceScaleMin:(double)min max:(double)max maxTicks:(int32_t)maxTicks headroomFraction:(double)headroomFraction __attribute__((swift_name("niceScale(min:max:maxTicks:headroomFraction:)")));
 @property (class, readonly) double Y_AXIS_HEADROOM_FRACTION __attribute__((swift_name("Y_AXIS_HEADROOM_FRACTION")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ScrubKt")))
+@interface LumipolGraphScrubKt : LumipolGraphBase
++ (LumipolGraphScrubResult * _Nullable)nearestScrubData:(LumipolGraphLineChartData *)data layout:(LumipolGraphLineChartLayout *)layout x:(double)x __attribute__((swift_name("nearestScrub(data:layout:x:)")));
+@property (class, readonly) double SCRUB_WINDOW_EPSILON __attribute__((swift_name("SCRUB_WINDOW_EPSILON")));
 @end
 
 __attribute__((objc_subclassing_restricted))

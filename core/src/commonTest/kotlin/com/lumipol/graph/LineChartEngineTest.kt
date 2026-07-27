@@ -74,6 +74,7 @@ class LineChartEngineTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // deprecated 위임 경로도 제거 시점까지 동작을 보증한다
     fun nearest_delegates_to_query() {
         val r = LineChartEngine.nearest(data, 0.95)
         assertEquals(3, r.size)
