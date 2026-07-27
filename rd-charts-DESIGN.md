@@ -420,6 +420,48 @@ iOS 스냅샷 1건(`testThreeSeriesStackedGradients`)을 재녹화했다.
 **xcframework 재빌드 필요** — 코어 동작 변경이므로 재생성 바이너리를 같은 커밋에 포함해야
 iOS가 새 동작을 받는다.
 
+### 심박존 도넛 탭 토글 — 센터 라벨·디밍·자동해제·햅틱 (0.26.0, 2026-07-27, **breaking**)
+도넛을 누르는 동안만 반응하던 스크럽 상호작용을 탭 토글 선택으로 바꿨다. 조각을 탭하면
+선택이 확정되고 중앙에 존 이름·퍼센트가 뜨며 나머지 조각은 디밍된다. 같은 조각을 다시
+탭하거나 링 밖(구멍 포함)을 탭하면 해제되고, 일정 시간 조작이 없으면 자동 해제된다.
+
+- **코어** — `DonutSegment.label: String?`(신규 3-인자 생성자 + 기존 `value:colorRole:` 2-인자
+  생성자를 별도 constructor로 보존, ObjC export가 기본 인자를 못 내보내는 제약 때문). 라벨을
+  넘기지 않으면 센터에 퍼센트만 표시된다. `DonutSegmentLayout.label`이 레이아웃까지 그대로
+  운반한다. `DonutEngine.toggleSelection(current:tapped:)` 순수 전이 함수 신설 — 링 밖 탭(`tapped
+  == null`)과 같은 조각 재탭은 해제(`null`), 다른 조각 탭은 그 인덱스로 이동. 타이머·통지는
+  플랫폼 책임으로 남겨, 코어는 "다음 선택 인덱스"만 결정한다.
+- **AOS** — `RDHeartRateZoneChart`가 `detectTapGestures`로 토글을 구현한다. 센터 라벨은
+  `TextMeasurer`로 존 이름 1줄 + 퍼센트 1줄을 그리고, 비선택 조각은 `ChartStyle.donutDimmedAlpha`
+  (기본 0.3)로 낮춘다. `donutAutoDeselectDelaySeconds`(기본 3초, 0 이하면 자동 해제 없음) 경과 시
+  자동 해제되고, `donutSelectionHapticsEnabled`(기본 true)면 선택 전환마다 햅틱을 낸다. 콜백
+  캡처가 최신 람다를 참조하도록 `rememberUpdatedState`로 감쌌다 — 그렇지 않으면 자동 해제
+  타이머가 구식 `onSelectSegment`를 호출하는 스테일 클로저 버그가 생긴다.
+- **iOS** — `RDHeartRateZoneView`가 같은 토글을 구현한다. 센터는 `UILabel` 2개(존 이름·퍼센트)로
+  그리고, 비선택 조각 디밍·`Timer` 기반 자동 해제·`UIImpactFeedbackGenerator(.light)` 햅틱을
+  갖는다. `touchesBegan`/`touchesCancelled` 오버라이드를 제거했다 — 토글 모델에는 "누르는 동안"
+  상태가 없어 두 메서드는 no-op이었다.
+
+**breaking — `didSelectSegmentAt`/`onSelectSegment` 통지 의미 변경.** 종전에는 "누름 시 인덱스
+통지 → 뗌/취소 시 `nil`/`null` 통지"였다(스크럽 모델). 이제는 "선택이 **확정**될 때 그 인덱스,
+**해제**될 때 `nil`/`null`" — 누름·뗌이 아니라 선택 상태 전환에 매핑된다. 호스트 앱이 "손을 떼면
+선택 해제"를 기대하고 작성한 코드(예: 뗌 시 별도로 상태를 지우는 로직)는 이제 중복 해제이거나
+자동 해제 타이머와 경쟁할 수 있으니 제거해야 한다. render/data 교체로 인한 리셋은 선택 전환이
+아니므로 통지가 발생하지 않는다.
+
+**AOS `ChartStyle` — 신규 필수 색 2종.** `donutCenterLabelColor`/`donutCenterPercentColor`는
+기본값이 없다(iOS `.secondaryLabel`/`.label` 대응이라 라이트/다크 팔레트에서 주입). 총 8필드가
+추가됐다: 위 2색 외 `donutDimmedAlpha`·`donutCenterLabelFontSize`·`donutCenterPercentFontSize`·
+`donutCenterPercentFontWeight`·`donutAutoDeselectDelaySeconds`·`donutSelectionHapticsEnabled`.
+`ChartStyle`을 팩토리(`defaults()`/`.default`) 없이 **직접 생성**하던 코드는 필수 색 2종 누락으로
+컴파일 에러가 난다 — `defaults()`/`copy()` 사용자는 영향 없음. iOS `ChartStyle`은 7필드 전부
+기본값이 있어(색 포함) 직접 생성 호출부도 컴파일 에러가 나지 않는다.
+
+**xcframework 재빌드 필요** — 코어 공개 타입(`DonutSegment`/`DonutSegmentLayout`/
+`DonutEngine.toggleSelection`)이 바뀌므로 재생성 바이너리가 필요하다. Task 1(커밋 `372f971`)에서
+이미 재생성·커밋 완료 — 이번 릴리스에서 추가 재빌드는 없다. iOS 스냅샷 1건
+(`testDonutZoneSelected`)을 신규 추가했다.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은
