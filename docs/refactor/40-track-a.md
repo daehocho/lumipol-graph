@@ -19,5 +19,6 @@ AxisScale(B1), ZoomState(B3) 등은 "값이 이미 일치"하므로 A 단계 불
 - [x] A0 골든 테스트 기반 — `scripts/golden-check.sh` + `core/golden/` (커밋 cdaaa41)
 - [x] A1 — niceNum 결정론화. 실측: JVM↔iOS **비트 동일**(diffs=0, drifts=0), 골든 대비
   변화는 tiny_range 3건뿐(4틱→3틱 — 종전 Native 결과로 수렴). 골든 동일 커밋 갱신
-- [ ] A2
+- [x] A2 — NaN/Inf 페이스 명시 무효화 + 단위 테스트. 골든 델타는 P07_nan_pace 케이스에만
+  국한됨을 확인(26건 전부 해당 케이스) 후 갱신. 양 플랫폼 게이트 통과
 - [ ] A3 — 44 결정 대기

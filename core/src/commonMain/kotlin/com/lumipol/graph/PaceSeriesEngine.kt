@@ -49,7 +49,9 @@ object PaceSeriesEngine {
         var prevAlt: Double? = input.points.firstOrNull { it.altitude != null }?.altitude
         for (p in input.points) {
             var pace = p.paceSeconds
-            if (pace <= 0.0 || pace < filterMin || pace >= filterMax) pace = 0.0
+            // NaN은 모든 비교가 false라 아래 무효 판정을 전부 피해 유효 표본에 편입된다
+            // (docs/refactor/07-harness.md 관측) — 명시적으로 무효 처리한다.
+            if (pace.isNaN() || pace <= 0.0 || pace < filterMin || pace >= filterMax) pace = 0.0
             val hr = p.heartRate ?: prevHr
             if (hr != null) prevHr = hr
             val cad = p.cadence ?: prevCad

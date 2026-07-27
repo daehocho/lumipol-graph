@@ -29,6 +29,17 @@ class PaceSeriesEngineTest {
         r.pace.forEach { assertEquals(10.0, it.y, 1e-9) }
     }
 
+    @Test fun filters_nan_and_infinite_pace() {
+        // NaN은 비교 연산이 전부 false라 범위 필터를 통과해버리는 결함이 있었다(하네스 실측).
+        val pts = (0 until 50).map { pacePoint((it + 1) * 0.01, 600.0) } +
+            pacePoint(0.51, Double.NaN) +
+            pacePoint(0.52, Double.POSITIVE_INFINITY) +
+            pacePoint(0.53, Double.NEGATIVE_INFINITY)
+        val r = PaceSeriesEngine.preprocess(PaceSeriesInput(pts, 312.5, 520.0))
+        assertEquals(50, r.validPaceCount)
+        r.pace.forEach { assertFalse(it.y.isNaN()) }
+    }
+
     @Test fun filters_out_of_bounds_pace() {
         // 하한 120s 미만·상한(avg+600) 초과는 무효. avg=600/(?/1000)… 여기선 50 유효 + 스파이크 2.
         val pts = (0 until 50).map { pacePoint((it + 1) * 0.01, 600.0) } +
