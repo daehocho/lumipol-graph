@@ -165,6 +165,33 @@ class ComposeInteractionTest {
     }
 
     @Test
+    fun externalToggleDrivesChartWithoutRenotifyingButAutoDeselectStillFires() {
+        // 0.27.0 헤드라인 동작(레전드 탭 → 도넛 반영)의 반대 방향 회귀 가드: 앱이 selection.toggle()로
+        // 직접 선택을 구동하면 (a) 차트가 그 값을 반영하고 (b) 재진입 루프 방지를 위해 onSelectSegment를
+        // 재통지하지 않아야 하지만, (c) 자동 해제 타이머는 여전히 걸려 타임아웃 시엔 통지돼야 한다.
+        val events = mutableListOf<Int?>()
+        lateinit var externalSelection: DonutSelectionState
+        rule.setContent {
+            externalSelection = rememberDonutSelectionState(donutData)
+            RDHeartRateZoneChart(
+                data = donutData,
+                modifier = Modifier.size(240.dp),
+                onSelectSegment = { events.add(it) },
+                selection = externalSelection,
+            )
+        }
+        rule.runOnIdle { externalSelection.toggle(1) }
+        rule.waitForIdle()
+        assertEquals(1, externalSelection.selectedIndex, "외부 toggle()이 차트와 공유한 홀더에 반영돼야 함")
+        assertTrue(events.isEmpty(), "앱이 toggle()로 직접 구동한 변경은 onSelectSegment를 재통지하면 안 됨")
+
+        rule.mainClock.advanceTimeBy(3_100L) // donutAutoDeselectDelaySeconds(기본 3s) 경과
+        rule.waitForIdle()
+        assertNull(externalSelection.selectedIndex, "외부 구동 선택에도 자동 해제 타이머가 걸려야 함")
+        assertEquals(listOf<Int?>(null), events, "자동 해제는 외부 구동 선택이어도 통지돼야 함")
+    }
+
+    @Test
     fun donutTapInvokesLatestOnSelectSegmentAfterRecomposition() {
         // data는 그대로 두고 onSelectSegment 람다만 교체(리컴포지션) — pointerInput 키가 안 바뀌어도
         // 탭은 항상 최신 람다로 통지되어야 한다(낡은 클로저로 통지되면 stale 선택 상태 버그).

@@ -473,16 +473,21 @@ iOS가 새 동작을 받는다.
   없는 인덱스(범위 밖이거나 `value <= 0`으로 필터된 세그먼트)를 넘기면 대응하는 호가 없으므로
   무시한다(`layoutContainsSegment(at:)`로 사전 검사).
 - **AOS** — `DonutSelectionState` 클래스와 `rememberDonutSelectionState(data)` 신설. `toggle(index:)`가
-  코어 `DonutEngine.toggleSelection` 규칙을 그대로 적용해 `selectedIndex`를 갱신한다.
+  코어 `DonutEngine.toggleSelection` 규칙을 그대로 적용해 `selectedIndex`를 갱신하되, 레이아웃에
+  없는 인덱스(범위 밖이거나 `value <= 0`으로 필터된 세그먼트)는 홀더가 생성 시 받아 둔
+  선택 가능 인덱스 집합으로 사전 검사해 무시한다(iOS `layoutContainsSegment(at:)` 패리티).
   `RDHeartRateZoneChart` 시그니처 맨 끝에 `selection: DonutSelectionState =
   rememberDonutSelectionState(data)` 파라미터를 추가 — 앱이 레전드와 차트에 같은 홀더를 넘기면
   상태가 공유된다. `onSelectSegment`는 도넛 자체 제스처와 자동 해제 타이머에서만 발화하며, 앱이
   `selection.toggle()`로 직접 구동한 변경은 재통지하지 않는다(재진입 루프 방지). `onSelectSegment
   == null`이면 도넛 터치가 비활성인 기존 게이팅은 그대로다.
 
-**비파괴적 — 마이그레이션 불필요.** iOS는 신규 공개 메서드 추가뿐이고, AOS는 신규 파라미터가
-`selection` 하나뿐이며 기본값이 있고 시그니처 맨 끝에 위치해 기존 위치 인자 호출부를 깨지 않는다.
-기존 호출자는 소스 수정 없이 그대로 컴파일된다.
+**명명 인자 기준으로 비파괴적 — 마이그레이션 불필요.** iOS는 신규 공개 메서드 추가뿐이고, AOS는
+신규 파라미터가 `selection` 하나뿐이며 기본값이 있고 시그니처 맨 끝에 위치해 기존 위치 인자
+호출부를 깨지 않는다. 기존 호출자가 이름 붙은 인자로 호출한다면 소스 수정 없이 그대로
+컴파일된다 — 단, AOS에서 마지막 파라미터를 트레일링 람다로 넘기던 호출(예:
+`RDHeartRateZoneChart(data, modifier) { ... }`)이 있었다면 그 자리가 함수 타입에서
+`DonutSelectionState`로 바뀌므로 깨진다(저장소 내 실제 호출부는 전부 명명 인자라 해당 없음).
 
 **xcframework 재빌드 불필요** — 이번 변경은 iOS/AOS 렌더러 전용이고 코어(`core` 모듈) 공개 API에
 변경이 없다(0.26.0의 "재빌드 필요"와 대비).

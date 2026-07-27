@@ -3,7 +3,8 @@ import LumipolGraph
 
 public protocol RDHeartRateZoneSelectionDelegate: AnyObject {
     /// 탭 토글 선택(0.26.0): 선택 확정·이동 시 원본 인덱스, 재탭·링 밖 탭·자동 해제 시 nil.
-    /// render(데이터 교체)로 인한 리셋은 통지하지 않는다.
+    /// render(데이터 교체)로 인한 리셋은 통지하지 않는다. 앱이 [selectSegment(at:)](0.27.0)로
+    /// 직접 구동한 선택도 이 콜백을 되쏜다(레전드 등 차트 밖 UI와 동일 경로 공유).
     func heartRateZoneView(_ view: RDHeartRateZoneView, didSelectSegmentAt index: Int?)
 }
 
