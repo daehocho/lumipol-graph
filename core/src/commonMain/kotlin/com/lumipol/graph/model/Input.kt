@@ -37,6 +37,9 @@ data class ChartConfig(val segmentCount: Int = 0, val maxTicks: Int = 5) {
          * 구간 통계 분할 정책(C5) — D4 결정(44 문서): 거리 비례(사실상 단위 랩).
          * `floor(총거리 단위 수)`(상한 [MAX_SEGMENT_COUNT]), 시간 모드는 0(스플릿 없음).
          * 종전 iOS 고정 5는 폐기 — 10km 러닝에서 2km 단위 통계가 되어 랩과 어긋났다.
+         *
+         * [totalDistanceUnits]는 **x 모드와 무관하게 항상 거리 기준**(현행 AOS 계약과 동일 —
+         * 시간 모드 x값(분)을 넘기지 말 것. TIME이면 어차피 0을 반환하므로 값은 무시된다).
          */
         fun segmentCountFor(totalDistanceUnits: Double, xMode: XMode): Int =
             if (xMode == XMode.TIME || totalDistanceUnits.isNaN()) 0

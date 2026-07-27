@@ -102,6 +102,31 @@ object HeartRateZoneEngine { // 기존 object 확장
   잔여 grep 체크(`scripts/boundary-lint.sh <앱 차트 디렉토리>` 포함). 앱 커밋 규약:
   Runday_IOS 대문자 접두사·Co-Authored-By 금지, Runday_AOS 소문자 접두사.
 
+## 앱 전환 시 주의 (앱 원본 교차 검증에서 확정 — 2026-07-28)
+
+코어 구현(0.38.0)과 앱 원본을 항목별 대조한 결과 **코어 수정 필요 없음**. 전환 커밋에서 챙길 것:
+
+1. **iOS 페이스 문자열 2벌**: 게이트 있는 `stringPace(withPace:)`(평균)와 게이트 없는
+   `stringPace1Minute`(최고·y축 라벨)가 병존 — 코어 `ChartFormat.pace`(게이트 단일)로 통일 시
+   극단값(6s 미만·99분 이상) y라벨이 `-'--"`로 정규화된다. 상류 필터 때문에 실사용 도달 불가
+   경로임을 확인했다(의도 변화로 기록만).
+2. **AOS `normalizedStat` 사문 비교 부활**: 앱이 `-'--"`(쌍따옴표)와 비교하는데 종전 formatPace는
+   `-'--''`를 반환해 영영 불일치였다 — 코어 표기 통일로 비교가 살아나 avg 0 기록의 표시가
+   `-'--''` → `--`로 바뀐다(개선, 스냅샷 갱신 대상).
+3. **행 전달 범위**: 앱은 기존 정렬·전처리(iOS `sortedTrackPointsA2`의 exerciseTime==0 축약 포함)를
+   유지한 채 **전 행**을 `RawTrackSample`로 넘긴다. 코어 `splitSamples`는 첫 행의 누적값을 시작
+   구간으로 삼는다(AOS 시드 규칙) — 앱이 첫 행을 자체 제거하지 말 것. 페이스는 행을 걸러내지
+   않고 무효를 0으로 실어 보낸다(스플릿만 무효 델타 제거 — 기존 비대칭 유지).
+4. **iOS 마일 상수 3벌 소거 효과**: x축 0.621371(절삭 역수) → 코어 파생값으로 바뀌며 7번째
+   자리부터 이동(D2 고지 범위). 워치+마일 페이스는 종전 식이 결함(min/km÷1.609)이라 코어
+   단일식이 **수정**이다.
+5. **범례 방향**: AOS 색바는 좌=느림(worst→best) 순서로 그린다 — `legendStops`(fastest→slowest)를
+   소비할 때 앱에서 역순 배치. 존 범례는 iOS가 Z5→Z1로 쌓고 StringTable id가 역순(6631~6627).
+6. **고도 실루엣 방출 조건**: 양 앱 모두 available이 아니라 **선택 상태**에 ALTITUDE가 있을 때만
+   backgroundArea를 내려보낸다 — 앱 조립 규칙으로 유지.
+7. **등장 애니**: 양 앱 모두 파라미터 미전달 상태 — A3(기본 off) 후 현재 동작을 유지하려면
+   명시 on 1줄(iOS `isAnimationEnabled = true`, AOS `animateEntrance = true`).
+
 ## 회수 후 앱 잔여 확인 기준
 
 각 앱 차트 디렉토리에 남아야 하는 것: DB 조회, `RawTrackSample` 변환(필드 복사), 카드 레이아웃,
