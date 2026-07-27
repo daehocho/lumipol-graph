@@ -95,7 +95,9 @@ class ComposeInteractionTest {
     }
 
     @Test
-    fun donutTouchCancelSendsDeselect() {
+    fun donutTouchCancelDoesNotNotify() {
+        // 0.26.0 탭 토글: cancel(스크롤뷰 가로챔 등)로 끝나는 제스처는 탭이 완결되지 않으므로
+        // detectTapGestures의 onTap이 아예 발화되지 않는다 — 선택/해제 어느 쪽도 통지하지 않아야 함.
         val events = mutableListOf<Int?>()
         rule.setContent {
             RDHeartRateZoneChart(
@@ -104,18 +106,17 @@ class ComposeInteractionTest {
                 onSelectSegment = { events.add(it) },
             )
         }
-        // 링 위의 한 점(상단 12시 부근)을 눌렀다가 터치 취소(스크롤뷰 가로챔 시나리오) → 마지막은 해제(null).
         rule.onRoot().performTouchInput {
             down(Offset(width / 2f, height * 0.06f))
             cancel()
         }
         rule.waitForIdle()
-        assertTrue(events.isNotEmpty(), "down 시 선택 통지가 있어야 함")
-        assertEquals(null, events.last(), "취소는 선택 해제(null)를 통지")
+        assertTrue(events.isEmpty(), "취소된 탭은 통지 없음")
     }
 
     @Test
     fun donutTapOnRingSelectsSegment() {
+        // 0.26.0 탭 토글: 탭 완결(down+up) 시 선택 확정만 통지 — 손 뗌 자체는 해제를 유발하지 않는다.
         val events = mutableListOf<Int?>()
         rule.setContent {
             RDHeartRateZoneChart(
@@ -124,14 +125,13 @@ class ComposeInteractionTest {
                 onSelectSegment = { events.add(it) },
             )
         }
-        // 12시 부근 링 = 첫 세그먼트(startFraction 0). 다운 즉시 원본 인덱스 통지.
+        // 12시 부근 링 = 첫 세그먼트(startFraction 0).
         rule.onRoot().performTouchInput {
             down(Offset(width / 2f, height * 0.06f))
             up()
         }
         rule.waitForIdle()
-        assertEquals(0, events.first(), "12시 링 탭은 첫 세그먼트(원본 인덱스 0)")
-        assertEquals(null, events.last(), "손 뗌 → 해제")
+        assertEquals(listOf<Int?>(0), events, "12시 링 탭은 첫 세그먼트(원본 인덱스 0) 선택만 통지")
     }
 
     @Test

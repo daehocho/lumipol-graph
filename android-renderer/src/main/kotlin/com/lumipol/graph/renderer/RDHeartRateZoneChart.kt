@@ -6,13 +6,15 @@
 package com.lumipol.graph.renderer
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -20,13 +22,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.sp
 import com.lumipol.graph.DonutEngine
 import com.lumipol.graph.model.DonutChartData
 import com.lumipol.graph.model.DonutChartLayout
+import kotlinx.coroutines.delay
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
@@ -47,7 +59,9 @@ internal data class DonutArc(
  * 심박존 분포 도넛.
  *
  * @param animateEntrance sweep 0→최종 등장 애니(12시부터 시계방향). iOS는 정적이라 기본 off(UX 패리티).
- * @param onSelectSegment 탭 시 **원본 data.segments 인덱스**, up/cancel 시 null. null이면 터치 비활성.
+ * @param onSelectSegment 탭 토글 선택(0.26.0). 선택 확정·이동 시 **원본 data.segments 인덱스**,
+ *   재탭·링 밖 탭·자동 해제([ChartStyle.donutAutoDeselectDelaySeconds]) 시 null.
+ *   data 교체로 인한 리셋은 통지하지 않는다. null이면 터치 비활성.
  */
 @Composable
 fun RDHeartRateZoneChart(
@@ -68,40 +82,86 @@ fun RDHeartRateZoneChart(
     // 히트 대역은 시각 링보다 넓게 최소 48dp 확보(WCAG/Material 터치 타겟 — UX Major-3). 얇은 링에서도 관대.
     val hitBandPx = max(ringPx, MIN_HIT_TARGET_DP * density)
 
-    // pointerInput 키에 콜백이 없으므로 최신 람다를 State로 유지 — 리컴포지션마다 새 람다를
-    // 전달하는 호출자의 탭이 최초 캡처된 낡은 클로저로 통지되는 것을 막는다.
+    // 탭 토글 선택(0.26.0). 원본 data.segments 인덱스. data 교체 시 조용히 리셋(통지 없음 — 재렌더 루프 방지).
+    var selected by remember(data) { mutableStateOf<Int?>(null) }
+    val haptics = LocalHapticFeedback.current
     val currentOnSelect by rememberUpdatedState(onSelectSegment)
     val gesture = if (onSelectSegment == null) {
         Modifier
     } else {
         Modifier.pointerInput(data, ringPx, hitBandPx) {
-            awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false)
-                currentOnSelect?.invoke(
-                    donutSegmentIndex(
-                        px = down.position.x,
-                        py = down.position.y,
-                        width = size.width.toFloat(),
-                        height = size.height.toFloat(),
-                        ringWidth = ringPx,
-                        layout = layout,
-                        hitBandWidth = hitBandPx,
-                    ),
+            detectTapGestures { pos ->
+                val tapped = donutSegmentIndex(
+                    px = pos.x, py = pos.y,
+                    width = size.width.toFloat(), height = size.height.toFloat(),
+                    ringWidth = ringPx, layout = layout, hitBandWidth = hitBandPx,
                 )
-                // up 또는 cancel(스크롤뷰 가로챔)로 모든 포인터가 떨어질 때까지 대기 → 해제 통지.
-                do {
-                    val event = awaitPointerEvent()
-                } while (event.changes.any { it.pressed })
-                currentOnSelect?.invoke(null)
+                val next = DonutEngine.toggleSelection(selected, tapped)
+                if (next != selected) {
+                    // 햅틱은 선택 확정·이동에만(해제엔 없음), 스타일로 off 가능.
+                    if (next != null && scaledStyle.donutSelectionHapticsEnabled) {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    }
+                    selected = next
+                    currentOnSelect?.invoke(next)
+                }
             }
+        }
+    }
+
+    // 자동 해제 — 선택이 생길 때마다 재시작(재탭·이동 시 LaunchedEffect 키 변경으로 리셋).
+    val autoDeselectMs = (scaledStyle.donutAutoDeselectDelaySeconds * 1000f).toLong()
+    LaunchedEffect(selected, autoDeselectMs) {
+        if (selected != null && autoDeselectMs > 0) {
+            delay(autoDeselectMs)
+            selected = null
+            currentOnSelect?.invoke(null)
         }
     }
 
     // TalkBack 요약(UX Major-1): 존별 %를 낭독해 시각장애 사용자도 분포에 도달.
     val description = remember(layout) { donutDescription(layout) }
+    val measurer = rememberTextMeasurer()
     Canvas(modifier.semantics { contentDescription = description }.then(gesture)) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
-        buildDonutArcs(layout, scaledStyle, size.width, size.height, sweep).forEach { drawDonutArc(it) }
+        buildDonutArcs(layout, scaledStyle, size.width, size.height, sweep, selected)
+            .forEach { drawDonutArc(it) }
+
+        // 센터 라벨(존 이름 작게 + 퍼센트 크게). 내접원 90% 폭으로 제한, 넘치면 말줄임.
+        val lines = donutCenterLines(layout, selected) ?: return@Canvas
+        val ring = scaledStyle.donutRingWidth
+        val radius = (min(size.width, size.height) - ring) / 2f
+        val innerRadius = radius - ring / 2f
+        if (innerRadius <= 0f) return@Canvas
+        val maxWidthPx = (innerRadius * 2f * 0.9f).toInt().coerceAtLeast(1)
+        val constraints = Constraints(maxWidth = maxWidthPx)
+
+        val percentLayout = measurer.measure(
+            AnnotatedString(lines.percentText),
+            style = TextStyle(
+                color = style.donutCenterPercentColor,
+                fontSize = style.donutCenterPercentFontSize.sp,
+                fontWeight = style.donutCenterPercentFontWeight,
+            ),
+            maxLines = 1, overflow = TextOverflow.Ellipsis, constraints = constraints,
+        )
+        val labelLayout = lines.label?.let {
+            measurer.measure(
+                AnnotatedString(it),
+                style = TextStyle(
+                    color = style.donutCenterLabelColor,
+                    fontSize = style.donutCenterLabelFontSize.sp,
+                ),
+                maxLines = 1, overflow = TextOverflow.Ellipsis, constraints = constraints,
+            )
+        }
+        val totalH = percentLayout.size.height + (labelLayout?.size?.height ?: 0)
+        var top = (size.height - totalH) / 2f
+        labelLayout?.let {
+            drawText(it, topLeft = Offset((size.width - it.size.width) / 2f, top))
+            top += it.size.height
+        }
+        drawText(percentLayout, topLeft = Offset((size.width - percentLayout.size.width) / 2f, top))
     }
 }
 
