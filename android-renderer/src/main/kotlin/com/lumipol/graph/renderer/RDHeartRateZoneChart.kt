@@ -11,7 +11,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -61,7 +60,11 @@ internal data class DonutArc(
  * @param animateEntrance sweep 0→최종 등장 애니(12시부터 시계방향). iOS는 정적이라 기본 off(UX 패리티).
  * @param onSelectSegment 탭 토글 선택(0.26.0). 선택 확정·이동 시 **원본 data.segments 인덱스**,
  *   재탭·링 밖 탭·자동 해제([ChartStyle.donutAutoDeselectDelaySeconds]) 시 null.
- *   data 교체로 인한 리셋은 통지하지 않는다. null이면 터치 비활성.
+ *   data 교체로 인한 리셋은 통지하지 않는다. null이면 터치 비활성. 도넛 제스처·자동 해제에서만
+ *   발화하며, 앱이 [selection]의 [DonutSelectionState.toggle]로 직접 구동한 변경은 재통지하지
+ *   않는다(재진입 루프 방지).
+ * @param selection 선택 상태 홀더(0.27.0). 앱이 레전드 등과 공유하려면 [rememberDonutSelectionState]로
+ *   만들어 넘긴다.
  */
 @Composable
 fun RDHeartRateZoneChart(
@@ -70,6 +73,9 @@ fun RDHeartRateZoneChart(
     style: ChartStyle = ChartStyle.defaults(isSystemInDarkTheme()),
     animateEntrance: Boolean = false,
     onSelectSegment: OnSelectSegment? = null,
+    // 선택 상태 홀더(0.27.0). 앱이 레전드 등과 공유하려면 rememberDonutSelectionState로 만들어 넘긴다.
+    // 파라미터를 맨 끝에 둔 것은 기존 위치 인자 호출자를 깨지 않기 위해서다.
+    selection: DonutSelectionState = rememberDonutSelectionState(data),
 ) {
     val layout = remember(data) { DonutEngine.layout(data) }
     // sweep 등장 애니 — data 교체·animateEntrance 토글 시 0부터 재생(공용 헬퍼).
@@ -82,8 +88,6 @@ fun RDHeartRateZoneChart(
     // 히트 대역은 시각 링보다 넓게 최소 48dp 확보(WCAG/Material 터치 타겟 — UX Major-3). 얇은 링에서도 관대.
     val hitBandPx = max(ringPx, MIN_HIT_TARGET_DP * density)
 
-    // 탭 토글 선택(0.26.0). 원본 data.segments 인덱스. data 교체 시 조용히 리셋(통지 없음 — 재렌더 루프 방지).
-    var selected by remember(data) { mutableStateOf<Int?>(null) }
     val haptics = LocalHapticFeedback.current
     val currentOnSelect by rememberUpdatedState(onSelectSegment)
     // pointerInput 키(data/ringPx/hitBandPx)와 무관하게 바뀔 수 있는 값이라 rememberUpdatedState로
@@ -99,13 +103,13 @@ fun RDHeartRateZoneChart(
                     width = size.width.toFloat(), height = size.height.toFloat(),
                     ringWidth = ringPx, layout = layout, hitBandWidth = hitBandPx,
                 )
-                val next = DonutEngine.toggleSelection(selected, tapped)
-                if (next != selected) {
+                val next = DonutEngine.toggleSelection(selection.selectedIndex, tapped)
+                if (next != selection.selectedIndex) {
                     // 햅틱은 선택 확정·이동에만(해제엔 없음), 스타일로 off 가능.
                     if (next != null && hapticsEnabled) {
                         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     }
-                    selected = next
+                    selection.selectedIndex = next
                     currentOnSelect?.invoke(next)
                 }
             }
@@ -113,11 +117,12 @@ fun RDHeartRateZoneChart(
     }
 
     // 자동 해제 — 선택이 생길 때마다 재시작(재탭·이동 시 LaunchedEffect 키 변경으로 리셋).
+    // 키를 홀더 값으로 둬 앱이 toggle()로 직접 구동한 선택에도 타이머가 걸린다.
     val autoDeselectMs = (scaledStyle.donutAutoDeselectDelaySeconds * 1000f).toLong()
-    LaunchedEffect(selected, autoDeselectMs) {
-        if (selected != null && autoDeselectMs > 0) {
+    LaunchedEffect(selection.selectedIndex, autoDeselectMs) {
+        if (selection.selectedIndex != null && autoDeselectMs > 0) {
             delay(autoDeselectMs)
-            selected = null
+            selection.selectedIndex = null
             currentOnSelect?.invoke(null)
         }
     }
@@ -127,11 +132,11 @@ fun RDHeartRateZoneChart(
     val measurer = rememberTextMeasurer()
     Canvas(modifier.semantics { contentDescription = description }.then(gesture)) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
-        buildDonutArcs(layout, scaledStyle, size.width, size.height, sweep, selected)
+        buildDonutArcs(layout, scaledStyle, size.width, size.height, sweep, selection.selectedIndex)
             .forEach { drawDonutArc(it) }
 
         // 센터 라벨(존 이름 작게 + 퍼센트 크게). 내접원 90% 폭으로 제한, 넘치면 말줄임.
-        val lines = donutCenterLines(layout, selected) ?: return@Canvas
+        val lines = donutCenterLines(layout, selection.selectedIndex) ?: return@Canvas
         val ring = scaledStyle.donutRingWidth
         val radius = (min(size.width, size.height) - ring) / 2f
         val innerRadius = radius - ring / 2f

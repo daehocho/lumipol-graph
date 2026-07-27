@@ -28,6 +28,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -132,6 +133,35 @@ class ComposeInteractionTest {
         }
         rule.waitForIdle()
         assertEquals(listOf<Int?>(0), events, "12시 링 탭은 첫 세그먼트(원본 인덱스 0) 선택만 통지")
+    }
+
+    @Test
+    fun donutTapUpdatesExternalSelectionHolderAndAutoDeselects() {
+        // 0.27.0: 앱이 rememberDonutSelectionState로 만든 홀더를 selection 인자로 넘기면 도넛 탭이
+        // 그 홀더에 반영돼야 한다(레전드 등 차트 밖 UI가 같은 선택을 읽을 수 있다는 증거). 자동
+        // 해제 타이머도 외부 홀더 값을 키로 걸려야 한다.
+        lateinit var externalSelection: DonutSelectionState
+        rule.setContent {
+            externalSelection = rememberDonutSelectionState(donutData)
+            RDHeartRateZoneChart(
+                data = donutData,
+                modifier = Modifier.size(240.dp),
+                onSelectSegment = {},
+                selection = externalSelection,
+            )
+        }
+        // 12시 부근 링 = 첫 세그먼트(startFraction 0).
+        rule.onRoot().performTouchInput {
+            down(Offset(width / 2f, height * 0.06f))
+            up()
+        }
+        rule.waitForIdle()
+        assertEquals(0, externalSelection.selectedIndex, "외부 홀더로 넘긴 selection에 탭 결과가 반영돼야 함")
+
+        // donutAutoDeselectDelaySeconds(기본 3s) 경과 → 외부 홀더에도 자동 해제가 걸려야 함.
+        rule.mainClock.advanceTimeBy(3_100L)
+        rule.waitForIdle()
+        assertNull(externalSelection.selectedIndex, "외부 홀더에도 자동 해제 타이머가 걸려야 함")
     }
 
     @Test
