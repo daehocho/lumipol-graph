@@ -86,6 +86,9 @@ fun RDHeartRateZoneChart(
     var selected by remember(data) { mutableStateOf<Int?>(null) }
     val haptics = LocalHapticFeedback.current
     val currentOnSelect by rememberUpdatedState(onSelectSegment)
+    // pointerInput 키(data/ringPx/hitBandPx)와 무관하게 바뀔 수 있는 값이라 rememberUpdatedState로
+    // 최신값을 참조 — 그렇지 않으면 이 플래그만 토글해선 제스처 코루틴이 재시작되지 않아 낡은 값이 쓰인다.
+    val hapticsEnabled by rememberUpdatedState(scaledStyle.donutSelectionHapticsEnabled)
     val gesture = if (onSelectSegment == null) {
         Modifier
     } else {
@@ -99,7 +102,7 @@ fun RDHeartRateZoneChart(
                 val next = DonutEngine.toggleSelection(selected, tapped)
                 if (next != selected) {
                     // 햅틱은 선택 확정·이동에만(해제엔 없음), 스타일로 off 가능.
-                    if (next != null && scaledStyle.donutSelectionHapticsEnabled) {
+                    if (next != null && hapticsEnabled) {
                         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     }
                     selected = next
