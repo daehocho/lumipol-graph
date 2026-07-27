@@ -93,7 +93,14 @@ object HeartRateZoneEngine { // 기존 object 확장
   `SeriesSelection.invertedAxesFor(paceSlot)`(AOS 슬롯2+ 누락 버그 소거)·
   `ChartConfig.segmentCountFor(D4 — 거리 비례·상한 120·시간 0)`. `PaceColormap.legendStops`는
   B6(0.34.0)에서 선행. 골든 3섹션 추가(폴백 trig 드리프트 0 실측).
-- [ ] 앱 전환(C1~C5 소비부) — 후속 커밋
+- [ ] **앱 전환(C1~C5 소비부) — 보류(2026-07-28), 사유**: 양 앱이 SDK를 정확 버전 고정으로
+  소비한다(AOS jitpack `mobile-lumipol`, iOS SPM exactVersion). 0.31.0~0.38.0은 로컬 커밋만
+  존재하고 태그 푸시(JitPack 배포)는 사용자 확인 게이트라, 신규 API를 소비하는 앱 코드는
+  현재 컴파일·테스트 검증이 불가능하다("하네스·테스트 직접 실행" 규칙 위배 없이 커밋 불가).
+  **절차**: ① 0.38.0 태그 푸시 승인 → ② JitPack 빌드 트리거·확인 → ③ 앱 버전 고정 인상 →
+  ④ C1~C5 앱 diff(아래 명세) + A3 등장 애니 명시 on 1줄 + B12 로컬라이즈 주입 → ⑤ 회수 후
+  잔여 grep 체크(`scripts/boundary-lint.sh <앱 차트 디렉토리>` 포함). 앱 커밋 규약:
+  Runday_IOS 대문자 접두사·Co-Authored-By 금지, Runday_AOS 소문자 접두사.
 
 ## 회수 후 앱 잔여 확인 기준
 
