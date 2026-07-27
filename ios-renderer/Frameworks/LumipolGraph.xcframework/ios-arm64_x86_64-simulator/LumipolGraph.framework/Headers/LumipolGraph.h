@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphChartA11y, LumipolGraphDonutChartLayout, LumipolGraphChartDefaults, LumipolGraphChartDefaultsDarkPalette, LumipolGraphChartDefaultsLightPalette, LumipolGraphDonutEngine, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceColormap, LumipolGraphBarColorAnchors, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphZoomWindow, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
+@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphChartA11y, LumipolGraphDonutChartLayout, LumipolGraphChartDefaults, LumipolGraphChartDefaultsDarkPalette, LumipolGraphChartDefaultsLightPalette, LumipolGraphChartFormat, LumipolGraphDonutEngine, LumipolGraphDonutChartData, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphGender, LumipolGraphKotlinArray<T>, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceColormap, LumipolGraphBarColorAnchors, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphTrackChartBuilder, LumipolGraphRawTrackSample, LumipolGraphRunTotals, LumipolGraphBuildOptions, LumipolGraphSplitSample, LumipolGraphZoomWindow, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphDistanceUnit, LumipolGraphXMode, LumipolGraphChartConfigCompanion, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDistanceUnitCompanion, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphRawTrackSampleCompanion, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -305,6 +305,24 @@ __attribute__((swift_name("ChartDefaults.LightPalette")))
 @end
 
 __attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ChartFormat")))
+@interface LumipolGraphChartFormat : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)chartFormat __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphChartFormat *shared __attribute__((swift_name("shared")));
+- (NSString *)distanceTickValue:(double)value __attribute__((swift_name("distanceTick(value:)")));
+- (NSString *)durationSeconds:(double)seconds __attribute__((swift_name("duration(seconds:)")));
+- (NSString *)intTickValue:(double)value __attribute__((swift_name("intTick(value:)")));
+- (NSString *)paceSeconds:(double)seconds __attribute__((swift_name("pace(seconds:)")));
+- (NSString *)paceInvalid __attribute__((swift_name("paceInvalid()")));
+- (NSString *)percentFraction:(double)fraction __attribute__((swift_name("percent(fraction:)")));
+- (NSString *)timeTickMinutes:(double)minutes __attribute__((swift_name("timeTick(minutes:)")));
+@property (readonly) double PACE_MAX_SECONDS __attribute__((swift_name("PACE_MAX_SECONDS")));
+@property (readonly) double PACE_MIN_SECONDS __attribute__((swift_name("PACE_MIN_SECONDS")));
+@end
+
+__attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("DonutEngine")))
 @interface LumipolGraphDonutEngine : LumipolGraphBase
 + (instancetype)alloc __attribute__((unavailable));
@@ -317,6 +335,37 @@ __attribute__((swift_name("DonutEngine")))
 @property (readonly) double MIN_HIT_TARGET_DP __attribute__((swift_name("MIN_HIT_TARGET_DP")));
 @end
 
+__attribute__((swift_name("KotlinComparable")))
+@protocol LumipolGraphKotlinComparable
+@required
+- (int32_t)compareToOther:(id _Nullable)other __attribute__((swift_name("compareTo(other:)")));
+@end
+
+__attribute__((swift_name("KotlinEnum")))
+@interface LumipolGraphKotlinEnum<E> : LumipolGraphBase <LumipolGraphKotlinComparable>
+- (instancetype)initWithName:(NSString *)name ordinal:(int32_t)ordinal __attribute__((swift_name("init(name:ordinal:)"))) __attribute__((objc_designated_initializer));
+@property (class, readonly, getter=companion) LumipolGraphKotlinEnumCompanion *companion __attribute__((swift_name("companion")));
+- (int32_t)compareToOther:(E)other __attribute__((swift_name("compareTo(other:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) NSString *name __attribute__((swift_name("name")));
+@property (readonly) int32_t ordinal __attribute__((swift_name("ordinal")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("Gender")))
+@interface LumipolGraphGender : LumipolGraphKotlinEnum<LumipolGraphGender *>
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
+- (instancetype)initWithName:(NSString *)name ordinal:(int32_t)ordinal __attribute__((swift_name("init(name:ordinal:)"))) __attribute__((objc_designated_initializer)) __attribute__((unavailable));
+@property (class, readonly) LumipolGraphGender *male __attribute__((swift_name("male")));
+@property (class, readonly) LumipolGraphGender *female __attribute__((swift_name("female")));
+@property (class, readonly) LumipolGraphGender *unknown __attribute__((swift_name("unknown")));
++ (LumipolGraphKotlinArray<LumipolGraphGender *> *)values __attribute__((swift_name("values()")));
+@property (class, readonly) NSArray<LumipolGraphGender *> *entries __attribute__((swift_name("entries")));
+@end
+
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("HeartRateZoneEngine")))
 @interface LumipolGraphHeartRateZoneEngine : LumipolGraphBase
@@ -325,6 +374,8 @@ __attribute__((swift_name("HeartRateZoneEngine")))
 + (instancetype)heartRateZoneEngine __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphHeartRateZoneEngine *shared __attribute__((swift_name("shared")));
 - (NSArray<LumipolGraphDouble *> *)calculateSamples:(NSArray<LumipolGraphHeartRateZoneSample *> *)samples maxHeartRate:(int32_t)maxHeartRate __attribute__((swift_name("calculate(samples:maxHeartRate:)")));
+- (LumipolGraphDonutChartData * _Nullable)donutDataZoneSeconds:(NSArray<LumipolGraphDouble *> *)zoneSeconds labels:(NSArray<NSString *> *)labels __attribute__((swift_name("donutData(zoneSeconds:labels:)")));
+- (int32_t)maxHeartRateAge:(int32_t)age gender:(LumipolGraphGender *)gender __attribute__((swift_name("maxHeartRate(age:gender:)")));
 - (NSArray<LumipolGraphZoneBpmRange *> *)zoneBpmRangesMaxHeartRate:(int32_t)maxHeartRate __attribute__((swift_name("zoneBpmRanges(maxHeartRate:)")));
 @end
 
@@ -393,9 +444,22 @@ __attribute__((swift_name("SeriesSelection")))
 + (instancetype)seriesSelection __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphSeriesSelection *shared __attribute__((swift_name("shared")));
 - (NSArray<LumipolGraphInt *> *)assignSlotsPriority:(NSArray<LumipolGraphInt *> *)priority selected:(NSSet<LumipolGraphInt *> *)selected withData:(NSSet<LumipolGraphInt *> *)withData __attribute__((swift_name("assignSlots(priority:selected:withData:)")));
+- (NSSet<LumipolGraphAxis *> *)invertedAxesForPaceSlot:(int32_t)paceSlot __attribute__((swift_name("invertedAxesFor(paceSlot:)")));
 - (NSArray<LumipolGraphInt *> *)normalizedCurrent:(NSArray<LumipolGraphInt *> *)current available:(NSSet<LumipolGraphInt *> *)available priority:(NSArray<LumipolGraphInt *> *)priority __attribute__((swift_name("normalized(current:available:priority:)")));
 - (LumipolGraphAxis *)slotAxisIndex:(int32_t)index __attribute__((swift_name("slotAxis(index:)")));
 - (NSArray<LumipolGraphInt *> *)toggledCurrent:(NSArray<LumipolGraphInt *> *)current toggling:(int32_t)toggling __attribute__((swift_name("toggled(current:toggling:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("TrackChartBuilder")))
+@interface LumipolGraphTrackChartBuilder : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)trackChartBuilder __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphTrackChartBuilder *shared __attribute__((swift_name("shared")));
+- (LumipolGraphPaceSeriesInput *)paceInputSamples:(NSArray<LumipolGraphRawTrackSample *> *)samples totals:(LumipolGraphRunTotals *)totals options:(LumipolGraphBuildOptions *)options __attribute__((swift_name("paceInput(samples:totals:options:)")));
+- (NSArray<LumipolGraphSplitSample *> *)splitSamplesSamples:(NSArray<LumipolGraphRawTrackSample *> *)samples __attribute__((swift_name("splitSamples(samples:)")));
+- (NSArray<LumipolGraphHeartRateZoneSample *> *)zoneSamplesSamples:(NSArray<LumipolGraphRawTrackSample *> *)samples __attribute__((swift_name("zoneSamples(samples:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -417,24 +481,6 @@ __attribute__((swift_name("ZoomWindow")))
 @property (readonly) double scale __attribute__((swift_name("scale")));
 @property (readonly) double windowMax __attribute__((swift_name("windowMax")));
 @property (readonly) double windowMin __attribute__((swift_name("windowMin")));
-@end
-
-__attribute__((swift_name("KotlinComparable")))
-@protocol LumipolGraphKotlinComparable
-@required
-- (int32_t)compareToOther:(id _Nullable)other __attribute__((swift_name("compareTo(other:)")));
-@end
-
-__attribute__((swift_name("KotlinEnum")))
-@interface LumipolGraphKotlinEnum<E> : LumipolGraphBase <LumipolGraphKotlinComparable>
-- (instancetype)initWithName:(NSString *)name ordinal:(int32_t)ordinal __attribute__((swift_name("init(name:ordinal:)"))) __attribute__((objc_designated_initializer));
-@property (class, readonly, getter=companion) LumipolGraphKotlinEnumCompanion *companion __attribute__((swift_name("companion")));
-- (int32_t)compareToOther:(E)other __attribute__((swift_name("compareTo(other:)")));
-- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
-- (NSUInteger)hash __attribute__((swift_name("hash()")));
-- (NSString *)description __attribute__((swift_name("description()")));
-@property (readonly) NSString *name __attribute__((swift_name("name")));
-@property (readonly) int32_t ordinal __attribute__((swift_name("ordinal")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -551,6 +597,20 @@ __attribute__((swift_name("BarLayout")))
 @end
 
 __attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("BuildOptions")))
+@interface LumipolGraphBuildOptions : LumipolGraphBase
+- (instancetype)initWithUnit:(LumipolGraphDistanceUnit *)unit xMode:(LumipolGraphXMode *)xMode __attribute__((swift_name("init(unit:xMode:)"))) __attribute__((objc_designated_initializer));
+- (instancetype)initWithUnit:(LumipolGraphDistanceUnit *)unit xMode:(LumipolGraphXMode *)xMode useWatchSpeed:(BOOL)useWatchSpeed __attribute__((swift_name("init(unit:xMode:useWatchSpeed:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphBuildOptions *)doCopyUnit:(LumipolGraphDistanceUnit *)unit xMode:(LumipolGraphXMode *)xMode useWatchSpeed:(BOOL)useWatchSpeed __attribute__((swift_name("doCopy(unit:xMode:useWatchSpeed:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) LumipolGraphDistanceUnit *unit __attribute__((swift_name("unit")));
+@property (readonly) BOOL useWatchSpeed __attribute__((swift_name("useWatchSpeed")));
+@property (readonly) LumipolGraphXMode *xMode __attribute__((swift_name("xMode")));
+@end
+
+__attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("ChartAxis")))
 @interface LumipolGraphChartAxis : LumipolGraphKotlinEnum<LumipolGraphChartAxis *>
 + (instancetype)alloc __attribute__((unavailable));
@@ -570,12 +630,24 @@ __attribute__((swift_name("ChartConfig")))
 - (instancetype)init __attribute__((swift_name("init()"))) __attribute__((objc_designated_initializer));
 + (instancetype)new __attribute__((availability(swift, unavailable, message="use object initializers instead")));
 - (instancetype)initWithSegmentCount:(int32_t)segmentCount maxTicks:(int32_t)maxTicks __attribute__((swift_name("init(segmentCount:maxTicks:)"))) __attribute__((objc_designated_initializer));
+@property (class, readonly, getter=companion) LumipolGraphChartConfigCompanion *companion __attribute__((swift_name("companion")));
 - (LumipolGraphChartConfig *)doCopySegmentCount:(int32_t)segmentCount maxTicks:(int32_t)maxTicks __attribute__((swift_name("doCopy(segmentCount:maxTicks:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) int32_t maxTicks __attribute__((swift_name("maxTicks")));
 @property (readonly) int32_t segmentCount __attribute__((swift_name("segmentCount")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ChartConfig.Companion")))
+@interface LumipolGraphChartConfigCompanion : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)companion __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphChartConfigCompanion *shared __attribute__((swift_name("shared")));
+- (int32_t)segmentCountForTotalDistanceUnits:(double)totalDistanceUnits xMode:(LumipolGraphXMode *)xMode __attribute__((swift_name("segmentCountFor(totalDistanceUnits:xMode:)")));
+@property (readonly) int32_t MAX_SEGMENT_COUNT __attribute__((swift_name("MAX_SEGMENT_COUNT")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -589,6 +661,31 @@ __attribute__((swift_name("ChartDomains")))
 @property (readonly) LumipolGraphAxisDomain *x __attribute__((swift_name("x")));
 @property (readonly) LumipolGraphAxisDomain * _Nullable yPrimary __attribute__((swift_name("yPrimary")));
 @property (readonly) LumipolGraphAxisDomain * _Nullable ySecondary __attribute__((swift_name("ySecondary")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("DistanceUnit")))
+@interface LumipolGraphDistanceUnit : LumipolGraphKotlinEnum<LumipolGraphDistanceUnit *>
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
+- (instancetype)initWithName:(NSString *)name ordinal:(int32_t)ordinal __attribute__((swift_name("init(name:ordinal:)"))) __attribute__((objc_designated_initializer)) __attribute__((unavailable));
+@property (class, readonly, getter=companion) LumipolGraphDistanceUnitCompanion *companion __attribute__((swift_name("companion")));
+@property (class, readonly) LumipolGraphDistanceUnit *kilometers __attribute__((swift_name("kilometers")));
+@property (class, readonly) LumipolGraphDistanceUnit *miles __attribute__((swift_name("miles")));
++ (LumipolGraphKotlinArray<LumipolGraphDistanceUnit *> *)values __attribute__((swift_name("values()")));
+@property (class, readonly) NSArray<LumipolGraphDistanceUnit *> *entries __attribute__((swift_name("entries")));
+@property (readonly) double unitMeters __attribute__((swift_name("unitMeters")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("DistanceUnit.Companion")))
+@interface LumipolGraphDistanceUnitCompanion : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)companion __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphDistanceUnitCompanion *shared __attribute__((swift_name("shared")));
+@property (readonly) double METERS_PER_KM __attribute__((swift_name("METERS_PER_KM")));
+@property (readonly) double METERS_PER_MILE __attribute__((swift_name("METERS_PER_MILE")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -811,6 +908,39 @@ __attribute__((swift_name("Point")))
 @end
 
 __attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("RawTrackSample")))
+@interface LumipolGraphRawTrackSample : LumipolGraphBase
+- (instancetype)initWithCumulativeDistanceMeters:(LumipolGraphDouble * _Nullable)cumulativeDistanceMeters deltaDistanceMeters:(LumipolGraphDouble * _Nullable)deltaDistanceMeters cumulativeSeconds:(LumipolGraphDouble * _Nullable)cumulativeSeconds deltaSeconds:(LumipolGraphDouble * _Nullable)deltaSeconds speedMps:(LumipolGraphDouble * _Nullable)speedMps latitude:(LumipolGraphDouble * _Nullable)latitude longitude:(LumipolGraphDouble * _Nullable)longitude heartRate:(LumipolGraphDouble * _Nullable)heartRate cadence:(LumipolGraphDouble * _Nullable)cadence altitude:(LumipolGraphDouble * _Nullable)altitude __attribute__((swift_name("init(cumulativeDistanceMeters:deltaDistanceMeters:cumulativeSeconds:deltaSeconds:speedMps:latitude:longitude:heartRate:cadence:altitude:)"))) __attribute__((objc_designated_initializer));
+@property (class, readonly, getter=companion) LumipolGraphRawTrackSampleCompanion *companion __attribute__((swift_name("companion")));
+- (LumipolGraphRawTrackSample *)doCopyCumulativeDistanceMeters:(LumipolGraphDouble * _Nullable)cumulativeDistanceMeters deltaDistanceMeters:(LumipolGraphDouble * _Nullable)deltaDistanceMeters cumulativeSeconds:(LumipolGraphDouble * _Nullable)cumulativeSeconds deltaSeconds:(LumipolGraphDouble * _Nullable)deltaSeconds speedMps:(LumipolGraphDouble * _Nullable)speedMps latitude:(LumipolGraphDouble * _Nullable)latitude longitude:(LumipolGraphDouble * _Nullable)longitude heartRate:(LumipolGraphDouble * _Nullable)heartRate cadence:(LumipolGraphDouble * _Nullable)cadence altitude:(LumipolGraphDouble * _Nullable)altitude __attribute__((swift_name("doCopy(cumulativeDistanceMeters:deltaDistanceMeters:cumulativeSeconds:deltaSeconds:speedMps:latitude:longitude:heartRate:cadence:altitude:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) LumipolGraphDouble * _Nullable altitude __attribute__((swift_name("altitude")));
+@property (readonly) LumipolGraphDouble * _Nullable cadence __attribute__((swift_name("cadence")));
+@property (readonly) LumipolGraphDouble * _Nullable cumulativeDistanceMeters __attribute__((swift_name("cumulativeDistanceMeters")));
+@property (readonly) LumipolGraphDouble * _Nullable cumulativeSeconds __attribute__((swift_name("cumulativeSeconds")));
+@property (readonly) LumipolGraphDouble * _Nullable deltaDistanceMeters __attribute__((swift_name("deltaDistanceMeters")));
+@property (readonly) LumipolGraphDouble * _Nullable deltaSeconds __attribute__((swift_name("deltaSeconds")));
+@property (readonly) LumipolGraphDouble * _Nullable heartRate __attribute__((swift_name("heartRate")));
+@property (readonly) LumipolGraphDouble * _Nullable latitude __attribute__((swift_name("latitude")));
+@property (readonly) LumipolGraphDouble * _Nullable longitude __attribute__((swift_name("longitude")));
+@property (readonly) LumipolGraphDouble * _Nullable speedMps __attribute__((swift_name("speedMps")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("RawTrackSample.Companion")))
+@interface LumipolGraphRawTrackSampleCompanion : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)companion __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphRawTrackSampleCompanion *shared __attribute__((swift_name("shared")));
+- (LumipolGraphRawTrackSample *)sanitizedCumulativeDistanceMeters:(LumipolGraphDouble * _Nullable)cumulativeDistanceMeters deltaDistanceMeters:(LumipolGraphDouble * _Nullable)deltaDistanceMeters cumulativeSeconds:(LumipolGraphDouble * _Nullable)cumulativeSeconds deltaSeconds:(LumipolGraphDouble * _Nullable)deltaSeconds speedMps:(LumipolGraphDouble * _Nullable)speedMps latitude:(LumipolGraphDouble * _Nullable)latitude longitude:(LumipolGraphDouble * _Nullable)longitude rawHeartRate:(LumipolGraphDouble * _Nullable)rawHeartRate rawCadence:(LumipolGraphDouble * _Nullable)rawCadence rawAltitude:(LumipolGraphDouble * _Nullable)rawAltitude __attribute__((swift_name("sanitized(cumulativeDistanceMeters:deltaDistanceMeters:cumulativeSeconds:deltaSeconds:speedMps:latitude:longitude:rawHeartRate:rawCadence:rawAltitude:)")));
+@property (readonly) double INVALID_ALTITUDE __attribute__((swift_name("INVALID_ALTITUDE")));
+@property (readonly) double MAX_CADENCE __attribute__((swift_name("MAX_CADENCE")));
+@end
+
+__attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("RefBand")))
 @interface LumipolGraphRefBand : LumipolGraphBase
 - (instancetype)initWithLower:(double)lower upper:(double)upper axis:(LumipolGraphAxis *)axis __attribute__((swift_name("init(lower:upper:axis:)"))) __attribute__((objc_designated_initializer));
@@ -834,6 +964,18 @@ __attribute__((swift_name("RefBandLayout")))
 @property (readonly) LumipolGraphAxis *axis __attribute__((swift_name("axis")));
 @property (readonly) double lower __attribute__((swift_name("lower")));
 @property (readonly) double upper __attribute__((swift_name("upper")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("RunTotals")))
+@interface LumipolGraphRunTotals : LumipolGraphBase
+- (instancetype)initWithSumDistanceMeters:(double)sumDistanceMeters runningSeconds:(double)runningSeconds __attribute__((swift_name("init(sumDistanceMeters:runningSeconds:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphRunTotals *)doCopySumDistanceMeters:(double)sumDistanceMeters runningSeconds:(double)runningSeconds __attribute__((swift_name("doCopy(sumDistanceMeters:runningSeconds:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) double runningSeconds __attribute__((swift_name("runningSeconds")));
+@property (readonly) double sumDistanceMeters __attribute__((swift_name("sumDistanceMeters")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -961,6 +1103,18 @@ __attribute__((swift_name("Stats")))
 @property (readonly) NSArray<LumipolGraphSeriesStat *> *perSeries __attribute__((swift_name("perSeries")));
 @property (readonly) NSString * _Nullable segmentSeriesId __attribute__((swift_name("segmentSeriesId")));
 @property (readonly) NSArray<LumipolGraphSegmentStat *> *segments __attribute__((swift_name("segments")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("XMode")))
+@interface LumipolGraphXMode : LumipolGraphKotlinEnum<LumipolGraphXMode *>
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
+- (instancetype)initWithName:(NSString *)name ordinal:(int32_t)ordinal __attribute__((swift_name("init(name:ordinal:)"))) __attribute__((objc_designated_initializer)) __attribute__((unavailable));
+@property (class, readonly) LumipolGraphXMode *distance __attribute__((swift_name("distance")));
+@property (class, readonly) LumipolGraphXMode *time __attribute__((swift_name("time")));
++ (LumipolGraphKotlinArray<LumipolGraphXMode *> *)values __attribute__((swift_name("values()")));
+@property (class, readonly) NSArray<LumipolGraphXMode *> *entries __attribute__((swift_name("entries")));
 @end
 
 __attribute__((objc_subclassing_restricted))

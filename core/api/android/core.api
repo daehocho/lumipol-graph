@@ -133,6 +133,19 @@ public final class com/lumipol/graph/ChartDefaults$LightPalette {
 	public static final field TOUCH_LINE J
 }
 
+public final class com/lumipol/graph/ChartFormat {
+	public static final field INSTANCE Lcom/lumipol/graph/ChartFormat;
+	public static final field PACE_MAX_SECONDS D
+	public static final field PACE_MIN_SECONDS D
+	public final fun distanceTick (D)Ljava/lang/String;
+	public final fun duration (D)Ljava/lang/String;
+	public final fun intTick (D)Ljava/lang/String;
+	public final fun pace (D)Ljava/lang/String;
+	public final fun paceInvalid ()Ljava/lang/String;
+	public final fun percent (D)Ljava/lang/String;
+	public final fun timeTick (D)Ljava/lang/String;
+}
+
 public final class com/lumipol/graph/DonutEngine {
 	public static final field INSTANCE Lcom/lumipol/graph/DonutEngine;
 	public static final field MIN_HIT_TARGET_DP D
@@ -141,9 +154,20 @@ public final class com/lumipol/graph/DonutEngine {
 	public final fun toggleSelection (Ljava/lang/Integer;Ljava/lang/Integer;)Ljava/lang/Integer;
 }
 
+public final class com/lumipol/graph/Gender : java/lang/Enum {
+	public static final field FEMALE Lcom/lumipol/graph/Gender;
+	public static final field MALE Lcom/lumipol/graph/Gender;
+	public static final field UNKNOWN Lcom/lumipol/graph/Gender;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/lumipol/graph/Gender;
+	public static fun values ()[Lcom/lumipol/graph/Gender;
+}
+
 public final class com/lumipol/graph/HeartRateZoneEngine {
 	public static final field INSTANCE Lcom/lumipol/graph/HeartRateZoneEngine;
 	public final fun calculate (Ljava/util/List;I)Ljava/util/List;
+	public final fun donutData (Ljava/util/List;Ljava/util/List;)Lcom/lumipol/graph/model/DonutChartData;
+	public final fun maxHeartRate (ILcom/lumipol/graph/Gender;)I
 	public final fun zoneBpmRanges (I)Ljava/util/List;
 }
 
@@ -188,9 +212,17 @@ public final class com/lumipol/graph/PaceSeriesId {
 public final class com/lumipol/graph/SeriesSelection {
 	public static final field INSTANCE Lcom/lumipol/graph/SeriesSelection;
 	public final fun assignSlots (Ljava/util/List;Ljava/util/Set;Ljava/util/Set;)Ljava/util/List;
+	public final fun invertedAxesFor (I)Ljava/util/Set;
 	public final fun normalized (Ljava/util/List;Ljava/util/Set;Ljava/util/List;)Ljava/util/List;
 	public final fun slotAxis (I)Lcom/lumipol/graph/model/Axis;
 	public final fun toggled (Ljava/util/List;I)Ljava/util/List;
+}
+
+public final class com/lumipol/graph/TrackChartBuilder {
+	public static final field INSTANCE Lcom/lumipol/graph/TrackChartBuilder;
+	public final fun paceInput (Ljava/util/List;Lcom/lumipol/graph/model/RunTotals;Lcom/lumipol/graph/model/BuildOptions;)Lcom/lumipol/graph/model/PaceSeriesInput;
+	public final fun splitSamples (Ljava/util/List;)Ljava/util/List;
+	public final fun zoneSamples (Ljava/util/List;)Ljava/util/List;
 }
 
 public final class com/lumipol/graph/interaction/ZoomWindow {
@@ -343,6 +375,22 @@ public final class com/lumipol/graph/model/BarLayout {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/lumipol/graph/model/BuildOptions {
+	public fun <init> (Lcom/lumipol/graph/model/DistanceUnit;Lcom/lumipol/graph/model/XMode;)V
+	public fun <init> (Lcom/lumipol/graph/model/DistanceUnit;Lcom/lumipol/graph/model/XMode;Z)V
+	public final fun component1 ()Lcom/lumipol/graph/model/DistanceUnit;
+	public final fun component2 ()Lcom/lumipol/graph/model/XMode;
+	public final fun component3 ()Z
+	public final fun copy (Lcom/lumipol/graph/model/DistanceUnit;Lcom/lumipol/graph/model/XMode;Z)Lcom/lumipol/graph/model/BuildOptions;
+	public static synthetic fun copy$default (Lcom/lumipol/graph/model/BuildOptions;Lcom/lumipol/graph/model/DistanceUnit;Lcom/lumipol/graph/model/XMode;ZILjava/lang/Object;)Lcom/lumipol/graph/model/BuildOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getUnit ()Lcom/lumipol/graph/model/DistanceUnit;
+	public final fun getUseWatchSpeed ()Z
+	public final fun getXMode ()Lcom/lumipol/graph/model/XMode;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/lumipol/graph/model/ChartAxis : java/lang/Enum {
 	public static final field X Lcom/lumipol/graph/model/ChartAxis;
 	public static final field Y_OVERLAY Lcom/lumipol/graph/model/ChartAxis;
@@ -354,6 +402,8 @@ public final class com/lumipol/graph/model/ChartAxis : java/lang/Enum {
 }
 
 public final class com/lumipol/graph/model/ChartConfig {
+	public static final field Companion Lcom/lumipol/graph/model/ChartConfig$Companion;
+	public static final field MAX_SEGMENT_COUNT I
 	public fun <init> ()V
 	public fun <init> (II)V
 	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -366,6 +416,10 @@ public final class com/lumipol/graph/model/ChartConfig {
 	public final fun getSegmentCount ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/lumipol/graph/model/ChartConfig$Companion {
+	public final fun segmentCountFor (DLcom/lumipol/graph/model/XMode;)I
 }
 
 public final class com/lumipol/graph/model/ChartDomains {
@@ -381,6 +435,21 @@ public final class com/lumipol/graph/model/ChartDomains {
 	public final fun getYSecondary ()Lcom/lumipol/graph/scale/AxisDomain;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/lumipol/graph/model/DistanceUnit : java/lang/Enum {
+	public static final field Companion Lcom/lumipol/graph/model/DistanceUnit$Companion;
+	public static final field KILOMETERS Lcom/lumipol/graph/model/DistanceUnit;
+	public static final field METERS_PER_KM D
+	public static final field METERS_PER_MILE D
+	public static final field MILES Lcom/lumipol/graph/model/DistanceUnit;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getUnitMeters ()D
+	public static fun valueOf (Ljava/lang/String;)Lcom/lumipol/graph/model/DistanceUnit;
+	public static fun values ()[Lcom/lumipol/graph/model/DistanceUnit;
+}
+
+public final class com/lumipol/graph/model/DistanceUnit$Companion {
 }
 
 public final class com/lumipol/graph/model/DonutChartData {
@@ -639,6 +708,42 @@ public final class com/lumipol/graph/model/Point {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/lumipol/graph/model/RawTrackSample {
+	public static final field Companion Lcom/lumipol/graph/model/RawTrackSample$Companion;
+	public static final field INVALID_ALTITUDE D
+	public static final field MAX_CADENCE D
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;)V
+	public final fun component1 ()Ljava/lang/Double;
+	public final fun component10 ()Ljava/lang/Double;
+	public final fun component2 ()Ljava/lang/Double;
+	public final fun component3 ()Ljava/lang/Double;
+	public final fun component4 ()Ljava/lang/Double;
+	public final fun component5 ()Ljava/lang/Double;
+	public final fun component6 ()Ljava/lang/Double;
+	public final fun component7 ()Ljava/lang/Double;
+	public final fun component8 ()Ljava/lang/Double;
+	public final fun component9 ()Ljava/lang/Double;
+	public final fun copy (Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;)Lcom/lumipol/graph/model/RawTrackSample;
+	public static synthetic fun copy$default (Lcom/lumipol/graph/model/RawTrackSample;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;ILjava/lang/Object;)Lcom/lumipol/graph/model/RawTrackSample;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAltitude ()Ljava/lang/Double;
+	public final fun getCadence ()Ljava/lang/Double;
+	public final fun getCumulativeDistanceMeters ()Ljava/lang/Double;
+	public final fun getCumulativeSeconds ()Ljava/lang/Double;
+	public final fun getDeltaDistanceMeters ()Ljava/lang/Double;
+	public final fun getDeltaSeconds ()Ljava/lang/Double;
+	public final fun getHeartRate ()Ljava/lang/Double;
+	public final fun getLatitude ()Ljava/lang/Double;
+	public final fun getLongitude ()Ljava/lang/Double;
+	public final fun getSpeedMps ()Ljava/lang/Double;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/lumipol/graph/model/RawTrackSample$Companion {
+	public final fun sanitized (Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;)Lcom/lumipol/graph/model/RawTrackSample;
+}
+
 public final class com/lumipol/graph/model/RefBand {
 	public fun <init> (DDLcom/lumipol/graph/model/Axis;)V
 	public synthetic fun <init> (DDLcom/lumipol/graph/model/Axis;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -666,6 +771,19 @@ public final class com/lumipol/graph/model/RefBandLayout {
 	public final fun getAxis ()Lcom/lumipol/graph/model/Axis;
 	public final fun getLower ()D
 	public final fun getUpper ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/lumipol/graph/model/RunTotals {
+	public fun <init> (DD)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun copy (DD)Lcom/lumipol/graph/model/RunTotals;
+	public static synthetic fun copy$default (Lcom/lumipol/graph/model/RunTotals;DDILjava/lang/Object;)Lcom/lumipol/graph/model/RunTotals;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRunningSeconds ()D
+	public final fun getSumDistanceMeters ()D
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -817,6 +935,14 @@ public final class com/lumipol/graph/model/Stats {
 	public final fun getSegments ()Ljava/util/List;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/lumipol/graph/model/XMode : java/lang/Enum {
+	public static final field DISTANCE Lcom/lumipol/graph/model/XMode;
+	public static final field TIME Lcom/lumipol/graph/model/XMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/lumipol/graph/model/XMode;
+	public static fun values ()[Lcom/lumipol/graph/model/XMode;
 }
 
 public final class com/lumipol/graph/model/ZoneBpmRange {

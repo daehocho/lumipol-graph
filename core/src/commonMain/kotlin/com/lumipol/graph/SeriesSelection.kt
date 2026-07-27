@@ -54,4 +54,13 @@ object SeriesSelection {
         require(index >= 0) { "index must be >= 0" }
         return if (index == 0) Axis.PRIMARY else Axis.SECONDARY
     }
+
+    /**
+     * 화면에서 뒤집을 Y축 집합(C5) — 페이스는 "위=빠름"이라 페이스가 앉은 축만 반전한다.
+     * [paceSlot]은 [assignSlots] 결과에서 페이스의 index(없으면 음수).
+     * 앱 2벌 분기(`paceOnPrimary ? [.primary] : []` / 슬롯 0/1 분기 — AOS는 슬롯 2+에서 반전
+     * 누락 버그)를 단일 규칙으로 회수: 페이스가 어느 슬롯이든 그 슬롯의 축을 반전.
+     */
+    fun invertedAxesFor(paceSlot: Int): Set<Axis> =
+        if (paceSlot < 0) emptySet() else setOf(slotAxis(paceSlot))
 }

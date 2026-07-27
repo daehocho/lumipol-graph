@@ -3,6 +3,9 @@ package com.lumipol.graph.harness
 import com.lumipol.graph.BarChartEngine
 import com.lumipol.graph.ChartA11y
 import com.lumipol.graph.ChartDefaults
+import com.lumipol.graph.ChartFormat
+import com.lumipol.graph.Gender
+import com.lumipol.graph.TrackChartBuilder
 import com.lumipol.graph.DonutEngine
 import com.lumipol.graph.HeartRateZoneEngine
 import com.lumipol.graph.LineChartEngine
@@ -240,6 +243,66 @@ object CoreDump {
                     jobj("lower" to jint(it.lower), "upper" to (it.upper?.let(::jint) ?: "null"))
                 })
             }),
+            section("trackChartBuilder", buildList {
+                // C1 — 원천 전처리. 워치/GPS/폴백/게이트 각 1케이스 + 스플릿/HR존 dt 규칙.
+                val totals = RunTotals(5000.0, 1500.0)
+                val cumRows = listOf(
+                    RawTrackSample(200.0, null, 60.0, null, null, 37.5665, 126.9780, 150.0, 170.0, 20.0),
+                    RawTrackSample(200.0, null, 120.0, null, null, 37.5683, 126.9780, 155.0, null, 21.0), // 누적 정지 → 폴백
+                    RawTrackSample(700.0, null, 180.0, null, null, 37.5701, 126.9780, 0.0, 172.0, 22.0),
+                    RawTrackSample(705.0, null, 240.0, null, null, null, null, 158.0, 173.0, -150.0),     // 게이트 하한 무효
+                )
+                val kmDist = TrackChartBuilder.paceInput(cumRows, totals, BuildOptions(DistanceUnit.KILOMETERS, XMode.DISTANCE))
+                add("cumulative_km_distance" to renderPaceInput(kmDist))
+                add("cumulative_mile_time" to renderPaceInput(
+                    TrackChartBuilder.paceInput(cumRows, totals, BuildOptions(DistanceUnit.MILES, XMode.TIME)),
+                ))
+                val deltaRows = listOf(
+                    RawTrackSample(null, 200.0, 60.0, 60.0, 2.5, null, null, 150.0, 170.0, 20.0),
+                    RawTrackSample(null, 210.0, 120.0, 60.0, 15.0, null, null, 152.0, 171.0, 20.5), // 워치 게이트 무효
+                    RawTrackSample(null, 190.0, 180.0, 60.0, 3.0, null, null, 154.0, 172.0, 21.0),
+                )
+                add("watch_km_distance" to renderPaceInput(
+                    TrackChartBuilder.paceInput(deltaRows, totals, BuildOptions(DistanceUnit.KILOMETERS, XMode.DISTANCE, useWatchSpeed = true)),
+                ))
+                add("splits_cumulative" to jarr(TrackChartBuilder.splitSamples(cumRows).map {
+                    jobj("distanceMeters" to jnum(it.distanceMeters), "timeSeconds" to jnum(it.timeSeconds))
+                }))
+                add("zones_cumulative" to jarr(TrackChartBuilder.zoneSamples(cumRows).map {
+                    jobj("heartRate" to jnum(it.heartRate), "timeInterval" to jnum(it.timeInterval))
+                }))
+                val legacyRows = listOf(
+                    RawTrackSample(null, 10.0, null, 12.0, null, null, null, 150.0, null, null),
+                    RawTrackSample(null, 10.0, null, -3.0, null, null, null, 155.0, null, null),
+                )
+                add("zones_legacy_fallback" to jarr(TrackChartBuilder.zoneSamples(legacyRows).map {
+                    jobj("heartRate" to jnum(it.heartRate), "timeInterval" to jnum(it.timeInterval))
+                }))
+            }),
+            section("chartFormat", buildList {
+                listOf(270.0, 305.9, 5.9, 5939.9, 5940.0, 0.0).forEach {
+                    add("pace_${jnum(it)}" to jstr(ChartFormat.pace(it)))
+                }
+                add("paceInvalid" to jstr(ChartFormat.paceInvalid()))
+                listOf(0.0, 307.9, 3665.0).forEach { add("duration_${jnum(it)}" to jstr(ChartFormat.duration(it))) }
+                listOf(0.316, 1.0).forEach { add("percent_${jnum(it)}" to jstr(ChartFormat.percent(it))) }
+                listOf(5.0, 2.5, 0.5, 12.25, -1.5).forEach { add("distanceTick_${jnum(it)}" to jstr(ChartFormat.distanceTick(it))) }
+                listOf(0.1, 15.0).forEach { add("timeTick_${jnum(it)}" to jstr(ChartFormat.timeTick(it))) }
+                add("intTick_178.6" to jstr(ChartFormat.intTick(178.6)))
+            }),
+            section("heartRateHelpers", buildList {
+                listOf(Gender.MALE, Gender.FEMALE, Gender.UNKNOWN).forEach { g ->
+                    add("maxHR_30_${g.name}" to jint(HeartRateZoneEngine.maxHeartRate(30, g)))
+                }
+                add("segmentCount_10.5_distance" to jint(ChartConfig.segmentCountFor(10.5, XMode.DISTANCE)))
+                add("segmentCount_10.5_time" to jint(ChartConfig.segmentCountFor(10.5, XMode.TIME)))
+                add("segmentCount_500_distance" to jint(ChartConfig.segmentCountFor(500.0, XMode.DISTANCE)))
+                (-1..2).forEach { slot ->
+                    add("invertedAxes_slot_$slot" to jarr(
+                        SeriesSelection.invertedAxesFor(slot).map { jstr(it.name) }.sorted(),
+                    ))
+                }
+            }),
             section("paceSeries", HarnessFixtures.paceCases.map { (name, input) ->
                 name to renderPaceResult(PaceSeriesEngine.preprocess(input))
             }),
@@ -305,6 +368,20 @@ object CoreDump {
         "windowMax" to jnum(z.windowMax),
         "isZoomed" to jbool(z.isZoomed),
         "scale" to jnum(z.scale),
+    )
+
+    private fun renderPaceInput(input: PaceSeriesInput): String = jobj(
+        "points" to jarr(input.points.map { p ->
+            jobj(
+                "x" to jnum(p.x),
+                "paceSeconds" to jnum(p.paceSeconds),
+                "heartRate" to (p.heartRate?.let(::jnum) ?: "null"),
+                "cadence" to (p.cadence?.let(::jnum) ?: "null"),
+                "altitude" to (p.altitude?.let(::jnum) ?: "null"),
+            )
+        }),
+        "runningSeconds" to jnum(input.runningSeconds),
+        "sumDistanceMeters" to jnum(input.sumDistanceMeters),
     )
 
     private fun renderNearest(n: NearestResult): String =

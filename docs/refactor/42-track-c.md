@@ -80,6 +80,21 @@ object HeartRateZoneEngine { // 기존 object 확장
 | segmentCount 정책 | 코어 기본 `ChartConfig.segmentCountFor(totalUnits, xMode)` — iOS 고정 5 vs AOS 거리비례 → 44 결정 |
 | 도넛 조립 | `HeartRateZoneEngine.donutData(zoneSeconds, labels): DonutChartData?` — 전존 0 → null 규칙 코어로 |
 
+## 실행 기록
+
+- [x] **SDK 신규 API(0.38.0, 2026-07-28)** — C1: `RawTrackSample(+sanitized 센티널 흡수)`·
+  `BuildOptions(unit, xMode, useWatchSpeed)`·`RunTotals`·`TrackChartBuilder.paceInput/splitSamples/
+  zoneSamples`(D2 병합식 — 워치 우선+Haversine 폴백(1e-6m 양자화, AOS ×1000 결함 소거)+1~41km/h
+  게이트 공통+Double+내림 제거 / D11 dt 폴백). 마일 상수 단일화 `DistanceUnit.METERS_PER_MILE=
+  1609.344`(역수 파생 — iOS 1.609344000000865·0.621371 불일치 종료, iOS 마일 워치 페이스 결함도
+  단일식으로 소거). C2: `ChartFormat`(D1 — pace `4'30"`+99분 상한, paceInvalid, duration, percent,
+  distanceTick(%g 동등), timeTick, intTick). C3: `HeartRateZoneEngine.maxHeartRate(age, gender)` +
+  `Gender`(D3 — UNKNOWN=여성 공식). C5: `donutData(zoneSeconds, labels)`(전존 0→null)·
+  `SeriesSelection.invertedAxesFor(paceSlot)`(AOS 슬롯2+ 누락 버그 소거)·
+  `ChartConfig.segmentCountFor(D4 — 거리 비례·상한 120·시간 0)`. `PaceColormap.legendStops`는
+  B6(0.34.0)에서 선행. 골든 3섹션 추가(폴백 trig 드리프트 0 실측).
+- [ ] 앱 전환(C1~C5 소비부) — 후속 커밋
+
 ## 회수 후 앱 잔여 확인 기준
 
 각 앱 차트 디렉토리에 남아야 하는 것: DB 조회, `RawTrackSample` 변환(필드 복사), 카드 레이아웃,

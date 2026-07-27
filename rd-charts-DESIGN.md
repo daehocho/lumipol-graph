@@ -670,6 +670,31 @@ X축은 기본값 0.0으로 현행(데이터 끝 밀착) 유지.
 **마이그레이션(앱)**: 현재의 등장 애니를 유지하려면 iOS `isAnimationEnabled = true`,
 AOS `animateEntrance = true`를 명시(각 1줄, 트랙 C 앱 커밋에 포함).
 
+### 앱 전처리·포맷·최대심박 코어 회수 API (0.38.0, 2026-07-28)
+
+경계 리팩토링 트랙 C(SDK 측) + D1·D2·D3·D4·D11 결정(44 문서). 상세는 `docs/refactor/42-track-c.md`.
+
+- **feat: `RawTrackSample`/`BuildOptions`/`RunTotals`/`TrackChartBuilder`(C1)** — 원천 DB 행 →
+  차트 입력. 페이스 계산식(D2 병합: 워치 우선 + Haversine 폴백 + 1~41km/h 게이트 + Double +
+  내림 제거)·x 산출·스플릿 델타·HR존 dt(D11: 누적 델타 + 구 기록 per-point 폴백)를 코어가
+  단독 소유. 센티널(심박·케이던스 0, 고도 −100, 케이던스 상한 250)은 `sanitized` 팩토리로 흡수.
+- **feat: `DistanceUnit`** — 마일 상수 단일 원본(`METERS_PER_MILE=1609.344`, 전부 파생) —
+  양 앱 3벌씩의 역수 불일치 상수 종료.
+- **feat: `ChartFormat`(C2)** — pace(D1: `4'30"` 표기 + 99분 상한)·paceInvalid·duration·percent·
+  distanceTick(%g 동등)·timeTick·intTick. ko-KR 고정.
+- **feat: `HeartRateZoneEngine.maxHeartRate(age:gender:)` + `Gender`(C3)** — D3: UNKNOWN=여성 공식.
+- **feat: C5 헬퍼** — `HeartRateZoneEngine.donutData`(전존 0→null),
+  `SeriesSelection.invertedAxesFor(paceSlot)`, `ChartConfig.segmentCountFor`(D4: 거리 비례·상한
+  120·시간모드 0).
+- **숫자 변화 고지(D2·D3·D4 확정분)**: 양 앱 페이스 미세 변동(게이트·정밀도·상수 단일화),
+  iOS 마일+워치 페이스 결함 소거, AOS 성별 불명 최대심박 변경, iOS 랩 통계 거리 비례 전환 —
+  앱이 이 API로 전환하는 릴리스에서 발효(44 문서 결정 기록 참조).
+
+**마이그레이션(앱)**: 43 문서 대응표 참조 — 기존 `PaceSeriesInput` 직접 조립 경로는 유지(어댑터
+병행), 앱 전환 후 deprecated 예정.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은

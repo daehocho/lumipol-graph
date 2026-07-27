@@ -269,6 +269,48 @@
     "maxHr_190": [{"lower":95,"upper":113},{"lower":114,"upper":132},{"lower":133,"upper":151},{"lower":152,"upper":170},{"lower":171,"upper":null}],
     "maxHr_200": [{"lower":100,"upper":119},{"lower":120,"upper":139},{"lower":140,"upper":159},{"lower":160,"upper":179},{"lower":180,"upper":null}]
   },
+  "trackChartBuilder": {
+    "cumulative_km_distance": {"points":[{"x":0.200000000000,"paceSeconds":300.000000000000,"heartRate":150.000000000000,"cadence":170.000000000000,"altitude":20.000000000000},{"x":0.200000000000,"paceSeconds":299.773868579975,"heartRate":155.000000000000,"cadence":null,"altitude":21.000000000000},{"x":0.700000000000,"paceSeconds":120.000000000000,"heartRate":0.000000000000,"cadence":172.000000000000,"altitude":22.000000000000},{"x":0.705000000000,"paceSeconds":0.000000000000,"heartRate":158.000000000000,"cadence":173.000000000000,"altitude":-150.000000000000}],"runningSeconds":1500.000000000000,"sumDistanceMeters":5000.000000000000},
+    "cumulative_mile_time": {"points":[{"x":1.000000000000,"paceSeconds":482.803200000000,"heartRate":150.000000000000,"cadence":170.000000000000,"altitude":20.000000000000},{"x":2.000000000000,"paceSeconds":482.439276755972,"heartRate":155.000000000000,"cadence":null,"altitude":21.000000000000},{"x":3.000000000000,"paceSeconds":193.121280000000,"heartRate":0.000000000000,"cadence":172.000000000000,"altitude":22.000000000000},{"x":4.000000000000,"paceSeconds":0.000000000000,"heartRate":158.000000000000,"cadence":173.000000000000,"altitude":-150.000000000000}],"runningSeconds":1500.000000000000,"sumDistanceMeters":5000.000000000000},
+    "watch_km_distance": {"points":[{"x":0.200000000000,"paceSeconds":400.000000000000,"heartRate":150.000000000000,"cadence":170.000000000000,"altitude":20.000000000000},{"x":0.410000000000,"paceSeconds":0.000000000000,"heartRate":152.000000000000,"cadence":171.000000000000,"altitude":20.500000000000},{"x":0.600000000000,"paceSeconds":333.333333333333,"heartRate":154.000000000000,"cadence":172.000000000000,"altitude":21.000000000000}],"runningSeconds":1500.000000000000,"sumDistanceMeters":5000.000000000000},
+    "splits_cumulative": [{"distanceMeters":200.000000000000,"timeSeconds":60.000000000000},{"distanceMeters":500.000000000000,"timeSeconds":60.000000000000},{"distanceMeters":5.000000000000,"timeSeconds":60.000000000000}],
+    "zones_cumulative": [{"heartRate":150.000000000000,"timeInterval":60.000000000000},{"heartRate":155.000000000000,"timeInterval":60.000000000000},{"heartRate":0.000000000000,"timeInterval":60.000000000000},{"heartRate":158.000000000000,"timeInterval":60.000000000000}],
+    "zones_legacy_fallback": [{"heartRate":150.000000000000,"timeInterval":12.000000000000},{"heartRate":155.000000000000,"timeInterval":0.000000000000}]
+  },
+  "chartFormat": {
+    "pace_270.000000000000": "4'30\"",
+    "pace_305.900000000000": "5'05\"",
+    "pace_5.900000000000": "-'--\"",
+    "pace_5939.900000000000": "98'59\"",
+    "pace_5940.000000000000": "-'--\"",
+    "pace_0.000000000000": "-'--\"",
+    "paceInvalid": "-'--\"",
+    "duration_0.000000000000": "00:00",
+    "duration_307.900000000000": "05:07",
+    "duration_3665.000000000000": "1:01:05",
+    "percent_0.316000000000": "32%",
+    "percent_1.000000000000": "100%",
+    "distanceTick_5.000000000000": "5",
+    "distanceTick_2.500000000000": "2.5",
+    "distanceTick_0.500000000000": "0.5",
+    "distanceTick_12.250000000000": "12.25",
+    "distanceTick_-1.500000000000": "-1.5",
+    "timeTick_0.100000000000": "",
+    "timeTick_15.000000000000": "15:00",
+    "intTick_178.6": "178"
+  },
+  "heartRateHelpers": {
+    "maxHR_30_MALE": 190,
+    "maxHR_30_FEMALE": 179,
+    "maxHR_30_UNKNOWN": 179,
+    "segmentCount_10.5_distance": 10,
+    "segmentCount_10.5_time": 0,
+    "segmentCount_500_distance": 120,
+    "invertedAxes_slot_-1": [],
+    "invertedAxes_slot_0": ["PRIMARY"],
+    "invertedAxes_slot_1": ["SECONDARY"],
+    "invertedAxes_slot_2": ["SECONDARY"]
+  },
   "paceSeries": {
     "P01_zero_totals": {"pace":{"count":0,"items":[]},"heart":{"count":0,"items":[]},"cadence":{"count":0,"items":[]},"altitudeArea":null,"bestPaceSeconds":0.000000000000,"validPaceCount":0,"availableSeries":[]},
     "P02_empty_points": {"pace":{"count":0,"items":[]},"heart":{"count":0,"items":[]},"cadence":{"count":0,"items":[]},"altitudeArea":null,"bestPaceSeconds":0.000000000000,"validPaceCount":0,"availableSeries":[]},
