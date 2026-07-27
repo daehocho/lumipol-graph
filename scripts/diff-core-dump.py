@@ -54,12 +54,14 @@ def compare(a, b, path):
 
 
 def main():
-    if len(sys.argv) != 3:
+    args = [a for a in sys.argv[1:] if a != "--strict"]
+    strict = "--strict" in sys.argv  # 골든 게이트: 드리프트도 실패로 취급
+    if len(args) != 2:
         print(__doc__)
         return 2
-    with open(sys.argv[1]) as f:
+    with open(args[0]) as f:
         left = json.load(f)
-    with open(sys.argv[2]) as f:
+    with open(args[1]) as f:
         right = json.load(f)
 
     compare(left, right, "")
@@ -77,6 +79,9 @@ def main():
         if len(diffs) > 100:
             print(f"  … 외 {len(diffs) - 100}건")
         print(f"\n결과: 불일치 (diffs={len(diffs)}, drifts={len(drifts)})")
+        return 1
+    if strict and drifts:
+        print(f"\n결과: 불일치(strict) — 드리프트 {len(drifts)}건은 골든 게이트에서 실패다")
         return 1
     print(f"결과: 동등 (diffs=0, drifts={len(drifts)})")
     return 0
