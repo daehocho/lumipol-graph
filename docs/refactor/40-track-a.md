@@ -16,7 +16,8 @@ AxisScale(B1), ZoomState(B3) 등은 "값이 이미 일치"하므로 A 단계 불
 
 ## 실행 기록
 
-- [ ] A0 골든 테스트 기반(50 문서 §1)
-- [ ] A1
+- [x] A0 골든 테스트 기반 — `scripts/golden-check.sh` + `core/golden/` (커밋 cdaaa41)
+- [x] A1 — niceNum 결정론화. 실측: JVM↔iOS **비트 동일**(diffs=0, drifts=0), 골든 대비
+  변화는 tiny_range 3건뿐(4틱→3틱 — 종전 Native 결과로 수렴). 골든 동일 커밋 갱신
 - [ ] A2
 - [ ] A3 — 44 결정 대기

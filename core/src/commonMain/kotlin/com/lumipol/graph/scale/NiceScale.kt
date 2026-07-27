@@ -3,8 +3,6 @@ package com.lumipol.graph.scale
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
-import kotlin.math.log10
-import kotlin.math.pow
 
 data class NiceScale(
     val niceMin: Double,
@@ -50,9 +48,20 @@ fun niceScale(min: Double, max: Double, maxTicks: Int = 5, headroomFraction: Dou
 
 // round=false 는 <= 로, round=true 는 < 로 구간을 나누는 비대칭 경계는 실수가 아니라
 // Heckbert의 표준 "nice numbers" 공식 그대로다(범위 산정 시엔 보수적으로 올림, 스텝 산정 시엔 반올림).
+//
+// 10의 거듭제곱은 log10/pow(libm) 대신 곱셈·나눗셈 누적으로 구한다 — libm은 JVM과
+// Kotlin/Native가 마지막 ULP에서 다를 수 있고, 그 차이가 niceScale의 floor/ceil 정수 경계를
+// 넘나들며 틱 개수(T1) 차이로 증폭된 것이 실측됐다(docs/refactor/07-harness.md, tiny_range 4vs3).
+// IEEE 기본 연산(＋−×÷)은 정확 반올림이 보장되어 두 타겟에서 비트 동일하다.
 private fun niceNum(x: Double, round: Boolean): Double {
-    val exp = floor(log10(x))
-    val f = x / 10.0.pow(exp)
+    if (x.isNaN() || x.isInfinite()) return x // 종전 log10/pow 경로의 전파 동작 보존
+    var pow10 = 1.0
+    if (x >= 10.0) {
+        while (x / pow10 >= 10.0) pow10 *= 10.0
+    } else if (x < 1.0) {
+        while (x / pow10 < 1.0) pow10 /= 10.0
+    }
+    val f = x / pow10
     val nf = if (round) {
         when {
             f < 1.5 -> 1.0
@@ -68,5 +77,5 @@ private fun niceNum(x: Double, round: Boolean): Double {
             else -> 10.0
         }
     }
-    return nf * 10.0.pow(exp)
+    return nf * pow10
 }
