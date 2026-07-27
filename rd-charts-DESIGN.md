@@ -462,6 +462,31 @@ iOS가 새 동작을 받는다.
 이미 재생성·커밋 완료 — 이번 릴리스에서 추가 재빌드는 없다. iOS 스냅샷 1건
 (`testDonutZoneSelected`)을 신규 추가했다.
 
+### 레전드 등 외부 UI에서 도넛 선택 구동 (0.27.0, 2026-07-27)
+목적: 심박존 도넛 밖의 UI(예: 레전드)가 도넛과 같은 선택 상태를 구동·표시할 수 있게 한다. 0.26.0의
+탭 토글 선택은 도넛 자체 제스처로만 진입할 수 있었는데, 이제 레전드 항목 탭 같은 외부 입력도
+동일한 전이·표시·타이머 경로를 탄다.
+
+- **iOS** — `RDHeartRateZoneView`에 공개 메서드 `selectSegment(at:)` 신설. 기존 `handleTap`의
+  몸통을 `applySelection(tapped:)`으로 추출해 탭과 외부 구동이 완전히 같은 경로(토글 전이,
+  센터 라벨·디밍 갱신, 자동 해제 타이머 재시작, 햅틱, 델리게이트 통지)를 공유한다. 레이아웃에
+  없는 인덱스(범위 밖이거나 `value <= 0`으로 필터된 세그먼트)를 넘기면 대응하는 호가 없으므로
+  무시한다(`layoutContainsSegment(at:)`로 사전 검사).
+- **AOS** — `DonutSelectionState` 클래스와 `rememberDonutSelectionState(data)` 신설. `toggle(index:)`가
+  코어 `DonutEngine.toggleSelection` 규칙을 그대로 적용해 `selectedIndex`를 갱신한다.
+  `RDHeartRateZoneChart` 시그니처 맨 끝에 `selection: DonutSelectionState =
+  rememberDonutSelectionState(data)` 파라미터를 추가 — 앱이 레전드와 차트에 같은 홀더를 넘기면
+  상태가 공유된다. `onSelectSegment`는 도넛 자체 제스처와 자동 해제 타이머에서만 발화하며, 앱이
+  `selection.toggle()`로 직접 구동한 변경은 재통지하지 않는다(재진입 루프 방지). `onSelectSegment
+  == null`이면 도넛 터치가 비활성인 기존 게이팅은 그대로다.
+
+**비파괴적 — 마이그레이션 불필요.** iOS는 신규 공개 메서드 추가뿐이고, AOS는 신규 파라미터가
+`selection` 하나뿐이며 기본값이 있고 시그니처 맨 끝에 위치해 기존 위치 인자 호출부를 깨지 않는다.
+기존 호출자는 소스 수정 없이 그대로 컴파일된다.
+
+**xcframework 재빌드 불필요** — 이번 변경은 iOS/AOS 렌더러 전용이고 코어(`core` 모듈) 공개 API에
+변경이 없다(0.26.0의 "재빌드 필요"와 대비).
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은
