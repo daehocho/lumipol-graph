@@ -226,7 +226,7 @@ final class ChartLayerBuilderTests: XCTestCase {
         XCTAssertTrue(layers.isEmpty)
     }
 
-    func testOverlaySeriesProducesDashedLayerWithoutAxisLabels() {
+    func testOverlaySeriesProducesSolidThinLayerWithoutAxisLabels() {
         let overlayLayout = LineChartLayout(
             series: [
                 SeriesLayout(id: "p", role: .main, points: [
@@ -257,7 +257,7 @@ final class ChartLayerBuilderTests: XCTestCase {
         XCTAssertTrue(names.contains("series.gradient.o"))
         XCTAssertFalse(names.contains { $0.hasPrefix("axisLabels") })
         let overlay = layer(named: "series.overlay.o", in: layers) as? CAShapeLayer
-        XCTAssertEqual(overlay?.lineDashPattern, ChartStyle.default.overlayLineDashPattern)
+        XCTAssertNil(overlay?.lineDashPattern)
         XCTAssertEqual(overlay?.strokeColor, ChartStyle.default.overlayLineColor.cgColor)
         XCTAssertEqual(overlay?.lineWidth, ChartStyle.default.overlayLineWidth)
     }

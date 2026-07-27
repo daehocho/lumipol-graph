@@ -199,7 +199,7 @@ class LineChartDrawingTest {
     }
 
     @Test
-    fun overlaySeriesProducesDashedLayerWithoutAxisLabels() {
+    fun overlaySeriesProducesSolidThinLayerWithoutAxisLabels() {
         val overlayLayout = LineChartLayout(
             series = listOf(
                 SeriesLayout("p", SeriesRole.MAIN, listOf(NormalizedPoint(0.0, 0.2), NormalizedPoint(1.0, 0.8))),
@@ -222,7 +222,7 @@ class LineChartDrawingTest {
         assertTrue(names.contains("series.gradient.o"))
         assertFalse(names.any { it.startsWith("axisLabels") })
         val overlay = layers.named("series.overlay.o") as StrokeLayer
-        assertContentEquals(style.overlayLineDashPattern, overlay.dash)
+        assertNull(overlay.dash)
         assertEquals(style.overlayLineColor, overlay.color)
         assertEquals(style.overlayLineWidth, overlay.width)
     }

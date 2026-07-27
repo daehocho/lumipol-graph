@@ -2,7 +2,7 @@ import UIKit
 import LumipolGraph
 
 /// 코어 `LineChartLayout`(정규화 0~1)을 `ChartStyle`·`PlotArea`로 CALayer 트리에 조립한다.
-/// z-순서: 그리드 → 밴드 → 마커 → 모든 시리즈 그라데이션(배경) → 모든 시리즈 라인(main 실선/overlay 점선) → 축 라벨.
+/// z-순서: 그리드 → 밴드 → 마커 → 모든 시리즈 그라데이션(배경) → 모든 시리즈 라인(전부 실선, overlay는 가는 폭) → 축 라벨.
 enum ChartLayerBuilder {
 
     static func build(
@@ -47,7 +47,7 @@ enum ChartLayerBuilder {
                 ))
             }
         }
-        // 패스 B: 모든 라인(배열 순서). main=실선, overlay=점선.
+        // 패스 B: 모든 라인(배열 순서). main/overlay 모두 실선, overlay는 가는 폭.
         for entry in drawableSeries {
             if entry.series.role == .overlay {
                 layers.append(overlayLineLayer(entry.series, path: entry.path, style: style))
@@ -104,7 +104,7 @@ enum ChartLayerBuilder {
         return layer
     }
 
-    /// 코어가 자체 정규화한 오버레이 시리즈 — 축 라벨 없는 점선 라인(그라데이션은 패스 A가 그린다).
+    /// 코어가 자체 정규화한 오버레이 시리즈 — 축 라벨 없는 가는 실선 라인(그라데이션은 패스 A가 그린다).
     private static func overlayLineLayer(
         _ series: SeriesLayout, path: UIBezierPath, style: ChartStyle
     ) -> CAShapeLayer {
@@ -114,7 +114,6 @@ enum ChartLayerBuilder {
         layer.strokeColor = seriesColor(id: series.id, role: series.role, axis: .primary, style: style).cgColor
         layer.fillColor = nil
         layer.lineWidth = style.overlayLineWidth
-        layer.lineDashPattern = style.overlayLineDashPattern
         layer.lineJoin = .round
         return layer
     }

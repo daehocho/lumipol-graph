@@ -31,7 +31,6 @@ class DensityScalingTest {
         assertEquals(base.plotInsets.top * 3f, s.plotInsets.top)
         // dash 패턴도 스케일
         assertEquals(base.gridLineDashPattern[0] * 3f, s.gridLineDashPattern[0])
-        assertEquals(base.overlayLineDashPattern[0] * 3f, s.overlayLineDashPattern[0])
     }
 
     @Test

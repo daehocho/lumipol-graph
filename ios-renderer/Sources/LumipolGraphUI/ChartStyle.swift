@@ -24,11 +24,10 @@ public struct ChartStyle {
     public var gridLineDashPattern: [NSNumber] = [3, 3]
     public var gridLineWidth: CGFloat = 0.5
 
-    // 오버레이(코어가 자체 정규화한 시리즈) — 축 라벨 없는 점선 라인.
+    // 오버레이(코어가 자체 정규화한 시리즈) — 축 라벨 없는 가는 실선 라인(0.23.0부터 점선 제거).
     // 배경 그라데이션은 다른 시리즈와 동일하게 gradientMaxAlpha 규칙을 따른다(0.21.0부터).
     public var overlayLineColor: UIColor = UIColor.systemPurple.withAlphaComponent(0.8)
     public var overlayLineWidth: CGFloat = 1.5
-    public var overlayLineDashPattern: [NSNumber] = [2, 2]
 
     // 기준선/밴드 (refLineDashPattern은 BarChart 평균/목표 점선이 재사용)
     public var refLineDashPattern: [NSNumber] = [6, 3]

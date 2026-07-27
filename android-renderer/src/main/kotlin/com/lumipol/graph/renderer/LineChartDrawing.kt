@@ -129,7 +129,7 @@ internal data class ContainerLayer(
 
 /**
  * 코어 [LineChartLayout]을 z-순서 [LineChartLayer] 리스트로 조립한다(그리드→밴드→마커→
- * 모든 시리즈 그라데이션(배경)→모든 시리즈 라인(main 실선/overlay 점선)→축라벨).
+ * 모든 시리즈 그라데이션(배경)→모든 시리즈 라인(전부 실선, overlay는 가는 폭)→축라벨).
  * 렌더 불가 플롯이면 빈 리스트.
  *
  * 코어 API가 시리즈 id 유일성을 강제하지 않으므로 중복 시 **첫 시리즈 우선**으로 축을 해석한다
@@ -183,7 +183,7 @@ internal fun buildLineChartLayers(
             layers.add(gradientLayer(s.id, s.role, points, axis, alpha, style, plot))
         }
     }
-    // 패스 B: 모든 라인(배열 순서). main=실선, overlay=점선.
+    // 패스 B: 모든 라인(배열 순서). main/overlay 모두 실선, overlay는 가는 폭.
     drawableSeries.forEach { (series, axis, points) ->
         if (series.role == SeriesRole.OVERLAY) {
             layers.add(
@@ -192,7 +192,6 @@ internal fun buildLineChartLayers(
                     segments = listOf(points),
                     color = seriesColor(series.id, series.role, axis, style),
                     width = style.overlayLineWidth,
-                    dash = style.overlayLineDashPattern,
                     join = StrokeJoin.Round,
                 ),
             )

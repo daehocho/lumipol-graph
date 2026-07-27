@@ -60,11 +60,10 @@ data class ChartStyle(
     val gridLineDashPattern: FloatArray = floatArrayOf(3f, 3f),
     val gridLineWidth: Float = 0.5f,
 
-    // 오버레이(코어가 자체 정규화한 시리즈) — 축 라벨 없는 점선 라인.
+    // 오버레이(코어가 자체 정규화한 시리즈) — 축 라벨 없는 가는 실선 라인(0.23.0부터 점선 제거).
     // 배경 그라데이션은 다른 시리즈와 동일하게 gradientMaxAlpha 규칙을 따른다(0.21.0부터).
     val overlayLineColor: Color,
     val overlayLineWidth: Float = 1.5f,
-    val overlayLineDashPattern: FloatArray = floatArrayOf(2f, 2f),
 
     // 기준선/밴드 (refLineDashPattern은 BarChart 평균/목표 점선이 재사용)
     val refLineDashPattern: FloatArray = floatArrayOf(6f, 3f),
@@ -214,7 +213,6 @@ internal fun ChartStyle.scaledForDensity(density: Float): ChartStyle {
         gridLineDashPattern = gridLineDashPattern.scaled(),
         gridLineWidth = maxOf(gridLineWidth * density, ChartStyle.HAIRLINE_MIN_PX),
         overlayLineWidth = overlayLineWidth * density,
-        overlayLineDashPattern = overlayLineDashPattern.scaled(),
         refLineDashPattern = refLineDashPattern.scaled(),
         barCornerRadius = barCornerRadius * density,
         barMinHeight = barMinHeight * density,
