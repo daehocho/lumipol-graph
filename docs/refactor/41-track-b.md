@@ -75,7 +75,10 @@
 - [x] **B10** — 0.36.0. `SeriesLayout.axis` 신설 — 코어가 항목별 축을 확정해 출력(맵 방식 대신
   항목 내장 — 중복 id 모호성 자체가 소멸). 렌더러 firstWinsBy/firstWinsAxis(AOS)·
   Dictionary(uniquingKeysWith:)(iOS 드로잉) 삭제. 골든 라인 섹션에 axis 키 추가(의도 델타 26건)
-- [ ] B11~B14 — 미착수
+- [x] **B11** — AOS `DonutSelectionState.toggle()`도 탭과 동일 경로로 햅틱+`onSelectSegment` 발화
+  (iOS `selectSegment(at:)` 패리티, 30 문서 §3-7 비대칭 해소). 재진입은 전이 규칙상 1스텝 수렴.
+  구 무통지 계약을 검증하던 테스트를 새 계약으로 갱신. 렌더러 내부 — 코어 무변경
+- [ ] B12~B14 — 미착수
 
 ## 실행 순서 권장
 

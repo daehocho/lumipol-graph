@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -61,9 +62,10 @@ internal data class DonutArc(
  * @param onSelectSegment 탭 토글 선택(0.26.0). 선택 확정·이동 시 **원본 data.segments 인덱스**,
  *   재탭·링 밖 탭·자동 해제([ChartStyle.donutAutoDeselectDelaySeconds]) 시 null.
  *   data 교체로 인한 리셋은 통지하지 않는다. null이면 터치 비활성 — [selection]만 넘기고 이 값을
- *   생략하면 도넛 자체 탭도 함께 죽는다([selection] 문서 참고). 도넛 제스처·자동 해제에서만
- *   발화하며, 앱이 [selection]의 [DonutSelectionState.toggle]로 직접 구동한 변경은 재통지하지
- *   않는다(재진입 루프 방지).
+ *   생략하면 도넛 자체 탭도 함께 죽는다([selection] 문서 참고). 도넛 제스처·자동 해제뿐 아니라
+ *   앱이 [selection]의 [DonutSelectionState.toggle]로 직접 구동한 변경도 발화한다(B11 —
+ *   iOS `selectSegment(at:)` 패리티). 콜백 안에서 다시 toggle을 구동하지 말 것(같은 값은
+ *   전이 규칙상 no-op이라 루프는 1스텝 수렴).
  * @param selection 선택 상태 홀더(0.27.0). 앱이 레전드 등과 공유하려면 [rememberDonutSelectionState]로
  *   만들어 넘긴다. 주의: 터치 활성화는 여전히 [onSelectSegment]가 null이 아닌지로 결정된다 —
  *   레전드와 선택만 공유하고 콜백 자체는 필요 없더라도, 도넛 탭을 살리려면 no-op 람다(`{}`)라도
@@ -97,6 +99,15 @@ fun RDHeartRateZoneChart(
     // pointerInput 키(data/ringPx/hitBandPx)와 무관하게 바뀔 수 있는 값이라 rememberUpdatedState로
     // 최신값을 참조 — 그렇지 않으면 이 플래그만 토글해선 제스처 코루틴이 재시작되지 않아 낡은 값이 쓰인다.
     val hapticsEnabled by rememberUpdatedState(scaledStyle.donutSelectionHapticsEnabled)
+    // B11: 앱이 toggle()로 직접 구동한 변경도 탭과 동일 경로(햅틱+통지) — iOS selectSegment 패리티.
+    SideEffect {
+        selection.onProgrammaticChange = { next ->
+            if (next != null && hapticsEnabled) {
+                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+            currentOnSelect?.invoke(next)
+        }
+    }
     val gesture = if (onSelectSegment == null) {
         Modifier
     } else {

@@ -24,14 +24,26 @@ class DonutSelectionState internal constructor(
         internal set
 
     /**
+     * [toggle]로 구동된 변경의 통지·햅틱 훅 — 차트 composable이 주입한다(B11).
+     * iOS `selectSegment(at:)`가 탭과 동일 경로로 델리게이트·햅틱을 울리는 것의 패리티.
+     */
+    internal var onProgrammaticChange: ((Int?) -> Unit)? = null
+
+    /**
      * 탭 토글 전이를 적용한다(코어 규칙 재사용) — 같은 인덱스면 해제, null이면 해제, 다르면 이동.
      * 레이아웃에 없는 인덱스(범위 밖, value<=0으로 필터된 세그먼트)는 무시한다(상태 불변·통지
-     * 없음 — iOS `layoutContainsSegment` 패리티). 햅틱·통지는 호출부 몫이다(컴포지션 로컬을
-     * 홀더가 소유할 수 없다 — iOS는 메서드가 대신 울린다).
+     * 없음 — iOS `layoutContainsSegment` 패리티).
+     *
+     * 상태가 실제로 바뀌면 `onSelectSegment`(연결된 차트가 주입)를 발화한다 — iOS
+     * `selectSegment(at:)`와 동일 계약(B11, 발화 조건 비대칭 해소). 같은 값 재요청은 전이
+     * 규칙상 해제 또는 no-op이므로 콜백 재진입은 1스텝에서 수렴한다.
      */
     fun toggle(index: Int?) {
         if (index != null && index !in selectableIndices) return
-        selectedIndex = DonutEngine.toggleSelection(selectedIndex, index)
+        val next = DonutEngine.toggleSelection(selectedIndex, index)
+        if (next == selectedIndex) return
+        selectedIndex = next
+        onProgrammaticChange?.invoke(next)
     }
 }
 
