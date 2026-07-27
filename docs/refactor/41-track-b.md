@@ -85,7 +85,9 @@
 - [x] **B13** — 그림자 정리. iOS `ChartStyle.barColors` 죽은 기본값 + AOS `barColors`(B6 이후
   동반 사문화) 제거 — 양 앱 미사용 grep 확인, 43 전략 5(파괴적 허용). ZoomState 사문 API는
   B3 이관 때 이미 소거. 렌더러만 — 코어 무변경
-- [ ] B14 — 미착수
+- [x] **B14** — 막대 Y 좌표 경로 통일. iOS RDBarChartView가 PlotArea 경유(라인차트와 동일 경로),
+  AOS도 tick·참조선 y를 `plot.y(pos, PRIMARY)`로 통일 — `maxY - pos*height` 수동 산식 소거
+  (반전은 코어 값 그대로, invertedAxes 비움 = 동일 결과 리팩토링). 스냅샷 무변화 확인
 
 ## 실행 순서 권장
 

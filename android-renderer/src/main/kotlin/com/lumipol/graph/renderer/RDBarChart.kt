@@ -31,6 +31,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
 import com.lumipol.graph.PaceColormap
+import com.lumipol.graph.model.Axis
 import com.lumipol.graph.model.BarChartLayout
 import com.lumipol.graph.model.BarColorAnchors
 import com.lumipol.graph.model.BarColorRole
@@ -207,7 +208,8 @@ internal fun buildBarChartLayers(
 
     // Y 그리드 + 틱 라벨
     for ((i, tick) in layout.yTicks.withIndex()) {
-        val y = plot.maxY - tick.position * plot.height
+        // B14: 라인차트와 동일한 PlotArea.y 경유 — 반전은 코어 값 그대로(invertedAxes 비움).
+        val y = plot.y(tick.position, Axis.PRIMARY)
         style.gridLineColor?.let { grid ->
             layers.add(
                 StrokeLayer(
@@ -297,7 +299,7 @@ internal fun buildBarChartLayers(
 
     // 참조선(목표/평균)
     layout.referenceLinePosition?.let { refPos ->
-        val y = plot.maxY - refPos * plot.height
+        val y = plot.y(refPos, Axis.PRIMARY)
         layers.add(
             StrokeLayer(
                 name = "barRefLine",

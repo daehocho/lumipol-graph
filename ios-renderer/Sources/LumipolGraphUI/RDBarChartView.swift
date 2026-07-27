@@ -74,12 +74,15 @@ public final class RDBarChartView: UIView {
         guard let layout = layout, !layout.bars.isEmpty, bounds.width > 0, bounds.height > 0 else { return }
 
         let insets = style.plotInsets
-        let plot = bounds.inset(by: insets)
-        guard plot.width > 0, plot.height > 0 else { return }
+        // B14: 라인차트와 동일한 PlotArea 경유 — Y 매핑 경로 통일. 막대 반전은 코어 값 그대로
+        // (heightFraction·position이 이미 반전 축)이므로 invertedAxes는 비운다.
+        let plotArea = PlotArea(bounds: bounds, insets: insets)
+        guard plotArea.isRenderable else { return }
+        let plot = plotArea.rect
 
         // Y 그리드/틱 라벨
         for tick in layout.yTicks {
-            let y = plot.maxY - CGFloat(tick.position) * plot.height
+            let y = plotArea.y(tick.position, axis: .primary)
             if let grid = style.gridLineColor {
                 let line = CAShapeLayer()
                 let p = UIBezierPath()
@@ -164,7 +167,7 @@ public final class RDBarChartView: UIView {
         // 참조선(목표/평균)
         if let refBox = layout.referenceLinePosition {
             let refPos = CGFloat(truncating: refBox)
-            let y = plot.maxY - refPos * plot.height
+            let y = plotArea.y(Double(refPos), axis: .primary)
             let line = CAShapeLayer()
             let p = UIBezierPath()
             p.move(to: CGPoint(x: plot.minX, y: y))
