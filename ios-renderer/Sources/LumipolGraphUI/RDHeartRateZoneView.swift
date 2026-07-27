@@ -107,7 +107,25 @@ public final class RDHeartRateZoneView: UIView {
 
     /// 탭 좌표 → 토글 전이 → 상태·표시·타이머·통지. 상태가 실제로 바뀔 때만 통지.
     func handleTap(at point: CGPoint) {
-        let tapped = segmentIndex(at: point)
+        applySelection(tapped: segmentIndex(at: point))
+    }
+
+    /// 도넛 밖(레전드 등)에서 선택을 구동한다(0.27.0). 탭과 완전히 동일한 경로 —
+    /// 토글 전이(같은 인덱스 재요청 시 해제), 센터 라벨·디밍 갱신, 자동 해제 타이머 재시작,
+    /// 햅틱, 델리게이트 통지. 레이아웃에 없는 인덱스(범위 밖·value<=0으로 필터된 세그먼트)는
+    /// 대응하는 호가 없으므로 무시한다 — 히트테스트는 구조상 그런 값을 만들지 않지만
+    /// 외부 호출은 임의 값이 올 수 있다.
+    public func selectSegment(at index: Int?) {
+        if let index = index, !layoutContainsSegment(at: index) { return }
+        applySelection(tapped: index)
+    }
+
+    private func layoutContainsSegment(at index: Int) -> Bool {
+        currentLayout?.segments.contains { Int($0.sourceIndex) == index } ?? false
+    }
+
+    /// 두 진입점(탭·외부 구동)의 공통 경로. 상태가 실제로 바뀔 때만 통지한다.
+    private func applySelection(tapped: Int?) {
         let next = toggled(current: selectedIndex, tapped: tapped)
         guard next != selectedIndex else { return }
         if next != nil, style.donutSelectionHapticsEnabled {

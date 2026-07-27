@@ -212,4 +212,75 @@ final class HeartRateZoneViewTests: XCTestCase {
         view.layoutIfNeeded()
         XCTAssertEqual(view.segmentLayers.count, 0)
     }
+
+    // MARK: - 외부 구동 선택 (0.27.0, 레전드 탭)
+
+    func testSelectSegmentSelectsAndNotifies() {
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy)
+        view.selectSegment(at: 1)
+        XCTAssertEqual(view.selectedIndex, 1)
+        XCTAssertEqual(spy.selections, [1])
+        XCTAssertEqual(view.zoneNameLabel.text, "유산소")
+        XCTAssertEqual(view.percentLabel.text, "70%")
+    }
+
+    func testSelectSegmentSameIndexTogglesOff() {
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy)
+        view.selectSegment(at: 0)
+        view.selectSegment(at: 0)
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(spy.selections, [0, nil])
+    }
+
+    func testSelectSegmentNilClears() {
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy)
+        view.selectSegment(at: 0)
+        view.selectSegment(at: nil)
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(spy.selections, [0, nil])
+    }
+
+    func testSelectSegmentIgnoresIndexNotInLayout() {
+        // 범위 밖·필터된(value<=0) 인덱스는 해당 호가 없으므로 무시 — 상태·통지 불변.
+        let spy = SpyZoneDelegate()
+        let view = makeView()
+        view.zoneDelegate = spy
+        view.render(DonutChartData(segments: [
+            DonutSegment(value: 0, colorRole: .zone1, label: "워밍업"),
+            DonutSegment(value: 100, colorRole: .zone2, label: "저강도"),
+        ]))
+        view.layoutIfNeeded()
+        view.selectSegment(at: 0)   // 필터된 세그먼트
+        view.selectSegment(at: 7)   // 범위 밖
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(spy.selections, [])
+        view.selectSegment(at: 1)   // 실재하는 인덱스는 정상 동작(회귀 방지)
+        XCTAssertEqual(view.selectedIndex, 1)
+    }
+
+    func testTapAndSelectSegmentShareSelection() {
+        // 도넛 탭으로 고른 존을 레전드로 다시 누르면 해제된다 — 두 진입점이 같은 상태를 쓴다.
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy)
+        view.handleTap(at: ringPoint(in: view, atFraction: 0.15))  // idx 0 선택
+        view.selectSegment(at: 0)
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(spy.selections, [0, nil])
+    }
+
+    func testSelectSegmentStartsAutoDeselectTimer() {
+        var style = ChartStyle.default
+        style.donutAutoDeselectDelay = 0.05
+        let spy = SpyZoneDelegate()
+        let view = makeSelectableView(delegate: spy, style: style)
+        view.selectSegment(at: 1)
+        let exp = expectation(description: "auto deselect")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { exp.fulfill() }
+        wait(for: [exp], timeout: 2)
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(spy.selections, [1, nil])
+    }
 }
