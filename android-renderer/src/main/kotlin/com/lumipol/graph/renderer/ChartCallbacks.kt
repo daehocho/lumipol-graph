@@ -19,7 +19,7 @@ typealias OnScrubBackground = (value: Double) -> Unit
 typealias OnScrubEnd = () -> Unit
 
 /**
- * 도넛 세그먼트 선택. index=null 이면 선택 해제(up/cancel). iOS `didSelectSegmentAt`.
+ * 도넛 세그먼트 선택. index=null 이면 선택 해제(재탭·링 밖 탭·자동 해제). iOS `didSelectSegmentAt`.
  * **index는 원본 `data.segments` 인덱스**(value<=0 필터로 어긋난 레이아웃 인덱스가 아님).
  *
  * 0.26.0: 탭 토글 선택으로 의미 변경 — "누름/뗌"이 아니라 "선택 확정/해제(토글·자동 해제)" 시 호출.

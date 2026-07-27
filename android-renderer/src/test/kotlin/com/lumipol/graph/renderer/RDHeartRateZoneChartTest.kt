@@ -122,7 +122,7 @@ class RDHeartRateZoneChartTest {
 
     @Test
     fun selectedIndexDimsOtherSegmentsOnly() {
-        // 선택 조각은 원째 색, 나머지는 alpha=donutDimmedAlpha로 교체(iOS withAlphaComponent 대응).
+        // 선택 조각은 원래 색, 나머지는 alpha=donutDimmedAlpha로 교체(iOS withAlphaComponent 대응).
         val layout = DonutEngine.layout(
             DonutChartData(
                 listOf(

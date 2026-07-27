@@ -166,6 +166,7 @@ public final class RDHeartRateZoneView: UIView {
         guard let layout = currentLayout, layout.total > 0 else {
             zoneNameLabel.isHidden = true
             percentLabel.isHidden = true
+            accessibilityLabel = "심박존 도넛"
             return
         }
         // 디밍: 선택 중이면 비선택 조각의 alpha를 donutDimmedAlpha로 대체.
