@@ -60,11 +60,14 @@ internal data class DonutArc(
  * @param animateEntrance sweep 0→최종 등장 애니(12시부터 시계방향). iOS는 정적이라 기본 off(UX 패리티).
  * @param onSelectSegment 탭 토글 선택(0.26.0). 선택 확정·이동 시 **원본 data.segments 인덱스**,
  *   재탭·링 밖 탭·자동 해제([ChartStyle.donutAutoDeselectDelaySeconds]) 시 null.
- *   data 교체로 인한 리셋은 통지하지 않는다. null이면 터치 비활성. 도넛 제스처·자동 해제에서만
+ *   data 교체로 인한 리셋은 통지하지 않는다. null이면 터치 비활성 — [selection]만 넘기고 이 값을
+ *   생략하면 도넛 자체 탭도 함께 죽는다([selection] 문서 참고). 도넛 제스처·자동 해제에서만
  *   발화하며, 앱이 [selection]의 [DonutSelectionState.toggle]로 직접 구동한 변경은 재통지하지
  *   않는다(재진입 루프 방지).
  * @param selection 선택 상태 홀더(0.27.0). 앱이 레전드 등과 공유하려면 [rememberDonutSelectionState]로
- *   만들어 넘긴다.
+ *   만들어 넘긴다. 주의: 터치 활성화는 여전히 [onSelectSegment]가 null이 아닌지로 결정된다 —
+ *   레전드와 선택만 공유하고 콜백 자체는 필요 없더라도, 도넛 탭을 살리려면 no-op 람다(`{}`)라도
+ *   [onSelectSegment]에 non-null로 넘겨야 한다.
  */
 @Composable
 fun RDHeartRateZoneChart(
@@ -96,7 +99,10 @@ fun RDHeartRateZoneChart(
     val gesture = if (onSelectSegment == null) {
         Modifier
     } else {
-        Modifier.pointerInput(data, ringPx, hitBandPx) {
+        // 키에 selection을 포함 — data는 그대로 두고 홀더 인스턴스만 교체하는 드문 패턴에서도
+        // 제스처 코루틴이 새 홀더를 읽도록 재시작시킨다(정상 경로인 rememberDonutSelectionState는
+        // remember(data)로 묶여 있어 data 불변 시 인스턴스도 그대로라 재시작이 늘지 않는다).
+        Modifier.pointerInput(data, ringPx, hitBandPx, selection) {
             detectTapGestures { pos ->
                 val tapped = donutSegmentIndex(
                     px = pos.x, py = pos.y,
