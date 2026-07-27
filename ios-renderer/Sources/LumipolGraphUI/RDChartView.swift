@@ -50,7 +50,8 @@ public final class RDChartView: UIView {
     /// 최대 확대 배율 (전체 구간 대비)
     @objc public var maxZoomScale: CGFloat = 10
 
-    private var zoomState: ZoomState?
+    // 산술은 코어 ZoomWindow(B3 이관, 불변 값) — 상태 보유·재대입만 뷰 소관.
+    private var zoomState: ZoomWindow?
     private let pinchRecognizer = UIPinchGestureRecognizer()
     private let doubleTapRecognizer = UITapGestureRecognizer()
     private let markerTapRecognizer = UITapGestureRecognizer()
@@ -299,7 +300,7 @@ public final class RDChartView: UIView {
     public func zoom(toXRange range: ClosedRange<Double>) {
         guard isZoomEnabled, range.upperBound > range.lowerBound else { return }
         ensureZoomState()
-        zoomState?.setWindow(range)
+        zoomState = zoomState?.setWindow(targetMin: range.lowerBound, targetMax: range.upperBound)
         hideTouchMarker()
         commitViewport()
     }
@@ -317,7 +318,7 @@ public final class RDChartView: UIView {
         // 출력하므로 tick 양끝 외삽(구 AxisScale)이 필요 없다.
         guard zoomState == nil, let domain = xDomain() else { return }
         guard domain.max > domain.min else { return }
-        zoomState = ZoomState(fullDomain: domain.min...domain.max)
+        zoomState = ZoomWindow(fullMin: domain.min, fullMax: domain.max)
     }
 
     /// 제스처 종료/프로그래매틱 변경 시 — 창에 맞춰 코어 재계산 + 레이어 재조립 (하이브리드의 커밋 단계).
@@ -386,8 +387,9 @@ public final class RDChartView: UIView {
 
     func pinchChanged(cumulativeScale: Double, anchor: Double) {
         guard let start = pinchStartWindow else { return }
-        zoomState?.pinch(
-            from: start, cumulativeScale: cumulativeScale,
+        zoomState = zoomState?.pinch(
+            startMin: start.lowerBound, startMax: start.upperBound,
+            cumulativeScale: cumulativeScale,
             anchor: anchor, maxScale: Double(maxZoomScale)
         )
         commitViewport()
@@ -415,11 +417,11 @@ public final class RDChartView: UIView {
             panStartWindow = zoomState?.window
         case .changed:
             guard let start = panStartWindow else { return }
-            let span = start.upperBound - start.lowerBound
-            // 오른쪽 드래그(+x) = 이전(왼쪽) 구간으로 → 창 왼쪽 이동.
+            // 오른쪽 드래그(+x) = 이전(왼쪽) 구간으로 → 창 왼쪽 이동. 산술은 코어 ZoomWindow.pan.
             let fraction = Double(recognizer.translation(in: self).x / plotArea.rect.width)
-            let targetLower = start.lowerBound - fraction * span
-            zoomState?.setWindow(targetLower ... (targetLower + span))
+            zoomState = zoomState?.pan(
+                startMin: start.lowerBound, startMax: start.upperBound, fraction: fraction
+            )
             commitViewport()
         case .ended, .cancelled:
             panStartWindow = nil
@@ -546,4 +548,9 @@ extension RDChartView: UIGestureRecognizerDelegate {
         }
         return super.gestureRecognizerShouldBegin(gestureRecognizer)
     }
+}
+
+private extension ZoomWindow {
+    /// 코어 창 값의 Range 뷰 — 기존 호출부(기준 창 스냅샷·클램프) 표기 유지용.
+    var window: ClosedRange<Double> { windowMin...windowMax }
 }

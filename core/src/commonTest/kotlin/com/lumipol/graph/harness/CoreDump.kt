@@ -7,6 +7,7 @@ import com.lumipol.graph.LineChartEngine
 import com.lumipol.graph.PaceSeriesEngine
 import com.lumipol.graph.PaceSeriesId
 import com.lumipol.graph.SeriesSelection
+import com.lumipol.graph.interaction.ZoomWindow
 import com.lumipol.graph.model.*
 import com.lumipol.graph.query.barIndexAtX
 import com.lumipol.graph.query.heightFractions
@@ -78,6 +79,22 @@ object CoreDump {
             }),
             section("interpolatedY", HarnessFixtures.interpolationCases.flatMap { (name, points, xs) ->
                 xs.map { x -> "${name}_x_${jnum(x)}" to jnum(LineChartEngine.interpolatedY(points, x)) }
+            }),
+            section("zoomWindow", buildList {
+                val full = ZoomWindow(0.0, 10.0)
+                add("initial" to renderZoom(full))
+                val pinched = full.pinch(full.windowMin, full.windowMax, 2.0, 0.5, 10.0)
+                add("pinch_2.0_anchor_0.5" to renderZoom(pinched))
+                add("pinch_cumulative_4.0_anchor_0.25" to renderZoom(
+                    pinched.pinch(full.windowMin, full.windowMax, 4.0, 0.25, 10.0),
+                ))
+                add("pinch_clamped_max_10" to renderZoom(full.pinch(full.windowMin, full.windowMax, 100.0, 0.5, 10.0)))
+                add("pan_0.2_from_pinched" to renderZoom(pinched.pan(pinched.windowMin, pinched.windowMax, 0.2)))
+                add("setWindow_8_13" to renderZoom(full.setWindow(8.0, 13.0)))
+                // ulp 재구성 회귀 — 완전 줌아웃 시 fullDomain 비트 복원(isZoomed=false)
+                val ulp = ZoomWindow(21.730886, 195.28034191195613)
+                    .pinch(21.730886, 195.28034191195613, 4.0, 0.7, 10.0)
+                add("ulp_full_zoom_out" to renderZoom(ulp.pinch(ulp.windowMin, ulp.windowMax, 0.1, 0.3, 10.0)))
             }),
             section("barChart", HarnessFixtures.barCases.map { (name, data) ->
                 name to renderBarLayout(BarChartEngine.layout(data))
@@ -152,6 +169,13 @@ object CoreDump {
 
     private fun renderNormPoints(points: List<NormalizedPoint>): String =
         digestList(points) { p -> jobj("x" to jnum(p.x), "y" to jnum(p.y)) }
+
+    private fun renderZoom(z: ZoomWindow): String = jobj(
+        "windowMin" to jnum(z.windowMin),
+        "windowMax" to jnum(z.windowMax),
+        "isZoomed" to jbool(z.isZoomed),
+        "scale" to jnum(z.scale),
+    )
 
     private fun renderNearest(n: NearestResult): String =
         jobj("seriesId" to jstr(n.seriesId), "x" to jnum(n.x), "y" to jnum(n.y))

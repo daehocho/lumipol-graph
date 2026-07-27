@@ -13,6 +13,7 @@ import com.lumipol.graph.LineChartEngine
 import com.lumipol.graph.model.ChartAxis
 import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.LineChartLayout
+import com.lumipol.graph.interaction.ZoomWindow
 import com.lumipol.graph.model.Point
 import com.lumipol.graph.query.SCRUB_WINDOW_EPSILON
 
@@ -35,8 +36,8 @@ internal class LineChartInteraction(
     val data: LineChartData,
     val sortedArea: List<Point>?,
 ) {
-    /** 현재 줌 창(null = 전체 구간, ensureZoom 불변식). */
-    var zoom by mutableStateOf<ZoomState?>(null)
+    /** 현재 줌 창(null = 전체 구간, ensureZoom 불변식). 산술은 코어 [ZoomWindow](B3), 상태 보유만 렌더러. */
+    var zoom by mutableStateOf<ZoomWindow?>(null)
         private set
 
     /**
@@ -55,6 +56,7 @@ internal class LineChartInteraction(
     var onScrubEnd: OnScrubEnd? = null
 
     // 제스처 진행 중 기준 창(드리프트 방지) — non-observable 임시값(iOS pinch/panStartWindow).
+    // 기준 창 스냅샷은 상태 보유라 렌더러 소관 — 산술만 코어 ZoomWindow가 수행.
     private var pinchStartWindow: ClosedFloatingPointRange<Double>? = null
     private var panStartWindow: ClosedFloatingPointRange<Double>? = null
 
@@ -64,14 +66,12 @@ internal class LineChartInteraction(
 
     /**
      * 현재 줌 창에 맞춘 layout. 확대 상태면 창 구간 windowed layout(코어 재계산), 아니면 전체 구간.
-     * `xMax > xMin` 가드는 [ZoomState] 클램프가 보장하지만, 방어적으로 확대 상태만 windowed 호출한다.
+     * `xMax > xMin` 가드는 [ZoomWindow] 클램프가 보장하지만, 방어적으로 확대 상태만 windowed 호출한다.
      */
     fun layoutForCurrentWindow(): LineChartLayout {
         val z = zoom
         if (z != null && z.isZoomed) {
-            val lo = z.window.start
-            val hi = z.window.endInclusive
-            if (hi > lo) return LineChartEngine.layout(data, lo, hi)
+            if (z.windowMax > z.windowMin) return LineChartEngine.layout(data, z.windowMin, z.windowMax)
         }
         return makeFullLayout()
     }
@@ -90,7 +90,7 @@ internal class LineChartInteraction(
      * 원본 도메인 [rawX]에 마커를 세우고(성공 시 [activeMarkerRawX] 갱신), [notify]면 콜백을 발화한다.
      *
      * 확대 상태에서 창 끝 스크럽은 도메인 역산 반올림으로 상/하한을 수 ulp 벗어날 수 있어, [TouchMarker]와
-     * 동일하게 [ZoomState] 폭 × 1e-9 이내는 창 안으로 클램프한다(엄격 비교 시 끝 스크럽 침묵 드롭).
+     * 동일하게 [ZoomWindow] 폭 × epsilon 이내는 창 안으로 클램프한다(엄격 비교 시 끝 스크럽 침묵 드롭).
      *
      * @param context 현재 layout·plot·style·formatter를 담은 마커 컨텍스트(그리기와 동일 좌표계).
      * @return 마커가 표시되면 true.
@@ -99,9 +99,9 @@ internal class LineChartInteraction(
         var x = rawX
         val z = zoom
         if (z != null && z.isZoomed) {
-            val epsilon = (z.window.endInclusive - z.window.start) * SCRUB_WINDOW_EPSILON
-            if (x < z.window.start - epsilon || x > z.window.endInclusive + epsilon) return false
-            x = x.coerceIn(z.window.start, z.window.endInclusive)
+            val epsilon = (z.windowMax - z.windowMin) * SCRUB_WINDOW_EPSILON
+            if (x < z.windowMin - epsilon || x > z.windowMax + epsilon) return false
+            x = x.coerceIn(z.windowMin, z.windowMax)
         }
 
         val hadMarker = activeMarkerRawX != null
@@ -151,7 +151,7 @@ internal class LineChartInteraction(
     fun zoomToRange(range: ClosedFloatingPointRange<Double>) {
         if (range.endInclusive <= range.start) return
         ensureZoom()
-        zoom = zoom?.setWindow(range)
+        zoom = zoom?.setWindow(range.start, range.endInclusive)
         // '비줌 = null' 불변식 유지 — 전체 도메인 창이 non-null로 남으면(zoomed-but-full)
         // pinchEnded/panEnded와 상태 표현이 어긋난다.
         if (zoom?.isZoomed != true) zoom = null
@@ -168,13 +168,13 @@ internal class LineChartInteraction(
     fun pinchBegan() {
         ensureZoom()
         endScrub()
-        pinchStartWindow = zoom?.window
+        pinchStartWindow = zoom?.let { it.windowMin..it.windowMax }
     }
 
     /** 라이브 핀치 진행 — 기준 창에서 누적 배율·앵커로 재계산(iOS `pinchChanged`). */
     fun pinchChanged(cumulativeScale: Double, anchor: Double) {
         val start = pinchStartWindow ?: return
-        zoom = zoom?.pinch(start, cumulativeScale, anchor, maxZoomScale)
+        zoom = zoom?.pinch(start.start, start.endInclusive, cumulativeScale, anchor, maxZoomScale)
     }
 
     /** 라이브 핀치 종료 — 기준 창 해제, 전체 구간에서 끝났으면 줌 상태 정리(iOS `pinchEnded`). */
@@ -186,18 +186,16 @@ internal class LineChartInteraction(
     /** 확대 팬 시작 — 마커 숨김 + 기준 창 스냅샷(iOS `handleZoomedPan .began`). */
     fun panBegan() {
         endScrub()
-        panStartWindow = zoom?.window
+        panStartWindow = zoom?.let { it.windowMin..it.windowMax }
     }
 
     /**
      * 확대 팬 진행 — 플롯 폭 대비 누적 이동 비율([fraction], 오른쪽 드래그=+)만큼 기준 창을 왼쪽 이동.
-     * 기준 창에 누적 이동을 적용해 드리프트를 막는다(iOS `handleZoomedPan .changed`).
+     * 기준 창에 누적 이동을 적용해 드리프트를 막는다(iOS `handleZoomedPan .changed`). 산술은 코어 [ZoomWindow.pan].
      */
     fun panChanged(fraction: Double) {
         val start = panStartWindow ?: return
-        val span = start.endInclusive - start.start
-        val targetLower = start.start - fraction * span
-        zoom = zoom?.setWindow(targetLower..(targetLower + span))
+        zoom = zoom?.pan(start.start, start.endInclusive, fraction)
     }
 
     /** 확대 팬 종료 — 기준 창 해제, 전체 구간에서 끝났으면 줌 상태 정리(iOS `handleZoomedPan .ended`). */
@@ -218,6 +216,6 @@ internal class LineChartInteraction(
         // 0.30.0: 코어가 전체 X 도메인을 직접 출력한다 — tick 두 점 외삽(구 AxisScale) 제거.
         val domain = makeFullLayout().domains.x
         if (domain.max <= domain.min) return
-        zoom = ZoomState.full(domain.min..domain.max)
+        zoom = ZoomWindow(domain.min, domain.max)
     }
 }

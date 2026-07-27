@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorAnchors, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
+@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphZoomWindow, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorAnchors, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -229,6 +229,27 @@ __attribute__((swift_name("SeriesSelection")))
 - (NSArray<LumipolGraphInt *> *)normalizedCurrent:(NSArray<LumipolGraphInt *> *)current available:(NSSet<LumipolGraphInt *> *)available priority:(NSArray<LumipolGraphInt *> *)priority __attribute__((swift_name("normalized(current:available:priority:)")));
 - (LumipolGraphAxis *)slotAxisIndex:(int32_t)index __attribute__((swift_name("slotAxis(index:)")));
 - (NSArray<LumipolGraphInt *> *)toggledCurrent:(NSArray<LumipolGraphInt *> *)current toggling:(int32_t)toggling __attribute__((swift_name("toggled(current:toggling:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ZoomWindow")))
+@interface LumipolGraphZoomWindow : LumipolGraphBase
+- (instancetype)initWithFullMin:(double)fullMin fullMax:(double)fullMax __attribute__((swift_name("init(fullMin:fullMax:)"))) __attribute__((objc_designated_initializer));
+- (instancetype)initWithFullMin:(double)fullMin fullMax:(double)fullMax windowMin:(double)windowMin windowMax:(double)windowMax __attribute__((swift_name("init(fullMin:fullMax:windowMin:windowMax:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphZoomWindow *)doCopyFullMin:(double)fullMin fullMax:(double)fullMax windowMin:(double)windowMin windowMax:(double)windowMax __attribute__((swift_name("doCopy(fullMin:fullMax:windowMin:windowMax:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (LumipolGraphZoomWindow *)panStartMin:(double)startMin startMax:(double)startMax fraction:(double)fraction __attribute__((swift_name("pan(startMin:startMax:fraction:)")));
+- (LumipolGraphZoomWindow *)pinchStartMin:(double)startMin startMax:(double)startMax cumulativeScale:(double)cumulativeScale anchor:(double)anchor maxScale:(double)maxScale __attribute__((swift_name("pinch(startMin:startMax:cumulativeScale:anchor:maxScale:)")));
+- (LumipolGraphZoomWindow *)reset __attribute__((swift_name("reset()")));
+- (LumipolGraphZoomWindow *)setWindowTargetMin:(double)targetMin targetMax:(double)targetMax __attribute__((swift_name("setWindow(targetMin:targetMax:)")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) double fullMax __attribute__((swift_name("fullMax")));
+@property (readonly) double fullMin __attribute__((swift_name("fullMin")));
+@property (readonly) BOOL isZoomed __attribute__((swift_name("isZoomed")));
+@property (readonly) double scale __attribute__((swift_name("scale")));
+@property (readonly) double windowMax __attribute__((swift_name("windowMax")));
+@property (readonly) double windowMin __attribute__((swift_name("windowMin")));
 @end
 
 __attribute__((swift_name("KotlinComparable")))

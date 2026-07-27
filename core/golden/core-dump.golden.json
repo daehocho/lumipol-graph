@@ -78,6 +78,15 @@
     "ip_multi_dup_x_x_3.000000000000": 30.000000000000,
     "ip_multi_dup_x_x_4.000000000000": 30.000000000000
   },
+  "zoomWindow": {
+    "initial": {"windowMin":0.000000000000,"windowMax":10.000000000000,"isZoomed":false,"scale":1.000000000000},
+    "pinch_2.0_anchor_0.5": {"windowMin":2.500000000000,"windowMax":7.500000000000,"isZoomed":true,"scale":2.000000000000},
+    "pinch_cumulative_4.0_anchor_0.25": {"windowMin":1.875000000000,"windowMax":4.375000000000,"isZoomed":true,"scale":4.000000000000},
+    "pinch_clamped_max_10": {"windowMin":4.500000000000,"windowMax":5.500000000000,"isZoomed":true,"scale":10.000000000000},
+    "pan_0.2_from_pinched": {"windowMin":1.500000000000,"windowMax":6.500000000000,"isZoomed":true,"scale":2.000000000000},
+    "setWindow_8_13": {"windowMin":5.000000000000,"windowMax":10.000000000000,"isZoomed":true,"scale":2.000000000000},
+    "ulp_full_zoom_out": {"windowMin":21.730886000000,"windowMax":195.280341911956,"isZoomed":false,"scale":1.000000000000}
+  },
   "barChart": {
     "B01_empty": {"barCount":0,"bars":[],"yTickCount":0,"yTicks":[],"referenceLinePosition":null,"colorAnchors":null},
     "B02_invalid_only": {"barCount":0,"bars":[],"yTickCount":0,"yTicks":[],"referenceLinePosition":null,"colorAnchors":null},

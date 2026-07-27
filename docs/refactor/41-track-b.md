@@ -44,7 +44,12 @@
   렌더러 전환 완료: 양 TouchMarker가 nearestScrub 소비 — 재탐색·firstWinsBy 캐시 주입·창 epsilon
   로직 삭제(AOS TouchMarkerContext 축소, iOS RDChartView 1e-9 리터럴 → 코어 상수). 양 플랫폼
   전체 테스트 통과(AOS testDebugUnitTest, iOS 174건)
-- [ ] B3, B4 — 미착수
+- [x] **B3** — 0.32.0. `com.lumipol.graph.interaction.ZoomWindow` — pinch(기준 창+누적 배율)·
+  pan(기준 창+누적 비율, 렌더러 산술 흡수)·setWindow·reset·ulp 재구성 방지 place. 렌더러
+  ZoomState 2벌+테스트 삭제(테스트는 commonTest ZoomWindowTest로 이식, 기대값 불변).
+  단발 pinch/pan 미러 API(양쪽 사문)는 이관에서 소거(B13 선행 해소). 골든 zoomWindow 섹션 추가.
+  기준 창 스냅샷(상태 보유)은 렌더러 잔류 — 산술만 코어
+- [ ] B4 — 미착수
 - [x] **B5** — 코어 0.30.0 + 양 렌더러 채택(`d6f14ca`). 규칙 검증은 코어 테스트로 이동.
   앱 복사본 2벌 삭제는 C4(앱 커밋)에서
 - [ ] B6, B7 — 미착수
