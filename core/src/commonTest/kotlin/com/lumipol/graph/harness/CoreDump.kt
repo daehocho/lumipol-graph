@@ -4,6 +4,7 @@ import com.lumipol.graph.BarChartEngine
 import com.lumipol.graph.DonutEngine
 import com.lumipol.graph.HeartRateZoneEngine
 import com.lumipol.graph.LineChartEngine
+import com.lumipol.graph.PaceColormap
 import com.lumipol.graph.PaceSeriesEngine
 import com.lumipol.graph.PaceSeriesId
 import com.lumipol.graph.SeriesSelection
@@ -122,6 +123,19 @@ object CoreDump {
                     }
                 }
             }),
+            section("paceColormap", buildList {
+                // f=300/s=400/a=350 — pace1=315, pace2=362.5. 값 그리드는 경계 정확점 포함(이산 규칙 관측).
+                val anchors = BarColorAnchors(300.0, 400.0, 350.0)
+                val values = listOf(250.0, 300.0, 303.0, 310.0, 315.0, 338.75, 350.0, 362.5, 390.0, 400.0, 450.0)
+                values.forEach { v ->
+                    add("rgba_${jnum(v)}" to jstr(hex(PaceColormap.rgba(v, anchors, colorBlind = false))))
+                    add("rgba_cb_${jnum(v)}" to jstr(hex(PaceColormap.rgba(v, anchors, colorBlind = true))))
+                }
+                add("legendStops_40" to jarr(PaceColormap.legendStops(anchors).map { jstr(hex(it)) }))
+                add("legendStops_cb_8" to jarr(
+                    PaceColormap.legendStops(anchors, count = 8, colorBlind = true).map { jstr(hex(it)) },
+                ))
+            }),
             section("heartRateZone", HarnessFixtures.hrZoneMaxHrCases.map { maxHr ->
                 "maxHr_$maxHr" to jarr(HeartRateZoneEngine.calculate(HarnessFixtures.hrZoneSamples, maxHr).map { jnum(it) })
             }),
@@ -183,6 +197,12 @@ object CoreDump {
 
     private fun renderNormPoints(points: List<NormalizedPoint>): String =
         digestList(points) { p -> jobj("x" to jnum(p.x), "y" to jnum(p.y)) }
+
+    /** 0xAARRGGBB → "#AARRGGBB" — 색은 문자열로 기록해 T1(완전 일치) 비교를 강제한다. */
+    private fun hex(argb: Long): String {
+        val h = argb.toULong().toString(16).uppercase().padStart(8, '0')
+        return "#$h"
+    }
 
     private fun renderZoom(z: ZoomWindow): String = jobj(
         "windowMin" to jnum(z.windowMin),

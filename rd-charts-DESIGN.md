@@ -597,6 +597,25 @@ X축은 기본값 0.0으로 현행(데이터 끝 밀착) 유지.
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### 페이스 컬러맵 코어화 — PaceColormap.rgba/legendStops (0.34.0, 2026-07-28)
+
+경계 리팩토링 트랙 B6 + D8·D12 결정(44 문서).
+
+- **feat: `PaceColormap.rgba(value, anchors, colorBlind): Long(0xAARRGGBB)`** — 3구간 연속
+  보간 + 색약 이산 4색(Okabe-Ito 계열)의 단일 원본. 렌더러 공식 2벌(구 `ChartStyle.
+  defaultPaceColor`) 삭제 — 렌더러는 플랫폼 색 타입 변환 1줄.
+- **feat: `PaceColormap.legendStops(anchors, count=40, colorBlind)`** — 색바 범례 데이터
+  API(D8: 인자화+기본 40). 그리기는 앱 유지, 색 산출만 코어(C5 색바 항목 겸용).
+- **feat: `ChartStyle.colorBlindMode: Boolean`(양 렌더러)** — 색약 모드 주입.
+  `barColorProvider`는 단계적 폐기 예고(C4에서 앱 전환 후 deprecated).
+- **동작 변경(D12)**: 색약 이산 규칙은 두 앱이 상이했다(iOS: 2구간 50/50 초록/노랑,
+  AOS: 전부 노랑) — iOS안 채택. 색 값은 8비트 반올림 양자화(기존 float 대비 ≤0.5/255 — 비가시).
+
+**마이그레이션(렌더러/앱)**: 기존 `defaultPaceColor` 직접 호출부가 있다면
+`PaceColormap.rgba`로 교체(SDK 내 잔존 호출 없음). 앱 colorizer 전환은 C4.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은

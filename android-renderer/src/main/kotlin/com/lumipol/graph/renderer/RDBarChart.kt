@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
+import com.lumipol.graph.PaceColormap
 import com.lumipol.graph.model.BarChartLayout
 import com.lumipol.graph.model.BarColorAnchors
 import com.lumipol.graph.model.BarColorRole
@@ -259,7 +261,9 @@ internal fun buildBarChartLayers(
             value = bar.value, fastest = fastest, slowest = slowest, average = average,
             isPartial = bar.isPartial, index = i, colorRole = bar.colorRole,
         )
-        val barColor = style.barColorProvider?.invoke(colorInput) ?: ChartStyle.defaultPaceColor(colorInput)
+        // B6: 기본 색은 코어 PaceColormap(0xAARRGGBB) — 렌더러는 Compose Color 변환만.
+        val barColor = style.barColorProvider?.invoke(colorInput)
+            ?: Color(PaceColormap.rgba(bar.value, anchors, style.colorBlindMode))
         layers.add(
             RectLayer(
                 name = "bar.$i",

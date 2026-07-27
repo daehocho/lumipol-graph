@@ -100,19 +100,20 @@ public final class RDBarChartView: UIView {
         // 연속 색상 앵커 — 규칙 원본은 코어 `BarChartEngine`(0.30.0, `layout.colorAnchors`).
         // 렌더러·앱이 각자 재계산하던 4벌 복제를 회수한 단일 원본이다. 코어를 안 거치고 직접
         // 생성된 레거시 layout(anchors=nil)만 국소 폴백으로 그린다(min/max/산술평균).
-        let fastest: Double
-        let slowest: Double
-        let average: Double
-        if let anchors = layout.colorAnchors {
-            fastest = anchors.fastest
-            slowest = anchors.slowest
-            average = anchors.average
+        let anchors: BarColorAnchors
+        if let coreAnchors = layout.colorAnchors {
+            anchors = coreAnchors
         } else {
             let values = layout.bars.map { $0.value }
-            fastest = values.min() ?? 0
-            slowest = values.max() ?? 0
-            average = values.reduce(0, +) / Double(max(values.count, 1))
+            anchors = BarColorAnchors(
+                fastest: values.min() ?? 0,
+                slowest: values.max() ?? 0,
+                average: values.reduce(0, +) / Double(max(values.count, 1))
+            )
         }
+        let fastest = anchors.fastest
+        let slowest = anchors.slowest
+        let average = anchors.average
 
         // x축 인덱스 라벨 솎아내기 stride(장거리·하프 등 슬롯보다 넓은 라벨 겹침 방지).
         // 개수 임계치가 아니라 슬롯 폭 대비 라벨 폭으로 계산 — 코어 labelStride(양 플랫폼 공유).
@@ -139,7 +140,10 @@ public final class RDBarChartView: UIView {
             let colorInput = BarPaceColorInput(
                 value: bar.value, fastest: fastest, slowest: slowest, average: average,
                 isPartial: bar.isPartial, index: i, colorRole: bar.colorRole)
-            let barColor = style.barColorProvider?(colorInput) ?? ChartStyle.defaultPaceColor(colorInput)
+            // B6: 기본 색은 코어 PaceColormap(0xAARRGGBB) — 렌더러는 UIColor 변환만.
+            let barColor = style.barColorProvider?(colorInput)
+                ?? UIColor(argb: PaceColormap.shared.rgba(
+                    value: bar.value, anchors: anchors, colorBlind: style.colorBlindMode))
             barLayer.backgroundColor = barColor.cgColor
             contentLayer.addSublayer(barLayer)
             barLayers.append(barLayer)

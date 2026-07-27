@@ -56,7 +56,13 @@
   골든 무해(§5 예외 근거 KDoc 기록). 골든 donutHitTest 섹션 추가. 양 렌더러는 픽셀→비율 환산만
 - [x] **B5** — 코어 0.30.0 + 양 렌더러 채택(`d6f14ca`). 규칙 검증은 코어 테스트로 이동.
   앱 복사본 2벌 삭제는 C4(앱 커밋)에서
-- [ ] B6, B7 — 미착수
+- [x] **B6** — 0.34.0. 코어 `PaceColormap.rgba(value, anchors, colorBlind): Long(0xAARRGGBB)` +
+  `legendStops(anchors, count=40, colorBlind)`(D8 반영 — C5 색바 API 겸용). 렌더러 공식 2벌
+  (defaultPaceColor)·전용 테스트 삭제, `ChartStyle.colorBlindMode` 신설(barColorProvider는 단계적
+  폐기 예고 — 정식 @Deprecated는 C4 앱 전환 시). 색약 이산 4색 규칙은 앱 2벌이 상이해 D12 신설,
+  iOS안 채택. 골든 paceColormap 섹션(색은 hex 문자열 = T1). 색 8비트 반올림 양자화 —
+  렌더러 float 대비 ≤0.5/255, 스냅샷 테스트 무변화 확인
+- [ ] B7 — 미착수
 - [x] **B8** — 0.30.0. 퇴화 창 폴백 + 기존 예외 테스트를 새 계약으로 갱신
 - [x] **B9** — 0.30.0. Series/ChartConfig/BarChartData 축약 생성자
 - [ ] B10~B14 — 미착수

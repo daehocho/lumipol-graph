@@ -90,8 +90,14 @@ data class ChartStyle(
     val barReferenceLineColor: Color,
     val barMinHeight: Float = 2f, // 가장 빠른(짧은) 막대도 최소 가시 높이
     val barDimOpacity: Float = 0.35f, // 롱프레스 선택 시 미선택 막대 흐림 배율(iOS barDimOpacity)
-    /** 막대별 색 오버라이드. null이면 [defaultPaceColor](연속 팔레트) 사용. 앱은 stable 람다를 넘길 것(리컴포지션 방지). */
+    /**
+     * 막대별 색 오버라이드. null이면 코어 [com.lumipol.graph.PaceColormap] 사용.
+     * 앱은 stable 람다를 넘길 것(리컴포지션 방지).
+     * 단계적 폐기 예정(B6/C4) — 색약 모드는 [colorBlindMode] 주입으로 대체한다.
+     */
     val barColorProvider: ((BarPaceColorInput) -> Color)? = null,
+    /** 색약 보정 모드 — 코어 컬러맵이 이산 4색(Okabe-Ito 계열)으로 전환(B6, D12). */
+    val colorBlindMode: Boolean = false,
     val barSelectionLineColor: Color, // 선택 막대 세로 가이드선(iOS label α0.55)
     val barCalloutBackgroundColor: Color, // 말풍선 배경(iOS .label)
     val barCalloutTextColor: Color, // 말풍선 텍스트(iOS .systemBackground)

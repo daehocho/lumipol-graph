@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphZoomWindow, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorAnchors, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
+@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphDonutEngine, LumipolGraphDonutChartLayout, LumipolGraphDonutChartData, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceColormap, LumipolGraphBarColorAnchors, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphZoomWindow, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphKotlinArray<T>, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphSplitSample, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -193,6 +193,22 @@ __attribute__((swift_name("LineChartEngine")))
 - (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x __attribute__((swift_name("nearest(data:x:)"))) __attribute__((deprecated("스냅 소스 선택·창 필터·정규화 좌표를 렌더러가 재구성해야 한다 — 코어가 확정하는 nearestScrub로 대체(B2)")));
 - (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("nearest(data:x:xMin:xMax:)"))) __attribute__((deprecated("스냅 소스 선택·창 필터·정규화 좌표를 렌더러가 재구성해야 한다 — 코어가 확정하는 nearestScrub로 대체(B2)")));
 - (LumipolGraphScrubResult * _Nullable)nearestScrubData:(LumipolGraphLineChartData *)data layout:(LumipolGraphLineChartLayout *)layout x:(double)x __attribute__((swift_name("nearestScrub(data:layout:x:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("PaceColormap")))
+@interface LumipolGraphPaceColormap : LumipolGraphBase
++ (instancetype)alloc __attribute__((unavailable));
++ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
++ (instancetype)paceColormap __attribute__((swift_name("init()")));
+@property (class, readonly, getter=shared) LumipolGraphPaceColormap *shared __attribute__((swift_name("shared")));
+- (NSArray<LumipolGraphLong *> *)legendStopsAnchors:(LumipolGraphBarColorAnchors *)anchors count:(int32_t)count colorBlind:(BOOL)colorBlind __attribute__((swift_name("legendStops(anchors:count:colorBlind:)")));
+- (int64_t)rgbaValue:(double)value anchors:(LumipolGraphBarColorAnchors *)anchors colorBlind:(BOOL)colorBlind __attribute__((swift_name("rgba(value:anchors:colorBlind:)")));
+@property (readonly) int64_t COLOR_BLIND_BLUE __attribute__((swift_name("COLOR_BLIND_BLUE")));
+@property (readonly) int64_t COLOR_BLIND_GREEN __attribute__((swift_name("COLOR_BLIND_GREEN")));
+@property (readonly) int64_t COLOR_BLIND_RED __attribute__((swift_name("COLOR_BLIND_RED")));
+@property (readonly) int64_t COLOR_BLIND_YELLOW __attribute__((swift_name("COLOR_BLIND_YELLOW")));
+@property (readonly) int32_t LEGEND_STOP_COUNT __attribute__((swift_name("LEGEND_STOP_COUNT")));
 @end
 
 __attribute__((objc_subclassing_restricted))

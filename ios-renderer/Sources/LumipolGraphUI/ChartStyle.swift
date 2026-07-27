@@ -57,8 +57,11 @@ public struct ChartStyle {
     public var barMinHeight: CGFloat = 2   // 가장 빠른(짧은) 막대도 최소 가시 높이
     public var barDimOpacity: Float = 0.35   // 롱프레스 선택 시 미선택 막대 흐림 배율
     public var barPartialOpacity: Float = 0.6   // 부분 스플릿(마지막 조각) 막대 기본 흐림
-    /// 막대별 색 오버라이드. nil이면 ChartStyle.defaultPaceColor(연속 팔레트) 사용.
+    /// 막대별 색 오버라이드. nil이면 코어 PaceColormap(연속 팔레트) 사용.
+    /// 단계적 폐기 예정(B6/C4) — 색약 모드는 colorBlindMode 주입으로 대체한다.
     public var barColorProvider: ((BarPaceColorInput) -> UIColor)?
+    /// 색약 보정 모드 — 코어 컬러맵이 이산 4색(Okabe-Ito 계열)으로 전환(B6, D12).
+    public var colorBlindMode: Bool = false
     public var barSelectionLineColor: UIColor = UIColor.label.withAlphaComponent(0.55)
     public var barCalloutBackgroundColor: UIColor = .label
     public var barCalloutTextColor: UIColor = .systemBackground

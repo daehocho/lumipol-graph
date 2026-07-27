@@ -226,10 +226,11 @@ class RDBarChartTest {
         // 사용(fastest=250, slowest=300, average=275) — 부분 스플릿 bar2(350)는 앵커 계산엔 빠지고
         // 색 클램프 대상으로만 쓰인다.
         for ((i, bar) in layout.bars.withIndex()) {
-            val expected = ChartStyle.defaultPaceColor(
-                BarPaceColorInput(
-                    value = bar.value, fastest = 250.0, slowest = 300.0, average = 275.0,
-                    isPartial = bar.isPartial, index = i, colorRole = bar.colorRole,
+            val expected = androidx.compose.ui.graphics.Color(
+                com.lumipol.graph.PaceColormap.rgba(
+                    bar.value,
+                    com.lumipol.graph.model.BarColorAnchors(250.0, 300.0, 275.0),
+                    colorBlind = false,
                 ),
             )
             assertEquals(expected, bars[i].color, "bar $i")
