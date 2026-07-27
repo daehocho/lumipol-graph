@@ -50,11 +50,6 @@ public struct ChartStyle {
     public var markerEmphasisLineColor: UIColor = .systemGray
 
     // 스플릿 막대
-    public var barColors: [BarColorRole: UIColor] = [
-        .faster: UIColor.systemGreen,
-        .onTarget: UIColor.systemGray,
-        .slower: UIColor.systemOrange,
-    ]
     /// 슬롯 폭 대비 막대 폭 — 코어 정책 상수 기본(B7). 종전 iOS는 필드 없이 하드코딩(주입 비대칭).
     public var barWidthRatio: CGFloat = CGFloat(ChartDefaults.shared.BAR_WIDTH_RATIO)
     public var barCornerRadius: CGFloat = CGFloat(ChartDefaults.shared.BAR_CORNER_RADIUS)

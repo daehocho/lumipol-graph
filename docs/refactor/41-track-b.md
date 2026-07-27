@@ -82,7 +82,10 @@
   각 차트 주입점(`chartContentDescription`/AOS, `accessibilityDescriptionOverride`/iOS).
   D9 반영: iOS도 3차트 낭독(라인·막대 뷰 a11y 라벨 신설), 도넛은 전체 분포. AOS 도넛 낭독이
   colorRole 이름 대신 라벨 우선으로 개선. 렌더러 하드코딩 한국어 소거(내용은 앱 주입 가능)
-- [ ] B13~B14 — 미착수
+- [x] **B13** — 그림자 정리. iOS `ChartStyle.barColors` 죽은 기본값 + AOS `barColors`(B6 이후
+  동반 사문화) 제거 — 양 앱 미사용 grep 확인, 43 전략 5(파괴적 허용). ZoomState 사문 API는
+  B3 이관 때 이미 소거. 렌더러만 — 코어 무변경
+- [ ] B14 — 미착수
 
 ## 실행 순서 권장
 

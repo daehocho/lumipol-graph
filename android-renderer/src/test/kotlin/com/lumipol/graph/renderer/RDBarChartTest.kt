@@ -195,17 +195,11 @@ class RDBarChartTest {
         assertTrue(scaledBars.all { it.cornerRadius == scaled.barCornerRadius })
     }
 
-    // barColors(3버킷)는 하위호환용으로 존치되나 기본 색 경로는 연속 팔레트를 쓴다 — colorRole은
-    // 알파(흐림)에만 영향을 주고 색 자체는 barColors를 참조하지 않는다.
+    // colorRole은 알파(흐림)에만 영향을 주고 색 자체는 연속 팔레트(코어 PaceColormap)에서 나온다
+    // (구 barColors 3버킷은 B13에서 제거 — 양 렌더러 미사용 그림자였음).
     @Test
     fun partialBarIsDimmedRegardlessOfLegacyColorRole() {
-        val custom = style.copy(
-            barColors = mapOf(
-                BarColorRole.FASTER to Color.Red,
-                BarColorRole.ON_TARGET to Color.Green,
-                BarColorRole.SLOWER to Color.Blue,
-            ),
-        )
+        val custom = style
         val layout = BarChartLayout(
             bars = listOf(
                 BarLayout(0, 250.0, 0.8, BarColorRole.FASTER, false),

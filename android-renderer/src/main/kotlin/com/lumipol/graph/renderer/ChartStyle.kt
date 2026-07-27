@@ -6,7 +6,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.lumipol.graph.ChartDefaults
-import com.lumipol.graph.model.BarColorRole
 import com.lumipol.graph.model.DonutColorRole
 
 /**
@@ -82,7 +81,6 @@ data class ChartStyle(
     val markerEmphasisLineColor: Color,
 
     // 스플릿 막대
-    val barColors: Map<BarColorRole, Color>,
     val barWidthRatio: Float = ChartDefaults.BAR_WIDTH_RATIO.toFloat(),   // 슬롯 폭 대비 막대 폭(iOS slot*0.6)
     val partialBarAlpha: Float = ChartDefaults.PARTIAL_BAR_ALPHA.toFloat(), // 부분 스플릿 막대 흐림
     val barCornerRadius: Float = ChartDefaults.BAR_CORNER_RADIUS.toFloat(),
@@ -139,7 +137,7 @@ data class ChartStyle(
     val touchLineColor: Color,
     val touchDotRadius: Float = ChartDefaults.TOUCH_DOT_RADIUS.toFloat(),
 
-    // 데이터 색 role이 주입 맵(barColors/donutColors)에 없을 때의 폴백(iOS .systemGray).
+    // 데이터 색 role이 주입 맵(donutColors)에 없을 때의 폴백(iOS .systemGray).
     val fallbackDataColor: Color = Color(ChartDefaults.FALLBACK_DATA_COLOR),
 ) {
     companion object {
@@ -161,11 +159,6 @@ data class ChartStyle(
             areaFillColor = Color(P.AREA_FILL).copy(alpha = ChartDefaults.AREA_FILL_ALPHA.toFloat()),
             markerLineColor = Color(P.MARKER_LINE),
             markerEmphasisLineColor = Color(P.MARKER_EMPHASIS_LINE),
-            barColors = mapOf(
-                BarColorRole.FASTER to Color(P.BAR_FASTER),
-                BarColorRole.ON_TARGET to Color(P.BAR_ON_TARGET),
-                BarColorRole.SLOWER to Color(P.BAR_SLOWER),
-            ),
             barReferenceLineColor = Color(P.BAR_REFERENCE_LINE).copy(alpha = ChartDefaults.BAR_REFERENCE_LINE_ALPHA.toFloat()),
             barSelectionLineColor = Color(P.BAR_SELECTION_LINE).copy(alpha = ChartDefaults.BAR_SELECTION_LINE_ALPHA.toFloat()),
             barCalloutBackgroundColor = Color(P.BAR_CALLOUT_BACKGROUND),
@@ -196,11 +189,6 @@ data class ChartStyle(
             areaFillColor = Color(D.AREA_FILL).copy(alpha = ChartDefaults.AREA_FILL_ALPHA.toFloat()),
             markerLineColor = Color(D.MARKER_LINE),
             markerEmphasisLineColor = Color(D.MARKER_EMPHASIS_LINE),
-            barColors = mapOf(
-                BarColorRole.FASTER to Color(D.BAR_FASTER),
-                BarColorRole.ON_TARGET to Color(D.BAR_ON_TARGET),
-                BarColorRole.SLOWER to Color(D.BAR_SLOWER),
-            ),
             barReferenceLineColor = Color(D.BAR_REFERENCE_LINE).copy(alpha = ChartDefaults.BAR_REFERENCE_LINE_ALPHA.toFloat()),
             barSelectionLineColor = Color(D.BAR_SELECTION_LINE).copy(alpha = ChartDefaults.BAR_SELECTION_LINE_ALPHA.toFloat()),
             barCalloutBackgroundColor = Color(D.BAR_CALLOUT_BACKGROUND),
