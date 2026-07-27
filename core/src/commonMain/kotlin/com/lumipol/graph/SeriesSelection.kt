@@ -1,5 +1,7 @@
 package com.lumipol.graph
 
+import com.lumipol.graph.model.Axis
+
 /** 멀티지표 차트의 선택/슬롯 규칙(도메인 프리, 정수 id). 앱이 지표↔id를 매핑. */
 object SeriesSelection {
 
@@ -38,8 +40,18 @@ object SeriesSelection {
 
     /**
      * 슬롯 배정: priority 순서로 (selected ∩ withData)를 필터해 반환.
-     * 반환 index 0=primary, 1=secondary, 2+=overlay. 상한 없음 — overlay는 몇 개든 나올 수 있다.
+     * 반환 index 0=primary, 1 이후=전부 secondary — 축 매핑은 [slotAxis]. 상한 없음.
      */
     fun assignSlots(priority: List<Int>, selected: Set<Int>, withData: Set<Int>): List<Int> =
         priority.filter { it in selected && it in withData }
+
+    /**
+     * [assignSlots] 결과 index → 축. 0 = PRIMARY, 1 이후 = 전부 SECONDARY(도메인 공유).
+     * role은 전부 MAIN — 축 슬롯에서 OVERLAY는 더 이상 나오지 않는다(0.29.0).
+     * 스케일이 다른 지표를 축 밖에 겹치려면 앱이 직접 OVERLAY를 조립한다.
+     */
+    fun slotAxis(index: Int): Axis {
+        require(index >= 0) { "index must be >= 0" }
+        return if (index == 0) Axis.PRIMARY else Axis.SECONDARY
+    }
 }

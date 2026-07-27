@@ -1,7 +1,9 @@
 package com.lumipol.graph
 
+import com.lumipol.graph.model.Axis
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class SeriesSelectionTest {
     // 앱 매핑 규약: pace=0, heartRate=1, cadence=2, altitude=3.
@@ -88,5 +90,19 @@ class SeriesSelectionTest {
 
     @Test fun assign_slots_empty_when_no_data() {
         assertEquals(emptyList(), SeriesSelection.assignSlots(priority, setOf(0, 1, 2), emptySet()))
+    }
+
+    // MARK: slotAxis
+
+    @Test fun slot_axis_first_primary_rest_all_secondary() {
+        // 0.29.0 규약: 오버레이 슬롯 폐지 — 1 이후는 전부 보조축(도메인 공유).
+        assertEquals(Axis.PRIMARY, SeriesSelection.slotAxis(0))
+        assertEquals(Axis.SECONDARY, SeriesSelection.slotAxis(1))
+        assertEquals(Axis.SECONDARY, SeriesSelection.slotAxis(2))
+        assertEquals(Axis.SECONDARY, SeriesSelection.slotAxis(3))
+    }
+
+    @Test fun slot_axis_rejects_negative_index() {
+        assertFailsWith<IllegalArgumentException> { SeriesSelection.slotAxis(-1) }
     }
 }
