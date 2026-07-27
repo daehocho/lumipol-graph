@@ -108,6 +108,20 @@ object CoreDump {
             section("donutToggle", HarnessFixtures.donutToggleCases.map { (cur, tap) ->
                 "cur_${cur ?: "null"}_tap_${tap ?: "null"}" to (DonutEngine.toggleSelection(cur, tap)?.let { jint(it) } ?: "null")
             }),
+            section("donutHitTest", buildList {
+                // 비율 공간 프로브 — 조각 경계에서 떨어진 지점만(각도 libm ULP와 무관한 이산 결과).
+                val probes = listOf(
+                    Triple(0.01, -1.0, 0.2), Triple(1.0, 0.01, 0.2), Triple(-1.0, 0.0, 0.2),
+                    Triple(0.7, -0.7, 0.2), Triple(0.0, 0.0, 0.2), Triple(0.0, -1.5, 0.2),
+                    Triple(0.0, -0.65, 0.8),
+                )
+                HarnessFixtures.donutCases.forEach { (name, data) ->
+                    val layout = DonutEngine.layout(data)
+                    probes.forEachIndexed { i, (dx, dy, band) ->
+                        add("${name}_p$i" to (DonutEngine.hitTest(dx, dy, band, layout)?.let(::jint) ?: "null"))
+                    }
+                }
+            }),
             section("heartRateZone", HarnessFixtures.hrZoneMaxHrCases.map { maxHr ->
                 "maxHr_$maxHr" to jarr(HeartRateZoneEngine.calculate(HarnessFixtures.hrZoneSamples, maxHr).map { jnum(it) })
             }),

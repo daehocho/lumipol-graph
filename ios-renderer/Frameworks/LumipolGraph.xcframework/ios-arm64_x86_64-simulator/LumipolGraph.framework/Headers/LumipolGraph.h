@@ -162,8 +162,10 @@ __attribute__((swift_name("DonutEngine")))
 + (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
 + (instancetype)donutEngine __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphDonutEngine *shared __attribute__((swift_name("shared")));
+- (LumipolGraphInt * _Nullable)hitTestDxRatio:(double)dxRatio dyRatio:(double)dyRatio hitBandRatio:(double)hitBandRatio layout:(LumipolGraphDonutChartLayout *)layout __attribute__((swift_name("hitTest(dxRatio:dyRatio:hitBandRatio:layout:)")));
 - (LumipolGraphDonutChartLayout *)layoutData:(LumipolGraphDonutChartData *)data __attribute__((swift_name("layout(data:)")));
 - (LumipolGraphInt * _Nullable)toggleSelectionCurrent:(LumipolGraphInt * _Nullable)current tapped:(LumipolGraphInt * _Nullable)tapped __attribute__((swift_name("toggleSelection(current:tapped:)")));
+@property (readonly) double MIN_HIT_TARGET_DP __attribute__((swift_name("MIN_HIT_TARGET_DP")));
 @end
 
 __attribute__((objc_subclassing_restricted))

@@ -49,7 +49,11 @@
   ZoomState 2벌+테스트 삭제(테스트는 commonTest ZoomWindowTest로 이식, 기대값 불변).
   단발 pinch/pan 미러 API(양쪽 사문)는 이관에서 소거(B13 선행 해소). 골든 zoomWindow 섹션 추가.
   기준 창 스냅샷(상태 보유)은 렌더러 잔류 — 산술만 코어
-- [ ] B4 — 미착수
+- [x] **B4** — 0.33.0. `DonutEngine.hitTest(dxRatio, dyRatio, hitBandRatio, layout): Int?` —
+  비율 공간(반경 r로 정규화, r=1이라 명세의 ringRatio 인자는 불필요해 소거). 반경 대역·각도→
+  fraction·sourceIndex 규칙 코어 확정. `MIN_HIT_TARGET_DP=48` 코어 상수화, D7 결정 반영으로
+  **iOS도 max(링, 48pt) 대역 채택**(탭 영역 확대, 시각 무변화). atan2는 이산 인덱스 출력이라
+  골든 무해(§5 예외 근거 KDoc 기록). 골든 donutHitTest 섹션 추가. 양 렌더러는 픽셀→비율 환산만
 - [x] **B5** — 코어 0.30.0 + 양 렌더러 채택(`d6f14ca`). 규칙 검증은 코어 테스트로 이동.
   앱 복사본 2벌 삭제는 C4(앱 커밋)에서
 - [ ] B6, B7 — 미착수

@@ -38,7 +38,6 @@ import com.lumipol.graph.DonutEngine
 import com.lumipol.graph.model.DonutChartData
 import com.lumipol.graph.model.DonutChartLayout
 import kotlinx.coroutines.delay
-import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -89,7 +88,8 @@ fun RDHeartRateZoneChart(
     val scaledStyle = remember(style, density) { style.scaledForDensity(density) }
     val ringPx = scaledStyle.donutRingWidth
     // 히트 대역은 시각 링보다 넓게 최소 48dp 확보(WCAG/Material 터치 타겟 — UX Major-3). 얇은 링에서도 관대.
-    val hitBandPx = max(ringPx, MIN_HIT_TARGET_DP * density)
+    // 최소 터치 타겟은 코어 정책 상수(D7 — SDK 기본), dp→px 환산만 여기서.
+    val hitBandPx = max(ringPx, (DonutEngine.MIN_HIT_TARGET_DP * density).toFloat())
 
     val haptics = LocalHapticFeedback.current
     val currentOnSelect by rememberUpdatedState(onSelectSegment)
@@ -258,24 +258,17 @@ internal fun donutSegmentIndex(
     layout: DonutChartLayout,
     hitBandWidth: Float = ringWidth,
 ): Int? {
-    if (layout.total <= 0.0) return null
+    // B4: 판정 규칙(반경 대역·각도→fraction·sourceIndex)은 코어가 확정 — 여기는 픽셀→비율 환산만.
     val cx = width / 2f
     val cy = height / 2f
     val radius = (min(width, height) - ringWidth) / 2f
     if (radius <= 0f) return null
-
-    val distance = hypot(px - cx, py - cy)
-    val halfBand = hitBandWidth / 2f
-    if (distance < radius - halfBand || distance > radius + halfBand) return null
-
-    var angle = kotlin.math.atan2(py - cy, px - cx) + (Math.PI / 2).toFloat() // 12시 기준
-    if (angle < 0f) angle += (2 * Math.PI).toFloat()
-    val frac = angle / (2 * Math.PI).toFloat()
-
-    val segment = layout.segments.firstOrNull {
-        frac >= it.startFraction && frac < it.startFraction + it.sweepFraction
-    } ?: return null
-    return segment.sourceIndex.takeIf { it >= 0 }
+    return DonutEngine.hitTest(
+        dxRatio = ((px - cx) / radius).toDouble(),
+        dyRatio = ((py - cy) / radius).toDouble(),
+        hitBandRatio = (hitBandWidth / radius).toDouble(),
+        layout = layout,
+    )
 }
 
 private fun DrawScope.drawDonutArc(arc: DonutArc) {
@@ -292,8 +285,6 @@ private fun DrawScope.drawDonutArc(arc: DonutArc) {
 
 private const val DONUT_START_DEG = -90f       // 12시 시작(0°=3시 → −90°)
 private const val FULL_CIRCLE_DEG = 360f
-/** 최소 터치 타겟(dp) — WCAG/Material 권장. 얇은 링에서도 이만큼의 히트 대역을 확보(UX Major-3). */
-private const val MIN_HIT_TARGET_DP = 48f
 
 /** 도넛 arc 등장 애니 지속시간(ms). Material Emphasized. */
 private const val DONUT_SWEEP_DURATION_MS = 550

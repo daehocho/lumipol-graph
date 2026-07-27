@@ -235,23 +235,20 @@ public final class RDHeartRateZoneView: UIView {
     /// DonutEngine은 value<=0 세그먼트를 레이아웃에서 제외하므로,
     /// 레이아웃 인덱스를 그대로 내보내면 호출자 배열과 어긋난다 — 원본 인덱스로 복원해 전달.
     func segmentIndex(at p: CGPoint) -> Int? {
-        guard let layout = currentLayout, layout.total > 0 else { return nil }
+        guard let layout = currentLayout else { return nil }
+        // B4: 판정 규칙(반경 대역·각도→fraction·sourceIndex)은 코어 hitTest가 확정 —
+        // 여기는 픽셀→비율 환산만. D7: 히트 대역은 시각 링보다 넓게 최소 48pt
+        // (SDK 기본, 코어 정책 상수) — 시각 변화 없이 탭 영역만 넓어진다.
         let center = CGPoint(x: bounds.midX, y: bounds.midY)
-        // 반경 검사: 링 스트로크 대역 밖(도넛 구멍·모서리)은 선택 없음 —
-        // 각도만으로는 모든 터치가 어떤 세그먼트에든 매칭돼 허위 선택이 된다.
         let ring = style.donutRingWidth
         let radius = (min(bounds.width, bounds.height) - ring) / 2
         guard radius > 0 else { return nil }
-        let distance = hypot(p.x - center.x, p.y - center.y)
-        guard distance >= radius - ring / 2, distance <= radius + ring / 2 else { return nil }
-        var angle = atan2(p.y - center.y, p.x - center.x) + .pi / 2  // 12시 기준
-        if angle < 0 { angle += 2 * .pi }
-        let frac = Double(angle / (2 * .pi))
-        guard let segment = layout.segments.first(where: {
-            frac >= $0.startFraction && frac < $0.startFraction + $0.sweepFraction
-        }) else { return nil }
-        // 코어가 실어준 원본 인덱스를 그대로 보고 — value<=0 필터 규칙을 렌더러가 복제하지 않음
-        // (엔진 규칙 변경에 자동 추종).
-        return segment.sourceIndex >= 0 ? Int(segment.sourceIndex) : nil
+        let band = max(ring, CGFloat(DonutEngine.shared.MIN_HIT_TARGET_DP))
+        return DonutEngine.shared.hitTest(
+            dxRatio: Double((p.x - center.x) / radius),
+            dyRatio: Double((p.y - center.y) / radius),
+            hitBandRatio: Double(band / radius),
+            layout: layout
+        )?.intValue
     }
 }

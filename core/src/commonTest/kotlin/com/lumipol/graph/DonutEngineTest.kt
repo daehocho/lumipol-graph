@@ -99,4 +99,55 @@ class DonutEngineTest {
         assertEquals(3, DonutEngine.toggleSelection(current = 2, tapped = 3))    // 선택 이동
         assertNull(DonutEngine.toggleSelection(current = 2, tapped = null))      // 밖 탭 해제
     }
+
+    // B4 — hitTest(비율 공간). 12시 기준 시계방향, 반경 1 ± band/2 대역.
+
+    /** 25%/25%/50% 도넛 — 12시~3시 = 0번, 3시~6시 = 1번, 6시~12시 = 2번. */
+    private fun quadLayout() = DonutEngine.layout(
+        DonutChartData(
+            listOf(seg(25.0), seg(25.0, DonutColorRole.ZONE2), seg(50.0, DonutColorRole.ZONE3)),
+        ),
+    )
+
+    @Test
+    fun hitTest_maps_angle_to_source_index() {
+        val layout = quadLayout()
+        val band = 0.2
+        // 12시 바로 뒤(첫 조각), 3시 직후(둘째), 9시(셋째)
+        assertEquals(0, DonutEngine.hitTest(0.01, -1.0, band, layout))
+        assertEquals(1, DonutEngine.hitTest(1.0, 0.01, band, layout))
+        assertEquals(2, DonutEngine.hitTest(-1.0, 0.0, band, layout))
+    }
+
+    @Test
+    fun hitTest_rejects_hole_and_outside() {
+        val layout = quadLayout()
+        assertNull(DonutEngine.hitTest(0.0, 0.0, 0.2, layout))       // 구멍(중심)
+        assertNull(DonutEngine.hitTest(0.0, -1.5, 0.2, layout))      // 링 밖
+        assertNull(DonutEngine.hitTest(0.0, -0.5, 0.2, layout))      // 구멍(대역 안쪽)
+    }
+
+    @Test
+    fun hitTest_wide_band_accepts_taps_beyond_visual_ring() {
+        val layout = quadLayout()
+        // 대역 0.8이면 반경 0.62·1.38까지 허용 — 얇은 링의 48dp 확장(D7) 경로.
+        assertEquals(0, DonutEngine.hitTest(0.0, -0.65, 0.8, layout))
+        assertEquals(0, DonutEngine.hitTest(0.0, -1.35, 0.8, layout))
+        assertNull(DonutEngine.hitTest(0.0, -0.55, 0.8, layout))
+    }
+
+    @Test
+    fun hitTest_reports_original_source_index_after_zero_filter() {
+        // 0값 조각이 걸러져도 원본 인덱스로 보고(레이아웃 인덱스 아님).
+        val layout = DonutEngine.layout(
+            DonutChartData(listOf(seg(0.0), seg(50.0, DonutColorRole.ZONE2), seg(50.0, DonutColorRole.ZONE3))),
+        )
+        assertEquals(1, DonutEngine.hitTest(0.7, -0.7, 0.2, layout)) // 1시 방향 → 첫 표시 조각 = 원본 1
+    }
+
+    @Test
+    fun hitTest_empty_layout_returns_null() {
+        val empty = DonutEngine.layout(DonutChartData(emptyList()))
+        assertNull(DonutEngine.hitTest(0.0, -1.0, 0.2, empty))
+    }
 }
