@@ -47,3 +47,9 @@ android {
         minSdk = 24
     }
 }
+
+// 0.7단계 대조 하네스(docs/refactor/07-harness.md): iOS 시뮬레이터 테스트 디바이스.
+// 기본값은 로컬에 설치된 시뮬레이터와 일치해야 한다 — 다르면 -PiosSimDevice=<이름> 으로 재정의.
+tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest>().configureEach {
+    device.set(providers.gradleProperty("iosSimDevice").orElse("iPhone 17 Pro"))
+}
