@@ -2,6 +2,7 @@ package com.lumipol.graph
 
 import com.lumipol.graph.model.*
 import com.lumipol.graph.scale.AxisDomain
+import com.lumipol.graph.scale.Y_AXIS_HEADROOM_FRACTION
 import com.lumipol.graph.scale.niceScale
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -53,7 +54,7 @@ object BarChartEngine {
         val tol = data.toleranceSecPerUnit
 
         val ys = raw.map { it.value } + ref
-        val ns = niceScale(ys.min(), ys.max(), data.maxTicks)
+        val ns = niceScale(ys.min(), ys.max(), data.maxTicks, Y_AXIS_HEADROOM_FRACTION)
         val dom = AxisDomain(ns.niceMin, ns.niceMax)
 
         val bars = raw.mapIndexed { idx, b ->

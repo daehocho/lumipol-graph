@@ -5,6 +5,7 @@ import com.lumipol.graph.query.interpolatedY as interpolatedYQuery
 import com.lumipol.graph.query.nearest as nearestQuery
 import com.lumipol.graph.scale.AxisDomain
 import com.lumipol.graph.scale.NiceScale
+import com.lumipol.graph.scale.Y_AXIS_HEADROOM_FRACTION
 import com.lumipol.graph.scale.niceScale
 import com.lumipol.graph.scale.yValues
 import com.lumipol.graph.stats.segmentStats
@@ -64,7 +65,7 @@ object LineChartEngine {
         val yWindow = if (windowed) xDom else null
         val yNice: Map<Axis, NiceScale?> = Axis.entries.associateWith { axis ->
             val vals = yValues(data, axis, yWindow)
-            if (vals.isEmpty()) null else niceScale(vals.min(), vals.max(), data.config.maxTicks)
+            if (vals.isEmpty()) null else niceScale(vals.min(), vals.max(), data.config.maxTicks, Y_AXIS_HEADROOM_FRACTION)
         }
         val yDom: Map<Axis, AxisDomain> = yNice.mapValues { (_, ns) ->
             if (ns == null) AxisDomain(0.0, 1.0) else AxisDomain(ns.niceMin, ns.niceMax)

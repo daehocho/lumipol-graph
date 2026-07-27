@@ -153,4 +153,19 @@ class LineChartEngineTest {
         val yPrimaryTicks = layout.axisTicks.first { it.axis == ChartAxis.Y_PRIMARY }.ticks
         assertTrue(yPrimaryTicks.all { it.value <= 200.0 })
     }
+
+    @Test
+    fun y_domain_gets_headroom_on_both_ends() {
+        // HR 100~180: 5% 인플레이션 96~184 → step 20 → 축 80~200.
+        // 페이스는 렌더러에서 축 반전(위=빠름)이라 min쪽 확장이 화면 위 여유가 된다.
+        val d = LineChartData(
+            series = listOf(
+                Series("hr", listOf(Point(0.0, 100.0), Point(1.0, 180.0)), axis = Axis.SECONDARY),
+            ),
+        )
+        val ticks = LineChartEngine.layout(d).axisTicks
+            .first { it.axis == ChartAxis.Y_SECONDARY }.ticks
+        assertEquals(80.0, ticks.first().value, 1e-9)
+        assertEquals(200.0, ticks.last().value, 1e-9)
+    }
 }

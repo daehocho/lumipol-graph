@@ -52,10 +52,11 @@ class ViewportLayoutTest {
         val inWindow = layout.series[0].points.filter { it.x in 0.0..1.0 }
         assertEquals(2, inWindow.size)
         inWindow.forEach { assertTrue(it.y in 0.0..1.0) }
-        // 창 안 값이 0..1을 꽉 채운다 = 도메인이 딱 가시 범위(1~2)로 맞춰졌다는 뜻.
+        // 도메인이 가시 값(1~2) 기준으로 재계산됐다는 뜻: 헤드룸 5% 인플레이션(0.95~2.05)
+        // → step 0.5 → 도메인 0.5~2.5, 그래서 y=1은 0.25, y=2는 0.75.
         // (봉우리 10이 도메인에 남아 있으면 두 점 모두 0 근처로 눌려 이 단언이 깨진다.)
-        assertEquals(0.0, inWindow.minOf { it.y }, 1e-9)
-        assertEquals(1.0, inWindow.maxOf { it.y }, 1e-9)
+        assertEquals(0.25, inWindow.minOf { it.y }, 1e-9)
+        assertEquals(0.75, inWindow.maxOf { it.y }, 1e-9)
         // 창 밖 이웃(봉우리)은 도메인에 기여하지 않으므로 1을 크게 넘긴다.
         val peakNeighbor = layout.series[0].points.first { it.x < 0.0 }
         assertTrue(peakNeighbor.y > 1.0, "창 밖 봉우리 이웃 y=${peakNeighbor.y}는 1 초과여야 한다")

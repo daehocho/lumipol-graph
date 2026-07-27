@@ -13,6 +13,18 @@ class BarChartEngineTest {
         List(km) { SplitSample(1000.0, secPerKm) }
 
     @Test
+    fun y_domain_gets_headroom_on_both_ends() {
+        // 페이스 250/300/350(ref=평균 300): 5% 인플레이션 245~355 → step 50 → 축 200~400
+        val data = BarChartData(
+            listOf(SplitSample(1000.0, 250.0), SplitSample(1000.0, 300.0), SplitSample(1000.0, 350.0)),
+            splitDistanceMeters = 1000.0,
+        )
+        val ticks = BarChartEngine.layout(data).yTicks
+        assertEquals(200.0, ticks.first().value, 1e-9)
+        assertEquals(400.0, ticks.last().value, 1e-9)
+    }
+
+    @Test
     fun exact_km_produces_one_bar_per_km_no_partial() {
         val data = BarChartData(evenSamples(3, 300.0), splitDistanceMeters = 1000.0)
         val layout = BarChartEngine.layout(data)
