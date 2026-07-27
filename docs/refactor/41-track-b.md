@@ -1,0 +1,40 @@
+# 41 — 트랙 B: 구조 정리 (4단계)
+
+- 작성일: 2026-07-27 / 승인: 위임
+- 원칙: 중복/비대칭을 코어로 흡수. 이관 후 렌더러엔 "코어 값 → 플랫폼 API" 어댑터만 남는다.
+- 난이도 S/M/L, 회귀 위험은 골든+렌더러 단위테스트+스냅샷(플랫폼 내) 기준.
+
+| # | 항목 | 난이도 | 회귀 위험 | 이관 후 렌더러 어댑터 형태 (의사코드) |
+|---|---|---|---|---|
+| B1 | **축 도메인 출력** — `LineChartLayout`에 `domains: ChartDomains(x: AxisDomain, yPrimary: AxisDomain?, ySecondary: AxisDomain?)` 추가. `AxisDomain`에 `denormalize(t)` 추가 | S | 낮음 — 추가 필드(기존 소비자 무영향) | `xScale.value(t)` → `layout.domains.x.denormalize(t)`; AxisScale.swift/kt 삭제, `ticksFor`만 유틸 잔류 |
+| B2 | **스크럽 결과 보강** — `nearestScrub(data, x, window?) : ScrubResult(snappedX, perSeries: [id, x, y, nx, ny(축 정규화)], snapSourceId)` — 스냅 소스 규칙(main 우선)·창 epsilon·오버레이 정규화 y 포함 | M | 중간 — TouchMarker 재배선 | `for p in result.perSeries: dot = plot.point(p.nx, p.ny, axis)`; TouchMarker의 재탐색·Y역산 삭제. 05 승인대로 스냅 x/y **T1 승격** (원본 복사 확인됨 — `Nearest.kt:9` `minByOrNull` 결과 그대로) |
+| B3 | **ZoomState 코어 이관** — `com.lumipol.graph.interaction.ZoomWindow` (pinch/pan/place/clamp, maxScale) | S | 낮음 — 순수 산술, 기존 테스트 이식 | 렌더러 ZoomState = typealias/thin wrapper → 삭제. iOS 사문 API(`pan(byFraction:)` 등) 이관 시 정리 |
+| B4 | **도넛 히트테스트 코어** — `DonutEngine.hitTest(dxRatio, dyRatio, ringRatio, hitBandRatio, layout): Int?` (비율 공간 — px 무관) | S | 낮음 | 렌더러: `hitTest((px-cx)/r, (py-cy)/r, …)`. AOS 48dp 확장은 hitBandRatio 인자로 유지(의도적 완화 — 44에 명시) |
+| B5 | **막대 색 앵커 공개** — `BarChartLayout.colorAnchors: BarColorAnchors(fastest, slowest, average)?` — 온전 스플릿 우선·2개 미만 폴백 규칙 포함. ref(런 총합 평균) 우선 규칙도 코어로 | S | 낮음 — 순수 축약 | 렌더러·앱의 앵커 블록 4벌 → `layout.colorAnchors` 소비. **비대칭 6번 부수 해소**: 앱이 layout을 직접 만들 이유가 없어지므로 렌더러 내부 호출로 통일 가능(43 문서 경로) |
+| B6 | **페이스 컬러맵 코어** — `PaceColormap.rgba(value, anchors, colorBlind: Boolean): Long(0xAARRGGBB)` — 3구간 보간 + 색약 이산 4색(앱 소유였던 것 포함) | M | 중간 — 색 비트 일치 검증 필요(SceneDigest) | 렌더러: `Color(rgba)` 변환 1줄. 렌더러 PaceColormap 2벌 삭제(그림자 소거), 앱 колorizer는 C4에서 전환 |
+| B7 | **수치 상수 코어 단일 원본** — `ChartDefaults` object: 스타일 밖 정책 상수(라벨 여백·마커 폭·barWidthRatio·도넛 시작각·자동해제 3s·maxZoomScale·epsilon…) + 팔레트 RGBA 쌍(라이트/다크) | M | 낮음(값 불변 이동) | ChartStyle 기본값이 `ChartDefaults.*` 참조. iOS는 동적 UIColor 유지하되 **SceneDigest가 해석값을 대조** |
+| B8 | **경계 계약 정규화** — `layout(data, xMin, xMax)`: xMax<=xMin이면 전체 layout 폴백(require 제거). `slotAxis` 음수 → require 유지(정적 오용). maxTicks `coerceAtLeast(2)` | S | 낮음 | 렌더러의 `if (hi > lo)` 가드 삭제 가능(잔류해도 무해) |
+| B9 | **기본 인자 브릿지 완화** — `BarChartData`·`ChartConfig`·`Series`에 ObjC용 보조 생성자(DonutSegment 패턴, `DonutInput.kt:13-14` 선례) | S | 낮음 | iOS 호출부가 코어 기본값을 자동 상속 — 하드코딩 재발 차단 |
+| B10 | **시리즈 id 첫 우선 규칙 코어** — layout이 `roleById/axisById` 맵을 실어 보내거나 중복 id를 레이아웃 단계에서 정리 | S | 낮음 | 렌더러 firstWinsBy 2벌 삭제 |
+| B11 | 도넛 선택 콜백 발화 통일 — AOS 홀더 `toggle()`도 `onSelectSegment` 발화 | S | 낮음 | AOS 렌더러 내부 |
+| B12 | 접근성 문자열 주입화 — 렌더러 하드코딩 한국어 제거, `ChartA11y(labels…)` 주입 + 코어 기본 문자열 | M | 낮음 | 렌더러는 배치만. 내용은 앱 로컬라이즈 |
+| B13 | 그림자 정리 — iOS `barColors` 죽은 기본값·ZoomState 사문 API 제거 | S | 낮음(공개 API면 43 전략 적용) | — |
+| B14 | 막대 Y 좌표 경로 통일 — RDBarChart가 PlotArea.y 경유(반전은 코어 값 그대로) | S | 낮음(동일 결과 리팩토링) | 렌더러 내부 |
+
+## 이관하지 말아야 할 것 (명시)
+
+| 항목 | 이유 |
+|---|---|
+| PlotArea 픽셀 변환·클립·Path 조립·캐시 | 픽셀 좌표계는 플랫폼 소관 — 목표 아키텍처의 렌더러 정의 그 자체 |
+| 텍스트 측정(tnum 포함) | 폰트 스택이 플랫폼 자산. 측정값은 코어 결정(labelStride)의 **입력**으로만 |
+| 제스처 인식·상태머신·consume 정책 | UIKit/Compose 이벤트 모델이 본질적으로 다름. **의미 해석**(창 산술 B3, 스냅 B2)만 코어 |
+| density/dp·헤어라인·fontScale 상한 | 플랫폼 디스플레이 정책 |
+| 햅틱·애니메이션 구동 | 플랫폼 API. 파라미터 값만 코어 상수(B7) |
+| Compose 요청 봉투(Zoom/MarkerController) | 선언형 UI 어댑터 — AOS 고유 계층으로 타당 |
+
+## 실행 순서 권장
+
+B1 → B2 (레이아웃 출력 확장 한 릴리스) → B5+B6 (막대 색 한 릴리스, C4 선행조건) →
+B3+B4 (상호작용 산술) → B8+B9 (브릿지) → B7+B10 (상수·계약) → B11~B14 (정리).
+각 단계: 코어 구현+commonTest → 하네스/골든 재녹화 → 렌더러 어댑터 전환 → 렌더러 테스트 →
+xcframework 재생성(같은 커밋) → 릴리스 태그.
