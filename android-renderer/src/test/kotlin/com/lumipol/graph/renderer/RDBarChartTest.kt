@@ -3,6 +3,7 @@ package com.lumipol.graph.renderer
 import androidx.compose.ui.graphics.Color
 import com.lumipol.graph.model.AxisTick
 import com.lumipol.graph.model.BarChartLayout
+import com.lumipol.graph.model.BarColorAnchors
 import com.lumipol.graph.model.BarColorRole
 import com.lumipol.graph.model.BarLayout
 import kotlin.test.Test
@@ -146,6 +147,8 @@ class RDBarChartTest {
     }
 
     // 앵커는 온전 스플릿만: 부분 스플릿의 극단값이 팔레트를 왜곡하지 않는다.
+    // 규칙 자체는 0.30.0부터 코어 소유(BarChartEngine → layout.colorAnchors, 코어 테스트가 검증) —
+    // 렌더러는 실려 온 앵커를 그대로 그린다는 계약만 여기서 확인한다.
     @Test
     fun colorAnchorsUseFullSplitsOnly() {
         // 온전 2개(300,360) 범위 있음. 부분 1개(value=600, 아주 느림)는 앵커에서 제외.
@@ -155,7 +158,8 @@ class RDBarChartTest {
             BarLayout(2, 600.0, 0.9, BarColorRole.ON_TARGET, isPartial = true),
         )
         val layout = BarChartLayout(bars = bars,
-            yTicks = listOf(AxisTick(300.0, 0.0), AxisTick(360.0, 1.0)), referenceLinePosition = null)
+            yTicks = listOf(AxisTick(300.0, 0.0), AxisTick(360.0, 1.0)), referenceLinePosition = null,
+            colorAnchors = BarColorAnchors(fastest = 300.0, slowest = 360.0, average = 330.0))
         val rects = bars(buildBarChartLayers(layout, style, width, height))
         // slowest 앵커=360이므로 600은 노랑↔빨강 구간 상단(빨강)으로 클램프.
         assertEquals(1f, rects[2].color.red)
@@ -210,6 +214,8 @@ class RDBarChartTest {
             ),
             yTicks = emptyList(),
             referenceLinePosition = null,
+            // 0.30.0: 앵커는 코어 산출을 주입(온전 스플릿 250/300, 평균 275) — 아래 기대색과 일치
+            colorAnchors = BarColorAnchors(fastest = 250.0, slowest = 300.0, average = 275.0),
         )
         val bars = bars(build(layout, style = custom))
         assertEquals(3, bars.size)

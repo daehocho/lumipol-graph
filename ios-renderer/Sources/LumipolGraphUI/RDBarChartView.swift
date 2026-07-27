@@ -97,16 +97,22 @@ public final class RDBarChartView: UIView {
         let slot = plot.width / CGFloat(n)
         let barWidth = slot * 0.6
 
-        // 연속 색상 앵커(이 런 막대 value 기준). average = 등거리 스플릿에서 런 평균 페이스와 일치.
-        // 색 앵커: 온전한 스플릿만 사용해 부분 스플릿(짧은 잔여 구간) 이상치가 팔레트를 왜곡하지 않게 한다.
-        // 단, 온전한 스플릿이 2개 미만이거나 값이 모두 같아 범위가 없으면(예: 짧은 런의 단일 온전 스플릿)
-        // 전체 막대로 폴백해 색 그라데이션 신호를 보존한다.
-        let fullValues = layout.bars.filter { !$0.isPartial }.map { $0.value }
-        let fullHasRange = fullValues.count >= 2 && fullValues.max()! > fullValues.min()!
-        let anchorValues = fullHasRange ? fullValues : layout.bars.map { $0.value }
-        let fastest = anchorValues.min() ?? 0
-        let slowest = anchorValues.max() ?? 0
-        let average = anchorValues.reduce(0, +) / Double(anchorValues.count)
+        // 연속 색상 앵커 — 규칙 원본은 코어 `BarChartEngine`(0.30.0, `layout.colorAnchors`).
+        // 렌더러·앱이 각자 재계산하던 4벌 복제를 회수한 단일 원본이다. 코어를 안 거치고 직접
+        // 생성된 레거시 layout(anchors=nil)만 국소 폴백으로 그린다(min/max/산술평균).
+        let fastest: Double
+        let slowest: Double
+        let average: Double
+        if let anchors = layout.colorAnchors {
+            fastest = anchors.fastest
+            slowest = anchors.slowest
+            average = anchors.average
+        } else {
+            let values = layout.bars.map { $0.value }
+            fastest = values.min() ?? 0
+            slowest = values.max() ?? 0
+            average = values.reduce(0, +) / Double(max(values.count, 1))
+        }
 
         // x축 인덱스 라벨 솎아내기 stride(장거리·하프 등 슬롯보다 넓은 라벨 겹침 방지).
         // 개수 임계치가 아니라 슬롯 폭 대비 라벨 폭으로 계산 — 코어 labelStride(양 플랫폼 공유).

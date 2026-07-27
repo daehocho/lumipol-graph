@@ -92,7 +92,8 @@ final class BarChartViewTests: XCTestCase {
         }
     }
 
-    // 부분 스플릿(극단값)은 색 앵커에서 제외 — 온전한 스플릿만으로 계산.
+    // 부분 스플릿(극단값)은 색 앵커에서 제외 — 규칙 원본은 0.30.0부터 코어(layout.colorAnchors,
+    // 코어 테스트가 검증). 렌더러는 실려 온 앵커를 그대로 쓴다는 계약만 여기서 확인한다.
     func testAnchorsExcludePartialSplit() {
         let bars = [
             BarLayout(index: 0, value: 300, heightFraction: 0.4, colorRole: .faster, isPartial: false, endMinutes: nil),
@@ -100,7 +101,9 @@ final class BarChartViewTests: XCTestCase {
             BarLayout(index: 2, value: 360, heightFraction: 0.6, colorRole: .slower, isPartial: false, endMinutes: nil),
             BarLayout(index: 3, value: 100, heightFraction: 0.1, colorRole: .faster, isPartial: true, endMinutes: nil), // 극단 outlier
         ]
-        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+        let layout = BarChartLayout(
+            bars: bars, yTicks: [], referenceLinePosition: nil,
+            colorAnchors: BarColorAnchors(fastest: 300, slowest: 360, average: 330))
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
         var captured: [BarPaceColorInput] = []
         var style = ChartStyle.default
@@ -116,7 +119,7 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertTrue(captured[3].isPartial)
     }
 
-    // 전부 부분 스플릿이면 전체로 폴백(크래시 없음).
+    // 앵커 없는 레거시 layout(직접 생성)은 국소 폴백(min/max/산술평균)으로 크래시 없이 그린다.
     func testAnchorsFallBackWhenAllPartial() {
         let bars = [BarLayout(index: 0, value: 250, heightFraction: 0.5, colorRole: .onTarget, isPartial: true, endMinutes: nil)]
         let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
@@ -129,7 +132,7 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertEqual(captured[0].average, 250, accuracy: 0.001)  // 폴백: 그 막대 자신
     }
 
-    // 짧은 런(온전 스플릿 1 + 부분 1): 온전 스플릿만으론 범위가 없어 전체로 폴백 → 색 신호 보존.
+    // 앵커 없는 레거시 layout: 폴백 앵커(전체 min/max)가 범위를 보존한다 → 색 신호 보존.
     func testFallsBackToAllWhenFullSplitsLackRange() {
         let bars = [
             BarLayout(index: 0, value: 300, heightFraction: 0.6, colorRole: .faster, isPartial: false, endMinutes: nil),

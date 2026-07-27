@@ -28,6 +28,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
 import com.lumipol.graph.model.BarChartLayout
+import com.lumipol.graph.model.BarColorAnchors
 import com.lumipol.graph.model.BarColorRole
 import com.lumipol.graph.query.barIndexAtX
 import com.lumipol.graph.query.isLabelVisible
@@ -237,15 +238,15 @@ internal fun buildBarChartLayers(
         }
     }
 
-    // 연속 색상 앵커(이 런 막대 value 기준). average = 등거리 스플릿에서 런 평균 페이스와 일치.
-    // 온전한 스플릿만 사용해 부분 스플릿(짧은 잔여) 이상치가 팔레트를 왜곡하지 않게 한다.
-    // 단 온전 스플릿 2개 미만이거나 값 범위가 없으면 전체 막대로 폴백(색 신호 보존).
-    val fullValues = layout.bars.filter { !it.isPartial }.map { it.value }
-    val fullHasRange = fullValues.size >= 2 && fullValues.max() > fullValues.min()
-    val anchorValues = if (fullHasRange) fullValues else layout.bars.map { it.value }
-    val fastest = anchorValues.min()
-    val slowest = anchorValues.max()
-    val average = anchorValues.sum() / anchorValues.size
+    // 연속 색상 앵커 — 규칙 원본은 코어 `BarChartEngine`(0.30.0, `layout.colorAnchors`).
+    // 렌더러·앱이 각자 재계산하던 4벌 복제를 회수한 단일 원본이다. 코어를 안 거치고 직접
+    // 생성된 레거시 layout(anchors=null)만 국소 폴백으로 그린다(min/max/산술평균).
+    val anchors = layout.colorAnchors ?: layout.bars.map { it.value }.let { v ->
+        BarColorAnchors(fastest = v.min(), slowest = v.max(), average = v.sum() / v.size)
+    }
+    val fastest = anchors.fastest
+    val slowest = anchors.slowest
+    val average = anchors.average
 
     // 막대
     val slot = plot.width / n
