@@ -2,6 +2,7 @@ package com.lumipol.graph.renderer
 
 import com.lumipol.graph.model.AxisTick
 import com.lumipol.graph.model.Point
+import com.lumipol.graph.scale.AxisDomain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -33,7 +34,7 @@ class AreaSilhouetteTest {
 
     private val style = ChartStyle.defaults(darkTheme = false)
     private val plot = PlotArea(100.0, 100.0, Insets(0f, 0f, 0f, 0f))
-    private val xScale = AxisScale.from(listOf(AxisTick(0.0, 0.0), AxisTick(10.0, 1.0)))!!
+    private val xDomain = AxisDomain(0.0, 10.0) // 0.30.0: 코어 출력 도메인 주입(구 AxisScale 대체)
 
     private fun bounds(polygon: List<PlotPoint>): DoubleArray {
         val xs = polygon.map { it.x }
@@ -46,7 +47,7 @@ class AreaSilhouetteTest {
         // 고도 0→10 (fraction 0→1), areaHeightFraction 0.35 → 봉우리 y = 65, 바닥 100
         val layer = AreaSilhouette.build(
             points = listOf(Point(0.0, 0.0), Point(10.0, 10.0)),
-            xScale = xScale, plot = plot, style = style.copy(areaHeightFraction = 0.35f),
+            xDomain = xDomain, plot = plot, style = style.copy(areaHeightFraction = 0.35f),
         )!!
         assertEquals("area.altitude", layer.name)
         val b = bounds(layer.polygon)
@@ -62,7 +63,7 @@ class AreaSilhouetteTest {
         // 시리즈 x-도메인(0~10)보다 넓은 고도(-5~15) — 좌표를 플롯 영역으로 클램프.
         val layer = AreaSilhouette.build(
             points = listOf(Point(-5.0, 0.0), Point(5.0, 10.0), Point(15.0, 0.0)),
-            xScale = xScale, plot = plot, style = style,
+            xDomain = xDomain, plot = plot, style = style,
         )!!
         val b = bounds(layer.polygon)
         assertTrue(b[0] >= plot.minX)
@@ -76,15 +77,15 @@ class AreaSilhouetteTest {
         val noise = listOf(Point(0.0, 10.0), Point(10.0, 10.25))
         val usable = 0.35 * plot.height // 35
 
-        val default = AreaSilhouette.build(noise, xScale, plot, style)!!
+        val default = AreaSilhouette.build(noise, xDomain, plot, style)!!
         assertEquals(100.0 - 0.5 * usable, bounds(default.polygon)[1], 1e-3) // 82.5
 
-        val noFloor = AreaSilhouette.build(noise, xScale, plot, style.copy(areaMinValueSpan = 0.0))!!
+        val noFloor = AreaSilhouette.build(noise, xDomain, plot, style.copy(areaMinValueSpan = 0.0))!!
         assertEquals(100.0 - usable, bounds(noFloor.polygon)[1], 1e-3) // 65.0
 
         // 실측 고저차가 하한보다 크면 하한은 관여하지 않는다.
         val real = AreaSilhouette.build(
-            listOf(Point(0.0, 0.0), Point(10.0, 100.0)), xScale, plot, style,
+            listOf(Point(0.0, 0.0), Point(10.0, 100.0)), xDomain, plot, style,
         )!!
         assertEquals(100.0 - usable, bounds(real.polygon)[1], 1e-3)
     }
@@ -92,7 +93,7 @@ class AreaSilhouetteTest {
     @Test
     fun buildNullForFewerThanTwoPoints() {
         assertNull(
-            AreaSilhouette.build(listOf(Point(0.0, 5.0)), xScale, plot, style),
+            AreaSilhouette.build(listOf(Point(0.0, 5.0)), xDomain, plot, style),
         )
     }
 }

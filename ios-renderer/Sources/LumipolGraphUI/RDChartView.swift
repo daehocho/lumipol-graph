@@ -67,11 +67,7 @@ public final class RDChartView: UIView {
     }
 
     private(set) var data: LineChartData?
-    private(set) var chartLayout: LineChartLayout? {
-        didSet { cachedXAxisScale = nil }
-    }
-    /// 현재 chartLayout의 X 스케일 캐시 — 스크럽(60~120Hz)마다 tick 탐색·재구성을 피한다.
-    private var cachedXAxisScale: AxisScale?
+    private(set) var chartLayout: LineChartLayout?
     private(set) var style: ChartStyle = .default
     private(set) var invertedAxes: Set<Axis> = []
     private(set) var labelFormatter: (ChartAxis, Double) -> String = RDChartView.defaultFormatter
@@ -187,9 +183,9 @@ public final class RDChartView: UIView {
         contentContainer.frame = bounds
         contentContainer.setAffineTransform(.identity)
         contentContainer.sublayers?.forEach { $0.removeFromSuperlayer() }
-        if let backgroundArea, let xScale = xAxisScale(),
+        if let backgroundArea, let xDomain = xDomain(),
            let areaLayer = AreaSilhouette.layer(
-               points: backgroundArea, xScale: xScale, plotArea: plotArea, style: style
+               points: backgroundArea, xDomain: xDomain, plotArea: plotArea, style: style
            ) {
             contentContainer.addSublayer(areaLayer)  // 최하단(그리드보다 아래)
         }
@@ -314,15 +310,14 @@ public final class RDChartView: UIView {
         commitViewport()
     }
 
-    /// 현재 표시 도메인(전체 layout의 X tick 양끝)으로 줌 상태를 초기화.
+    /// 현재 표시 도메인(전체 layout의 X 도메인)으로 줌 상태를 초기화.
     /// zoomState가 nil일 때만 유효 — nil ⇒ 현재 layout이 전체 구간이라는 불변식.
     private func ensureZoomState() {
-        // zoomState==nil ⇒ 현재 layout이 전체 구간 (불변식) — xAxisScale()이 곧 전체 도메인 스케일.
-        guard zoomState == nil, let scale = xAxisScale() else { return }
-        let lower = scale.value(atPosition: 0)
-        let upper = scale.value(atPosition: 1)
-        guard upper > lower else { return }
-        zoomState = ZoomState(fullDomain: lower...upper)
+        // zoomState==nil ⇒ 현재 layout이 전체 구간 (불변식) — 0.30.0: 코어가 도메인을 직접
+        // 출력하므로 tick 양끝 외삽(구 AxisScale)이 필요 없다.
+        guard zoomState == nil, let domain = xDomain() else { return }
+        guard domain.max > domain.min else { return }
+        zoomState = ZoomState(fullDomain: domain.min...domain.max)
     }
 
     /// 제스처 종료/프로그래매틱 변경 시 — 창에 맞춰 코어 재계산 + 레이어 재조립 (하이브리드의 커밋 단계).
@@ -508,21 +503,17 @@ public final class RDChartView: UIView {
         }
     }
 
-    /// 현재 chartLayout의 X tick으로 도메인↔정규화 변환 스케일. tick 부족 시 nil.
-    /// chartLayout 교체 시까지 캐시된다.
-    private func xAxisScale() -> AxisScale? {
-        if let cachedXAxisScale { return cachedXAxisScale }
-        guard let xTicks = chartLayout?.axisTicks.first(where: { $0.axis == .x })?.ticks else {
-            return nil
-        }
-        cachedXAxisScale = AxisScale(ticks: xTicks)
-        return cachedXAxisScale
+    /// 현재 chartLayout의 X 도메인 — 0.30.0부터 코어가 직접 출력(구 AxisScale 캐시 불필요:
+    /// 프로퍼티 접근뿐이라 스크럽 60~120Hz에도 재구성 비용이 없다). 축퇴(폭 0)면 nil.
+    private func xDomain() -> AxisDomain? {
+        guard let domain = chartLayout?.domains.x, domain.max > domain.min else { return nil }
+        return domain
     }
 
     /// 손가락 뷰 좌표 → 현재(창) 도메인 x로 환산해 스크럽 마커 표시. 롱프레스·비확대 스크럽 공용.
     func scrub(at location: CGPoint) {
-        guard let plotArea = currentPlotArea, let xScale = xAxisScale() else { return }
-        let rawX = xScale.value(atPosition: plotArea.normalizedX(at: location.x))
+        guard let plotArea = currentPlotArea, let xDomain = xDomain() else { return }
+        let rawX = xDomain.denormalize(t: plotArea.normalizedX(at: location.x))
         showTouchMarker(atX: rawX)
     }
 

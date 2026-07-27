@@ -23,10 +23,11 @@ enum AreaSilhouette {
     }
 
     /// 도메인 area 포인트 → 실루엣 CAShapeLayer. 2점 미만이거나 렌더 불가 플롯이면 nil.
-    /// x: xScale로 정규화 위치 산출 후 plotArea.x. y: heightFraction × areaHeightFraction, 바닥(maxY) 기준 위로.
-    /// 축 반전 무관(자체 매핑) — plotArea.y는 쓰지 않는다.
+    /// x: 코어 출력 xDomain으로 정규화 위치 산출 후 plotArea.x(0.30.0 — 구 AxisScale 역산 대체).
+    /// y: heightFraction × areaHeightFraction, 바닥(maxY) 기준 위로. 축 반전 무관(자체 매핑) —
+    /// plotArea.y는 쓰지 않는다.
     static func layer(
-        points: [AreaPoint], xScale: AxisScale, plotArea: PlotArea, style: ChartStyle
+        points: [AreaPoint], xDomain: AxisDomain, plotArea: PlotArea, style: ChartStyle
     ) -> CAShapeLayer? {
         guard points.count >= 2, plotArea.isRenderable else { return nil }
         let fractions = heightFractions(points.map { $0.y }, minSpan: style.areaMinValueSpan)
@@ -35,7 +36,7 @@ enum AreaSilhouette {
         func pixel(_ index: Int) -> CGPoint {
             // 시리즈 x-도메인보다 넓은 area 데이터는 정규화 위치가 0~1을 벗어난다 —
             // 1x에서는 클립 마스크가 없으므로 좌표를 플롯 영역으로 클램프해 번짐을 막는다.
-            let nx = min(max(xScale.position(ofValue: points[index].x), 0), 1)
+            let nx = min(max(xDomain.normalize(v: points[index].x), 0), 1)
             let px = plotArea.x(nx)
             let py = baseY - CGFloat(fractions[index]) * usableHeight
             return CGPoint(x: px, y: py)

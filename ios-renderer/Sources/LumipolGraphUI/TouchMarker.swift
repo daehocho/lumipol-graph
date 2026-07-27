@@ -23,11 +23,10 @@ enum TouchMarker {
     /// 시리즈 없는 차트(배경 area 단독)용 마커 — 스냅 격자(시리즈 포인트)가 없으므로
     /// rawX를 그대로 수직선 위치로 쓴다(연속 스크럽). 시리즈 값이 없어 valuesBySeriesId는 빈 딕셔너리.
     static func makeBackgroundOnly(atRawX rawX: Double, context: Context) -> Result? {
-        guard context.plotArea.isRenderable,
-              let xTicks = ticks(for: .x, in: context.layout),
-              let xScale = AxisScale(ticks: xTicks)
-        else { return nil }
-        let rawNx = xScale.position(ofValue: rawX)
+        // 0.30.0: 코어가 계산에 쓴 도메인을 직접 출력한다 — tick 두 점 역산(구 AxisScale) 제거.
+        let xDomain = context.layout.domains.x
+        guard context.plotArea.isRenderable, xDomain.max > xDomain.min else { return nil }
+        let rawNx = xDomain.normalize(v: rawX)
         guard rawNx >= -1e-9, rawNx <= 1 + 1e-9 else { return nil }
         let nx = min(max(rawNx, 0), 1)
         let container = CALayer()
@@ -35,22 +34,21 @@ enum TouchMarker {
         container.addSublayer(verticalLine(atNx: nx, context: context))
         return Result(
             layer: container, valuesBySeriesId: [:],
-            snappedX: xScale.value(atPosition: nx)
+            snappedX: xDomain.denormalize(t: nx)
         )
     }
 
     /// 원본 도메인 x 기준 마커. 표시 불가(플롯 없음·축 변환 불능·근접점 없음)면 nil.
     static func make(atRawX rawX: Double, context: Context) -> Result? {
-        guard context.plotArea.isRenderable,
-              let xTicks = ticks(for: .x, in: context.layout),
-              let xScale = AxisScale(ticks: xTicks)
-        else { return nil }
+        // 0.30.0: 코어 출력 도메인 사용(구 AxisScale 역산 대체). 축퇴 도메인이면 배치 불능.
+        let xDomain = context.layout.domains.x
+        guard context.plotArea.isRenderable, xDomain.max > xDomain.min else { return nil }
         // 창 안 점만 근접 후보로 — 창 밖 전역 최근접점이 스냅 소스가 되면 창 안 이웃이 있어도
         // 마커 전체가 nil로 떨어진다(줌 가장자리). 경계는 epsilon만큼 관대하게.
         let results = LineChartEngine.shared.nearest(
             data: context.data, x: rawX,
-            xMin: xScale.value(atPosition: -1e-9),
-            xMax: xScale.value(atPosition: 1 + 1e-9)
+            xMin: xDomain.denormalize(t: -1e-9),
+            xMax: xDomain.denormalize(t: 1 + 1e-9)
         )
         // 코어 API가 시리즈 id 유일성을 강제하지 않으므로 중복 시 첫 시리즈 우선(fatalError 방지).
         let axisBySeriesId = Dictionary(
@@ -67,7 +65,7 @@ enum TouchMarker {
         // 확대 창 경계 부근에서 창 밖 데이터로 스냅되는 것을 방지.
         // 단, 도메인 양끝 값은 부동소수점 반올림으로 0/1을 수 ulp 벗어날 수 있으므로
         // epsilon 이내는 창 안으로 간주해 클램프한다 (엄격 비교 시 끝 탭이 침묵 드롭됨).
-        let rawNx = xScale.position(ofValue: snappedX)
+        let rawNx = xDomain.normalize(v: snappedX)
         guard rawNx >= -1e-9, rawNx <= 1 + 1e-9 else { return nil }
         let nx = min(max(rawNx, 0), 1)
 
@@ -80,10 +78,10 @@ enum TouchMarker {
             // 시리즈별 근접점이 현재 표시 도메인(창) 밖이면 점·값 모두 생략 —
             // 창에 포인트가 없는 시리즈(예: 짧은 보조 라인)가 창 밖 값을 스크럽 위치인 양
             // 보고하거나, 창 기준 y-도메인을 벗어난 위치에 점을 그리는 것을 방지.
-            let seriesNx = xScale.position(ofValue: result.x)
+            let seriesNx = xDomain.normalize(v: result.x)
             guard seriesNx >= -1e-9, seriesNx <= 1 + 1e-9 else { continue }
             if roleBySeriesId[result.seriesId] == .overlay {
-                // 오버레이: 축이 없어 tick 스케일 역산이 불가 — 코어가 자체 정규화해 둔 layout
+                // 오버레이: 축이 없어 도메인이 실리지 않는다 — 코어가 자체 정규화해 둔 layout
                 // 포인트에서 근접점을 찾아, 라인과 같은 반전 무시 매핑으로 도트를 놓는다.
                 if let dot = overlayDot(
                     seriesId: result.seriesId, seriesNx: seriesNx, nx: nx, context: context
@@ -95,11 +93,12 @@ enum TouchMarker {
             }
             guard let axis = axisBySeriesId[result.seriesId],
                   let chartAxis = chartAxis(of: axis),
-                  let yTicks = ticks(for: chartAxis, in: context.layout),
-                  let yScale = AxisScale(ticks: yTicks)
+                  let yDomain = axis == .primary
+                      ? context.layout.domains.yPrimary
+                      : context.layout.domains.ySecondary
             else { continue }
             let point = context.plotArea.point(
-                NormalizedPoint(x: nx, y: yScale.position(ofValue: result.y)),
+                NormalizedPoint(x: nx, y: yDomain.normalize(v: result.y)),
                 axis: axis
             )
             let dot = CAShapeLayer()
@@ -160,10 +159,6 @@ enum TouchMarker {
         line.strokeColor = context.style.touchLineColor.cgColor
         line.lineWidth = 1
         return line
-    }
-
-    private static func ticks(for axis: ChartAxis, in layout: LineChartLayout) -> [AxisTick]? {
-        layout.axisTicks.first { $0.axis == axis }?.ticks
     }
 
     private static func chartAxis(of axis: Axis) -> ChartAxis? {

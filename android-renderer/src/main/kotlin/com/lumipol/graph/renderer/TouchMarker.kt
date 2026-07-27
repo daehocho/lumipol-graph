@@ -56,16 +56,17 @@ internal object TouchMarker {
      */
     fun make(rawX: Double, context: TouchMarkerContext): TouchMarkerResult? {
         if (!context.plot.isRenderable) return null
-        val xTicks = ticks(ChartAxis.X, context.layout) ?: return null
-        val xScale = AxisScale.from(xTicks) ?: return null
+        // 0.30.0: 코어가 계산에 쓴 도메인을 직접 출력한다 — tick 두 점 역산(구 AxisScale) 제거.
+        val xDomain = context.layout.domains.x
+        if (xDomain.max <= xDomain.min) return null // 축퇴 도메인 — 마커 배치 불능(구 AxisScale.from null 동일)
 
         // 창 안 점만 근접 후보로 — 창 밖 전역 최근접점이 스냅 소스가 되면 창 안 이웃이 있어도
         // 마커 전체가 null로 떨어진다(줌 가장자리). 경계는 WINDOW_EPSILON만큼 관대하게.
         val results = LineChartEngine.nearest(
             context.data,
             rawX,
-            xMin = xScale.value(-WINDOW_EPSILON),
-            xMax = xScale.value(1 + WINDOW_EPSILON),
+            xMin = xDomain.denormalize(-WINDOW_EPSILON),
+            xMax = xDomain.denormalize(1 + WINDOW_EPSILON),
         )
         val axisBySeriesId = context.axisBySeriesId
         val roleBySeriesId = context.roleBySeriesId
@@ -74,7 +75,7 @@ internal object TouchMarker {
             ?: results.firstOrNull()
         val snappedX = snapSource?.x ?: return null
 
-        val rawNx = xScale.position(snappedX)
+        val rawNx = xDomain.normalize(snappedX)
         if (rawNx < -WINDOW_EPSILON || rawNx > 1 + WINDOW_EPSILON) return null
         val nx = rawNx.coerceIn(0.0, 1.0)
 
@@ -84,11 +85,11 @@ internal object TouchMarker {
         val valuesBySeriesId = LinkedHashMap<String, String>()
         for (result in results) {
             // 창 밖 근접점은 점·값 모두 생략(짧은 보조 시리즈가 창 밖 값을 스크럽 위치인 양 보고 방지).
-            val seriesNx = xScale.position(result.x)
+            val seriesNx = xDomain.normalize(result.x)
             if (seriesNx < -WINDOW_EPSILON || seriesNx > 1 + WINDOW_EPSILON) continue
 
             if (roleBySeriesId[result.seriesId] == SeriesRole.OVERLAY) {
-                // 오버레이: 축이 없어 tick 스케일 역산이 불가 — 코어가 자체 정규화해 둔 layout
+                // 오버레이: 축이 없어 도메인이 실리지 않는다 — 코어가 자체 정규화해 둔 layout
                 // 포인트에서 근접점을 찾아, 라인과 같은 반전 무시 매핑으로 도트를 놓는다.
                 overlayDot(result.seriesId, seriesNx, nx, context)?.let { children.add(it) }
                 valuesBySeriesId[result.seriesId] = context.formatter(ChartAxis.Y_OVERLAY, result.y)
@@ -96,10 +97,12 @@ internal object TouchMarker {
             }
             val axis = axisBySeriesId[result.seriesId] ?: continue
             val chartAxis = chartAxis(axis) ?: continue
-            val yTicks = ticks(chartAxis, context.layout) ?: continue
-            val yScale = AxisScale.from(yTicks) ?: continue
+            val yDomain = when (axis) {
+                Axis.PRIMARY -> context.layout.domains.yPrimary
+                Axis.SECONDARY -> context.layout.domains.ySecondary
+            } ?: continue
             val point = context.plot.point(
-                NormalizedPoint(x = nx, y = yScale.position(result.y)),
+                NormalizedPoint(x = nx, y = yDomain.normalize(result.y)),
                 axis,
             )
             // 라인·그라데이션과 같은 seriesColor 리졸버(맵 우선, 축/역할 폴백) — 도트만 다른 색이 되지 않게.
@@ -129,13 +132,13 @@ internal object TouchMarker {
      */
     fun makeBackgroundOnly(rawX: Double, context: TouchMarkerContext): TouchMarkerResult? {
         if (!context.plot.isRenderable) return null
-        val xTicks = ticks(ChartAxis.X, context.layout) ?: return null
-        val xScale = AxisScale.from(xTicks) ?: return null
-        val rawNx = xScale.position(rawX)
+        val xDomain = context.layout.domains.x
+        if (xDomain.max <= xDomain.min) return null
+        val rawNx = xDomain.normalize(rawX)
         if (rawNx < -WINDOW_EPSILON || rawNx > 1 + WINDOW_EPSILON) return null
         val nx = rawNx.coerceIn(0.0, 1.0)
         val container = ContainerLayer("touch.marker", listOf(verticalLine(nx, context)))
-        return TouchMarkerResult(container, emptyMap(), xScale.value(nx))
+        return TouchMarkerResult(container, emptyMap(), xDomain.denormalize(nx))
     }
 
     /**
@@ -175,9 +178,6 @@ internal object TouchMarker {
             width = TOUCH_LINE_WIDTH * context.density,
         )
     }
-
-    private fun ticks(axis: ChartAxis, layout: LineChartLayout): List<com.lumipol.graph.model.AxisTick>? =
-        layout.ticksFor(axis)
 
     private fun chartAxis(axis: Axis): ChartAxis? = when (axis) {
         Axis.PRIMARY -> ChartAxis.Y_PRIMARY

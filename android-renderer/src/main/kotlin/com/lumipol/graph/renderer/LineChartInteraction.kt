@@ -219,11 +219,9 @@ internal class LineChartInteraction(
      */
     private fun ensureZoom() {
         if (zoom != null) return
-        val xTicks = makeFullLayout().ticksFor(ChartAxis.X) ?: return
-        val scale = AxisScale.from(xTicks) ?: return
-        val lower = scale.value(0.0)
-        val upper = scale.value(1.0)
-        if (upper <= lower) return
-        zoom = ZoomState.full(lower..upper)
+        // 0.30.0: 코어가 전체 X 도메인을 직접 출력한다 — tick 두 점 외삽(구 AxisScale) 제거.
+        val domain = makeFullLayout().domains.x
+        if (domain.max <= domain.min) return
+        zoom = ZoomState.full(domain.min..domain.max)
     }
 }

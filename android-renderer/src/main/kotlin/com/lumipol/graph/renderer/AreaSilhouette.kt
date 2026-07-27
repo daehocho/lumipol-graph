@@ -4,6 +4,7 @@ package com.lumipol.graph.renderer
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.TextMeasurer
 import com.lumipol.graph.model.Point
+import com.lumipol.graph.scale.AxisDomain
 
 /**
  * 페이스 라인 뒤에 깔리는 고도 실루엣(장식).
@@ -27,13 +28,14 @@ internal object AreaSilhouette {
     /**
      * 도메인 area 포인트 → 실루엣 채움 폴리곤. 2점 미만이거나 렌더 불가 플롯이면 null.
      *
-     * x는 [xScale]로 정규화 위치 산출 후 [PlotArea.x]. y는 heightFraction × areaHeightFraction,
-     * 바닥(maxY) 기준 위로. 축 반전 무관(자체 매핑) — [PlotArea.y]는 쓰지 않는다.
+     * x는 코어 출력 [xDomain]으로 정규화 위치 산출 후 [PlotArea.x](0.30.0 — 구 AxisScale 역산 대체).
+     * y는 heightFraction × areaHeightFraction, 바닥(maxY) 기준 위로. 축 반전 무관(자체 매핑) —
+     * [PlotArea.y]는 쓰지 않는다.
      * 시리즈 x-도메인보다 넓은 area는 정규화 위치가 0~1 밖이 되므로 좌표를 플롯 영역으로 클램프한다.
      */
     fun build(
         points: List<Point>,
-        xScale: AxisScale,
+        xDomain: AxisDomain,
         plot: PlotArea,
         style: ChartStyle,
     ): AreaFillLayer? {
@@ -43,7 +45,7 @@ internal object AreaSilhouette {
         val usableHeight = style.areaHeightFraction * plot.height
 
         fun pixel(index: Int): PlotPoint {
-            val nx = xScale.position(points[index].x).coerceIn(0.0, 1.0)
+            val nx = xDomain.normalize(points[index].x).coerceIn(0.0, 1.0)
             return PlotPoint(x = plot.x(nx), y = baseY - fractions[index] * usableHeight)
         }
 
@@ -60,10 +62,10 @@ internal object AreaSilhouette {
 /** 배경 고도 실루엣 그리기(최하단). 렌더 불가/2점 미만이면 아무것도 안 그림. */
 internal fun DrawScope.drawAreaSilhouette(
     points: List<Point>,
-    xScale: AxisScale,
+    xDomain: AxisDomain,
     plot: PlotArea,
     style: ChartStyle,
     measurer: TextMeasurer,
 ) {
-    AreaSilhouette.build(points, xScale, plot, style)?.let { render(it, measurer) }
+    AreaSilhouette.build(points, xDomain, plot, style)?.let { render(it, measurer) }
 }

@@ -550,9 +550,9 @@ internal class LineChartDrawCache {
         axisLabels = split.first
         clipped = split.second
         background = sortedArea?.let { area ->
-            layout.ticksFor(ChartAxis.X)
-                ?.let { AxisScale.from(it) }
-                ?.let { xScale -> AreaSilhouette.build(area, xScale, plot, style) }
+            // 0.30.0: 코어 출력 도메인 사용(구 AxisScale 역산 대체). 축퇴 도메인이면 실루엣 생략(종전 동일).
+            layout.domains.x.takeIf { it.max > it.min }
+                ?.let { xDomain -> AreaSilhouette.build(area, xDomain, plot, style) }
         }
         return true
     }

@@ -62,9 +62,10 @@ internal suspend fun PointerInputScope.lineChartGestures(
     /** 손가락 픽셀 x → 원본 도메인 x. 플롯·X스케일 없으면 null. */
     fun rawXAt(px: Float): Double? {
         val plot = plotProvider() ?: return null
-        val xTicks = layoutProvider().ticksFor(ChartAxis.X) ?: return null
-        val xScale = AxisScale.from(xTicks) ?: return null
-        return xScale.value(plot.normalizedX(px.toDouble()))
+        // 0.30.0: 코어 출력 도메인으로 픽셀→도메인 역변환(구 AxisScale 대체).
+        val xDomain = layoutProvider().domains.x
+        if (xDomain.max <= xDomain.min) return null
+        return xDomain.denormalize(plot.normalizedX(px.toDouble()))
     }
 
     fun scrub(px: Float) {
