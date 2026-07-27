@@ -71,7 +71,8 @@ final class RDChartViewTests: XCTestCase {
 
     func testEntranceAnimationRunsOnlyOnFirstLayoutAfterRender() {
         let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
-        view.render(TestFixtures.paceOnly) // isAnimationEnabled 기본값 true
+        view.isAnimationEnabled = true // D5(0.37.0): 기본 off — 애니 검증은 명시 on
+        view.render(TestFixtures.paceOnly)
         view.layoutIfNeeded()
         let animated = mainLineLayers(of: view)
         XCTAssertFalse(animated.isEmpty)
@@ -89,7 +90,8 @@ final class RDChartViewTests: XCTestCase {
         // 등장 애니메이션은 뷰 수명당 1회(최초 render) — 스트리밍 데이터 갱신마다
         // 라인이 0%부터 다시 그려지면 안 된다 (Android RDLineChart와 동일 계약).
         let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
-        view.render(TestFixtures.paceOnly) // isAnimationEnabled 기본값 true
+        view.isAnimationEnabled = true // D5(0.37.0): 기본 off — 애니 검증은 명시 on
+        view.render(TestFixtures.paceOnly)
         view.layoutIfNeeded()
         XCTAssertTrue(mainLineLayers(of: view).allSatisfy { $0.animation(forKey: "strokeEnd") != nil })
 

@@ -20,7 +20,7 @@ internal fun rememberEntranceProgress(trigger: Any?, animate: Boolean, durationM
         if (animate) {
             // 정착값(1f)에서 animateTo(1f)는 no-op — 토글·trigger 교체 재생은 0 스냅이 전제.
             progress.snapTo(0f)
-            progress.animateTo(1f, tween(durationMs, easing = EmphasizedDecelerate))
+            progress.animateTo(1f, tween(durationMs, easing = EntranceEasing))
         } else {
             progress.snapTo(1f)
         }

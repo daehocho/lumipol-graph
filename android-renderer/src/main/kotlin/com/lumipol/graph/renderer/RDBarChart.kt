@@ -403,5 +403,10 @@ private val BAR_CALLOUT_CORNER = ChartDefaults.CALLOUT_CORNER_RADIUS.toFloat()  
 
 /** 바 성장 등장 애니 지속시간(ms). Material Emphasized. */
 private val BAR_GROWTH_DURATION_MS = (ChartDefaults.BAR_GROWTH_DURATION_SECONDS * 1000).toInt()
-/** Material Emphasized Decelerate 이징(라인/바/도넛 등장 공용). */
-internal val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
+/** 등장 이징(라인/바/도넛 공용) — D5 결정: iOS .easeOut과 동일 곡선, 계수는 코어 상수(A3). */
+internal val EntranceEasing = CubicBezierEasing(
+    ChartDefaults.ENTRANCE_EASING_X1.toFloat(),
+    ChartDefaults.ENTRANCE_EASING_Y1.toFloat(),
+    ChartDefaults.ENTRANCE_EASING_X2.toFloat(),
+    ChartDefaults.ENTRANCE_EASING_Y2.toFloat(),
+)

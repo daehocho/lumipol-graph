@@ -22,8 +22,8 @@ public final class RDChartView: UIView {
 
     /// main 라인 등장 애니메이션(strokeEnd 0→1) — 뷰 수명당 1회, 최초 render에서만.
     /// 데이터 갱신(스트리밍) 재렌더마다 재생하면 라인이 매번 0%부터 다시 그려진다
-    /// (Android RDLineChart와 동일 계약). 스냅샷/테스트에서는 끈다.
-    @objc public var isAnimationEnabled: Bool = true
+    /// (Android RDLineChart와 동일 계약). D5(0.37.0): 기본 off 통일 — 앱이 명시적으로 켠다.
+    @objc public var isAnimationEnabled: Bool = ChartDefaults.shared.ENTRANCE_ENABLED_DEFAULT
 
     /// 스크럽 값 소비자. 미설정 시 값 전달 없음(기존 동작).
     public weak var scrubDelegate: RDChartScrubDelegate?

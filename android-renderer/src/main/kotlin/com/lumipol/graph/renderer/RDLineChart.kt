@@ -35,7 +35,7 @@ import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.Point
 import java.util.Locale
 
-/** 라인 등장 애니 지속시간(ms) — Material Emphasized(iOS strokeEnd 0.6s). */
+/** 라인 등장 애니 지속시간(ms) — iOS strokeEnd와 동일(코어 상수). */
 private val ENTRANCE_DURATION_MS = (ChartDefaults.ENTRANCE_DURATION_SECONDS * 1000).toInt()
 
 /**
@@ -81,7 +81,7 @@ private fun trimTrailingZeros(text: String): String =
  * @param markerController 명령형 터치 마커 핸들([LineChartMarkerController.show]/
  *   [LineChartMarkerController.hide]) — iOS `showTouchMarker(atX:)`/`hideTouchMarker()` 대응.
  *   show는 제스처 스크럽과 동일 경로로 콜백을 발화한다(패리티 규칙은 [LineChartMarkerController] 참조).
- * @param animateEntrance main 라인 등장 애니(첫 layout 1회). 스냅샷/테스트에선 false.
+ * @param animateEntrance main 라인 등장 애니(첫 layout 1회). D5: 기본 off — 앱이 명시적으로 켠다.
  * @param onScrub 스크럽 근접점 값(seriesId→포맷문자열). @param onScrubBackground 배경 area 보간 실값.
  * @param onScrubEnd 스크럽 종료(마커가 표시 중이었을 때만). 짝맞춤 불변식은 [LineChartInteraction] 참조.
  * @param chartContentDescription TalkBack 요약 주입(앱 로컬라이즈 — B12/D9). null이면 코어 기본([ChartA11y.lineChart]).
@@ -99,7 +99,7 @@ fun RDLineChart(
     zoomXRange: ClosedRange<Double>? = null,
     zoomController: LineChartZoomController? = null,
     markerController: LineChartMarkerController? = null,
-    animateEntrance: Boolean = true,
+    animateEntrance: Boolean = ChartDefaults.ENTRANCE_ENABLED_DEFAULT,
     onScrub: OnScrub? = null,
     onScrubBackground: OnScrubBackground? = null,
     onScrubEnd: OnScrubEnd? = null,
@@ -157,7 +157,7 @@ fun RDLineChart(
     // 라인이 매번 0%부터 다시 그려진다. 줌 relayout·데이터 갱신 모두 재실행 금지.
     val progress = remember { Animatable(if (animateEntrance) 0f else 1f) }
     LaunchedEffect(Unit) {
-        if (animateEntrance) progress.animateTo(1f, tween(ENTRANCE_DURATION_MS, easing = EmphasizedDecelerate))
+        if (animateEntrance) progress.animateTo(1f, tween(ENTRANCE_DURATION_MS, easing = EntranceEasing))
     }
 
     // TalkBack 요약(UX Major-1): 캔버스는 불투명하므로 컨테이너에 시리즈 구성을 노출한다.

@@ -21,4 +21,7 @@ AxisScale(B1), ZoomState(B3) 등은 "값이 이미 일치"하므로 A 단계 불
   변화는 tiny_range 3건뿐(4틱→3틱 — 종전 Native 결과로 수렴). 골든 동일 커밋 갱신
 - [x] A2 — NaN/Inf 페이스 명시 무효화 + 단위 테스트. 골든 델타는 P07_nan_pace 케이스에만
   국한됨을 확인(26건 전부 해당 케이스) 후 갱신. 양 플랫폼 게이트 통과
-- [ ] A3 — 44 결정 대기
+- [x] **A3** — D5 확정(2026-07-28) 반영. 이징: AOS EmphasizedDecelerate(0.05,0.7,0.1,1.0) →
+  easeOut(0,0,0.58,1) — 계수는 코어 `ChartDefaults.ENTRANCE_EASING_*`(B7), 렌더러는 구동만.
+  기본값: 라인 등장 애니 iOS·AOS 모두 기본 off(`ENTRANCE_ENABLED_DEFAULT`) — 현재 동작을
+  유지하려면 양 앱이 명시 on 1줄 필요(트랙 C 앱 커밋에 포함)
