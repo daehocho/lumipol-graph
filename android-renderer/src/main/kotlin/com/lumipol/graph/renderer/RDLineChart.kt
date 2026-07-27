@@ -49,6 +49,7 @@ fun defaultLineChartFormatter(axis: ChartAxis, value: Double): String {
     if (value.isNaN()) return "nan"
     if (value.isInfinite()) return if (value > 0) "inf" else "-inf"
     // Locale 고정 — 소수점 문자가 기기 지역 설정을 타지 않는다(iOS %g도 C 로케일 표기).
+    // boundary-allow: 기본 축 포매터 — 앱 미주입 시 폴백(C2 코어 포매터와 별개, iOS defaultFormatter %g 미러)
     val formatted = String.format(Locale.ROOT, "%g", value)
     val exponent = formatted.indexOf('e')
     return if (exponent >= 0) {

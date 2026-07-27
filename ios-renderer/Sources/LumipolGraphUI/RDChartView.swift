@@ -530,6 +530,7 @@ public final class RDChartView: UIView {
     }
 
     static func defaultFormatter(_ axis: ChartAxis, _ value: Double) -> String {
+        // boundary-allow: 기본 축 포매터 — 앱 미주입 시 폴백(AOS defaultLineChartFormatter와 동일 %g 규칙)
         String(format: "%g", value)
     }
 }

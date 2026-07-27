@@ -703,4 +703,5 @@ private val AXIS_LABEL_GAP = ChartDefaults.AXIS_LABEL_GAP       // 축 라벨과
 private val MARKER_WIDTH = ChartDefaults.MARKER_LINE_WIDTH.toFloat()
 private val MARKER_EMPHASIS_WIDTH = ChartDefaults.MARKER_EMPHASIS_LINE_WIDTH.toFloat()
 /** 접근성 글꼴 배율 상한(UX Minor-1) — 라벨이 플롯 여백을 넘지 않게 1.3까지만 키운다. */
+// boundary-allow: 플랫폼 보정 상수(Android fontScale 상한) — 정책 수치 아님(iOS는 Dynamic Type 미적용)
 private const val MAX_FONT_SCALE = 1.3f
