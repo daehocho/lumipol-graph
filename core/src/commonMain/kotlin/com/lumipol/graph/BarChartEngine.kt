@@ -11,7 +11,8 @@ import kotlin.math.roundToInt
  * - samples를 splitDistanceMeters마다 끊어 스플릿 페이스(시간가중, sec/unit) 산정.
  * - 마지막 잔여는 부분 스플릿(isPartial).
  * - colorRole: targetPace(없으면 전체 평균) ± tolerance 밴드로 FASTER/ON_TARGET/SLOWER.
- * - value는 크기 그대로 정규화(heightFraction) — 페이스 방향(낮을수록 빠름)은 색과 y틱으로 전달.
+ * - 축 반전: 페이스는 낮을수록 빠르므로 heightFraction·position을 1-normalize로 뒤집는다
+ *   — 맨 위 틱이 가장 빠른 페이스, 빠른 스플릿일수록 막대가 길다.
  */
 object BarChartEngine {
 
@@ -61,10 +62,10 @@ object BarChartEngine {
                 b.value > ref + tol -> BarColorRole.SLOWER
                 else -> BarColorRole.ON_TARGET
             }
-            BarLayout(idx, b.value, dom.normalize(b.value), role, b.isPartial, b.endMinutes)
+            BarLayout(idx, b.value, 1.0 - dom.normalize(b.value), role, b.isPartial, b.endMinutes)
         }
-        val yTicks = ns.ticks.map { AxisTick(it, dom.normalize(it)) }
-        return BarChartLayout(bars, yTicks, dom.normalize(ref))
+        val yTicks = ns.ticks.map { AxisTick(it, 1.0 - dom.normalize(it)) }
+        return BarChartLayout(bars, yTicks, 1.0 - dom.normalize(ref))
     }
 
     // 런 총합 기반 색 기준(총거리>0일 때만). iOS 시간모드가 넘기던 runningTime/(sumDistance/unit).

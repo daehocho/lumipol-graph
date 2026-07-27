@@ -26,7 +26,8 @@ data class LineChartLayout(
 
 data class NearestResult(val seriesId: String, val x: Double, val y: Double)
 
-/** 막대 1칸. value=스플릿 평균 페이스(sec/unit, 시간가중). heightFraction·position은 0.0~1.0. */
+/** 막대 1칸. value=스플릿 평균 페이스(sec/unit, 시간가중).
+ *  heightFraction·position은 0.0~1.0, 반전 축 — 값이 작을수록(빠를수록) 크다. */
 data class BarLayout(
     val index: Int,
     val value: Double,

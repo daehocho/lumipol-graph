@@ -98,6 +98,52 @@ class BarChartEngineTest {
     }
 
     @Test
+    fun inverted_axis_faster_pace_gets_taller_bar() {
+        // 페이스 250(빠름), 300, 350(느림) → 빠를수록 heightFraction이 커야 한다(축 반전).
+        val data = BarChartData(
+            listOf(SplitSample(1000.0, 250.0), SplitSample(1000.0, 300.0), SplitSample(1000.0, 350.0)),
+            splitDistanceMeters = 1000.0,
+        )
+        val bars = BarChartEngine.layout(data).bars
+        assertTrue(bars[0].heightFraction > bars[1].heightFraction)
+        assertTrue(bars[1].heightFraction > bars[2].heightFraction)
+    }
+
+    @Test
+    fun inverted_axis_smallest_tick_at_top() {
+        // yTicks는 값 오름차순으로 오는데, 반전 축에서는 값이 작을수록(빠를수록) position이 커야 한다(1.0=천장).
+        val data = BarChartData(
+            listOf(SplitSample(1000.0, 250.0), SplitSample(1000.0, 300.0), SplitSample(1000.0, 350.0)),
+            splitDistanceMeters = 1000.0,
+        )
+        val ticks = BarChartEngine.layout(data).yTicks
+        assertTrue(ticks.size >= 2)
+        for (i in 1 until ticks.size) {
+            assertTrue(ticks[i].value > ticks[i - 1].value)
+            assertTrue(ticks[i].position < ticks[i - 1].position)
+        }
+        // 도메인 양끝 틱은 정확히 천장/바닥에 닿는다.
+        assertEquals(1.0, ticks.first().position, 1e-9)
+        assertEquals(0.0, ticks.last().position, 1e-9)
+    }
+
+    @Test
+    fun inverted_axis_reference_line_matches_tick_scale() {
+        // ref=평균. 반전 축에서 ref 위치는 같은 값의 틱 보간과 일치해야 한다: 1 - normalize(ref).
+        // 평균(300)이 도메인 중앙에 오지 않도록 비대칭 값 사용 — 대칭이면 반전 전후가 같아 회귀를 못 잡는다.
+        val data = BarChartData(
+            listOf(SplitSample(1000.0, 250.0), SplitSample(1000.0, 250.0), SplitSample(1000.0, 400.0)),
+            splitDistanceMeters = 1000.0,
+        )
+        val layout = BarChartEngine.layout(data)
+        val lo = layout.yTicks.first().value
+        val hi = layout.yTicks.last().value
+        val ref = 300.0 // 시간가중 평균 = 900s / 3km
+        val expected = 1.0 - (ref - lo) / (hi - lo)
+        assertEquals(expected, layout.referenceLinePosition!!, 1e-9)
+    }
+
+    @Test
     fun invalid_and_empty_samples() {
         assertEquals(emptyList(), BarChartEngine.layout(
             BarChartData(emptyList(), 1000.0)).bars)

@@ -2,7 +2,7 @@ import UIKit
 import LumipolGraph
 
 /// 스플릿 막대 차트 뷰. 코어 BarChartLayout(정규화 완료)을 받아 CALayer로 그린다.
-/// 페이스는 "낮을수록 빠름" — 막대 높이는 값 크기 그대로, 색으로 빠름/목표/느림을 전달한다.
+/// 페이스는 "낮을수록 빠름" — 코어가 축을 반전해 빠른 스플릿일수록 막대가 길고 맨 위 틱이 가장 빠르다.
 public final class RDBarChartView: UIView {
 
     /// 솎아낸 이웃 라벨 사이 최소 여백(pt) — Android BAR_LABEL_MIN_GAP과 동일.
