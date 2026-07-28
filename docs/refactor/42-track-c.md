@@ -93,14 +93,33 @@ object HeartRateZoneEngine { // 기존 object 확장
   `SeriesSelection.invertedAxesFor(paceSlot)`(AOS 슬롯2+ 누락 버그 소거)·
   `ChartConfig.segmentCountFor(D4 — 거리 비례·상한 120·시간 0)`. `PaceColormap.legendStops`는
   B6(0.34.0)에서 선행. 골든 3섹션 추가(폴백 trig 드리프트 0 실측).
-- [ ] **앱 전환(C1~C5 소비부) — 보류(2026-07-28), 사유**: 양 앱이 SDK를 정확 버전 고정으로
-  소비한다(AOS jitpack `mobile-lumipol`, iOS SPM exactVersion). 0.31.0~0.38.0은 로컬 커밋만
-  존재하고 태그 푸시(JitPack 배포)는 사용자 확인 게이트라, 신규 API를 소비하는 앱 코드는
-  현재 컴파일·테스트 검증이 불가능하다("하네스·테스트 직접 실행" 규칙 위배 없이 커밋 불가).
-  **절차**: ① 0.38.0 태그 푸시 승인 → ② JitPack 빌드 트리거·확인 → ③ 앱 버전 고정 인상 →
-  ④ C1~C5 앱 diff(아래 명세) + A3 등장 애니 명시 on 1줄 + B12 로컬라이즈 주입 → ⑤ 회수 후
-  잔여 grep 체크(`scripts/boundary-lint.sh <앱 차트 디렉토리>` 포함). 앱 커밋 규약:
-  Runday_IOS 대문자 접두사·Co-Authored-By 금지, Runday_AOS 소문자 접두사.
+- [x] **앱 전환(C1~C5 소비부) — 완료(2026-07-29, 양 앱 로컬 커밋·push는 사용자 확인 대기)**
+  - **Runday_AOS**(`feature/graph` 6dc7cfee15): watchlibs `mobile-lumipol=0.38.0`.
+    ChartSamples(RawTrackSample.sanitized 누적형 매핑)·UnifiedChartDataBuilder(paceInput/
+    segmentCountFor/invertedAxesFor)·SplitChartDataBuilder(splitSamples)·AnalysisChartsBinder
+    (maxHeartRate+Gender 매핑 0=FEMALE/1=MALE/그외 UNKNOWN, donutData, zoneBpmRanges)·
+    SplitChartCard(colorAnchors/colorBlindMode/legendStops(40).reversed())·UnifiedChartCard
+    (ChartFormat 틱·페이스, animateEntrance=true)·HeartRateZoneCard(ChartFormat.duration),
+    HeartRateZoneCalculator.kt 삭제. compileRundayDebugKotlin ✓, 차트 단위테스트 ✓.
+  - **Runday_IOS**(`dh/lumipol-pace-chart` c87793acc): SPM exactVersion 0.38.0 + Package.resolved.
+    RDTrackSampleMapper 신설(델타형 매핑 — **exerciseTime 누적은 페이스 경로에 싣지 않음**:
+    코어가 누적 우선이라 실으면 시간모드 x가 구 동작(timeInterval 합)에서 이탈. HR존 경로만
+    RDHeartRateZoneCalculator.zoneSample이 누적을 실어 D11 dt 재구성·폴백을 탄다).
+    RDPaceChartDataBuilder(paceInput/BuildOptions(useWatchSpeed)/segmentCountFor —
+    totalDistanceUnits는 샘플 |delta| 합 기준으로 x축과 정합)·RDSplitChartDataBuilder
+    (splitSamples, 두 모드 모두 런 총합 전달 — colorAnchors average 코어 적용)·RDSplitChartView
+    (layout.colorAnchors/colorBlindMode/legendStops(LEGEND_STOP_COUNT).reversed(), RDRouteColorizer
+    주입·24샘플 재구성·paceAnchors 사본 삭제)·RDHeartRateZoneCardView(zoneSamples/donutData/
+    ChartFormat.duration)·RDHeartRateZoneCalculator(공식부 삭제 — 코어 위임 어댑터로 재작성)·
+    RDUnifiedChartView(ChartFormat 틱·paceInvalid/invertedAxesFor/isAnimationEnabled=true).
+    앱 빌드 ✓, 차트 테스트 3벌 재작성 55개 전부 ✓.
+  - 잔여 grep: `scripts/boundary-lint.sh <iOS ChartComponents> <AOS chart/lumipol>` 통과.
+    예외는 boundary-allow 주석 처리 — AOS LegendDimAlpha(앱 UI 디밍), iOS legendDimAlpha·
+    색 근사비교 tolerance·BarChartData 기본값 명시 전달(ObjC 전체 생성자 제약, 브릿지 감사 §3)·
+    BalloonMarker.swift(구 DGCharts 레거시, 비-lumipol 경로 — 코어 회수 대상 아님).
+  - 기록할 의도 변화(주의 7건 외 1건): iOS 최대심박 나이 0 입력이 구 220 → 코어 규칙 0(무데이터).
+    생년 미상은 birthday nil → maxHR 0 경로라 실사용 도달 불가 퇴화 케이스(테스트로 명문화).
+  - B12 로컬라이즈 주입: 양 앱 기본(ko-KR 고정, 05 승인)과 동일해 추가 주입 코드 없음.
 
 ## 앱 전환 시 주의 (앱 원본 교차 검증에서 확정 — 2026-07-28)
 
