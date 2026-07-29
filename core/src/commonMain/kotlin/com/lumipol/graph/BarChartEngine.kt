@@ -212,6 +212,11 @@ object BarChartEngine {
             }
         }
         if (accDist > 0.0 && accTime > 0.0) {
+            // 마지막 부분 버킷 끝은 기록 총 시간으로 스냅(총 시간 > 유효 합일 때만) — 일시정지
+            // 등으로 증발한 시간 때문에 요약 수치(예: 워치 13:53)와 라벨(10:53)이 갈리던 문제.
+            // 거리모드의 총거리 스냅(0.42.0)과 대칭이고, 페이스 값은 유효 구간 기준 그대로다.
+            val total = data.totalDurationSeconds
+            if (total != null && total > elapsed) elapsed = total
             raw.add(RawBar(
                 accTime / (accDist / paceUnit), isPartial = true,
                 endMinutes = endMin(), endSeconds = elapsed,

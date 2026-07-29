@@ -255,6 +255,32 @@ class BarChartEngineTest {
     }
 
     @Test
+    fun time_mode_last_partial_end_snaps_to_total_duration() {
+        // 기록 시간(일시정지 포함)이 유효 델타 합보다 크면 — 워치 13:53 vs 유효 10:53 —
+        // 마지막 부분 버킷 끝을 총 시간으로 스냅해 요약 수치와 라벨을 맞춘다(거리 스냅과 대칭).
+        val layout = BarChartEngine.layout(BarChartData(
+            evenTimeSamples(653, 300.0), splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 120.0,
+            totalDurationSeconds = 833.0, totalDistanceMeters = 890.0,
+        ))
+        val ends = layout.bars.map { it.endSeconds!! }
+        assertEquals(listOf(120.0, 240.0, 360.0, 480.0, 600.0, 833.0), ends)
+        assertEquals(14, layout.bars.last().endMinutes) // round(833/60) — 스냅값 기준
+        assertTrue(layout.bars.last().isPartial)
+    }
+
+    @Test
+    fun time_mode_last_partial_end_keeps_elapsed_when_total_smaller() {
+        // 총 시간이 유효 합보다 작으면(역방향 불일치) 스냅하지 않는다 — 차트 내 정합 우선.
+        val layout = BarChartEngine.layout(BarChartData(
+            evenTimeSamples(653, 300.0), splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 120.0,
+            totalDurationSeconds = 600.0,
+        ))
+        assertEquals(653.0, layout.bars.last().endSeconds!!, 1e-6)
+    }
+
+    @Test
     fun time_mode_end_distance_null() {
         val data = BarChartData(
             evenTimeSamples(720, 300.0), splitDistanceMeters = 1000.0,

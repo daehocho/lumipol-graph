@@ -167,6 +167,14 @@ object HarnessFixtures {
             totalDurationSeconds = 480.0,
             totalDistanceMeters = 690.0,
         ),
+        // 시간모드 + 총 시간(833s) > 유효 합(653s) — 마지막 부분 버킷 끝 스냅 관측(0.45.0)
+        "B13_time_mode_total_snap" to BarChartData(
+            bars(653 to SplitSample(1000.0 / 300.0, 1.0)),
+            splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 120.0,
+            totalDurationSeconds = 833.0,
+            totalDistanceMeters = 890.0,
+        ),
     )
 
     /** chooseTimeBucketSeconds 입력(초) — 버킷 후보 경계 전후 + 하향(30/15초) 경계. */
