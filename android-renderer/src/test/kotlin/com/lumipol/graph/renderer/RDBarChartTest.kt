@@ -102,6 +102,12 @@ class RDBarChartTest {
         assertTrue(unit.anchorX >= plot.maxX, "플롯 오른쪽 끝(${plot.maxX}) 바깥, 실제 ${unit.anchorX}")
         assertEquals(HAlign.LEFT, unit.hAlign)
         assertEquals(VAlign.BELOW, unit.vAlign)
+        // 축 라벨보다 강조 — 볼드 + BAR_X_UNIT_FONT_DELTA만큼 크게(0.44.0).
+        assertEquals(
+            style.axisLabelFontSize + com.lumipol.graph.ChartDefaults.BAR_X_UNIT_FONT_DELTA.toFloat(),
+            unit.fontSizeSp,
+        )
+        assertEquals(androidx.compose.ui.text.font.FontWeight.Bold, unit.fontWeight)
         // 기존 x축 라벨은 전부 유지(밀리지 않음).
         assertEquals(5, named(layers, "barXLabel.").size)
     }

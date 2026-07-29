@@ -192,6 +192,7 @@ __attribute__((swift_name("ChartDefaults")))
 @property (readonly) double BAR_SELECTION_LINE_ALPHA __attribute__((swift_name("BAR_SELECTION_LINE_ALPHA")));
 @property (readonly) double BAR_WIDTH_RATIO __attribute__((swift_name("BAR_WIDTH_RATIO")));
 @property (readonly) double BAR_X_LABEL_GAP __attribute__((swift_name("BAR_X_LABEL_GAP")));
+@property (readonly) double BAR_X_UNIT_FONT_DELTA __attribute__((swift_name("BAR_X_UNIT_FONT_DELTA")));
 @property (readonly) double CALLOUT_CORNER_RADIUS __attribute__((swift_name("CALLOUT_CORNER_RADIUS")));
 @property (readonly) double CALLOUT_PAD_H __attribute__((swift_name("CALLOUT_PAD_H")));
 @property (readonly) double CALLOUT_PAD_V __attribute__((swift_name("CALLOUT_PAD_V")));

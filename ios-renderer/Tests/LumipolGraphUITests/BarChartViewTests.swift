@@ -255,7 +255,7 @@ final class BarChartViewTests: XCTestCase {
     }
 
     // 그래프 오른쪽 하단 단위 라벨(0.43.0) — x축 라벨 줄은 밀리지 않고 플롯 오른쪽 끝에 덧붙는다.
-    func testXAxisUnitLabelDrawnAtPlotRightEdge() {
+    func testXAxisUnitLabelDrawnAtPlotRightEdge() throws {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
         view.render(sampleLayout(barCount: 5), style: .default, barLabels: nil,
                     xAxisLabels: ["0.2", "0.4", "0.6", "0.8", "0.89"], yLabelFormatter: nil,
@@ -268,6 +268,12 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertEqual(unitLayers.count, 1)
         let plotMaxX = view.bounds.width - ChartStyle.default.plotInsets.right
         XCTAssertGreaterThanOrEqual(unitLayers[0].frame.minX, plotMaxX, "플롯 오른쪽 끝 바깥(오른쪽 인셋 영역)")
+        // 축 라벨보다 강조 — 볼드 + BAR_X_UNIT_FONT_DELTA만큼 크게(0.44.0).
+        let axisFont = ChartStyle.default.axisLabelFont
+        let expectedSize = axisFont.pointSize + CGFloat(ChartDefaults.shared.BAR_X_UNIT_FONT_DELTA)
+        XCTAssertEqual(unitLayers[0].fontSize, expectedSize, accuracy: 0.01)
+        let unitFont = try XCTUnwrap(unitLayers[0].font as? UIFont)
+        XCTAssertTrue(unitFont.fontDescriptor.symbolicTraits.contains(.traitBold), "단위 라벨은 볼드")
         // 기존 x축 라벨은 전부 유지.
         for label in ["0.2", "0.4", "0.6", "0.8", "0.89"] {
             XCTAssertTrue(view.allTextLayerStrings.contains(label))

@@ -179,13 +179,13 @@ public final class RDBarChartView: UIView {
             }
         }
 
-        // 그래프 오른쪽 하단 단위 라벨(km/mi 등, 0.43.0) — x축 라벨과 같은 급으로 플롯 오른쪽
-        // 끝(오른쪽 인셋 영역)에 덧붙는다. x축 라벨 숨김이면 함께 숨긴다.
+        // 그래프 오른쪽 하단 단위 라벨(km/mi 등, 0.43.0) — 플롯 오른쪽 끝(오른쪽 인셋 영역)에
+        // 덧붙는다. 축 라벨보다 강조(볼드·+BAR_X_UNIT_FONT_DELTA, 0.44.0). 라벨 숨김이면 함께 숨긴다.
         if style.barShowXAxisLabels, let unit = xAxisUnitLabel, !unit.isEmpty {
             let baseline = plot.maxY + CGFloat(ChartDefaults.shared.BAR_X_LABEL_GAP)
             addLabel(text: unit,
                      at: CGPoint(x: plot.maxX + CGFloat(ChartDefaults.shared.BAR_LABEL_GAP), y: baseline),
-                     align: .topLeft)
+                     align: .topLeft, font: xUnitFont())
         }
 
         // 참조선(목표/평균)
@@ -316,9 +316,21 @@ public final class RDBarChartView: UIView {
         String(Int(value.rounded()))  // 앱이 barLabels/롱프레스 말풍선으로 표시 페이스를 다루므로 y틱은 원값(초)만
     }
 
+    /// x축 단위 라벨 폰트 — 앱이 주입한 축 라벨 폰트의 볼드 변형 +BAR_X_UNIT_FONT_DELTA pt.
+    /// 볼드 트레이트가 없는 커스텀 폰트는 시스템 볼드로 폴백.
+    private func xUnitFont() -> UIFont {
+        let base = style.axisLabelFont
+        let size = base.pointSize + CGFloat(ChartDefaults.shared.BAR_X_UNIT_FONT_DELTA)
+        let traits = base.fontDescriptor.symbolicTraits.union(.traitBold)
+        guard let descriptor = base.fontDescriptor.withSymbolicTraits(traits) else {
+            return .boldSystemFont(ofSize: size)
+        }
+        return UIFont(descriptor: descriptor, size: size)
+    }
+
     private enum LabelAlign { case left, center, right, topCenter, topLeft }
-    private func addLabel(text: String, at point: CGPoint, align: LabelAlign) {
-        let tl = ChartLayerBuilder.textLayer(text, font: style.axisLabelFont, color: style.axisLabelColor)
+    private func addLabel(text: String, at point: CGPoint, align: LabelAlign, font: UIFont? = nil) {
+        let tl = ChartLayerBuilder.textLayer(text, font: font ?? style.axisLabelFont, color: style.axisLabelColor)
         let size = tl.frame.size
         var origin = point
         switch align {

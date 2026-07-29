@@ -832,6 +832,20 @@ AOS `animateEntrance = true`를 명시(각 1줄, 트랙 C 앱 커밋에 포함).
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### x축 단위 라벨 강조 — 볼드 + 2pt (0.44.0, 2026-07-29)
+
+0.43.0 단위 라벨(km/mi)이 축 라벨과 같은 급이라 눈에 안 들어왔다. 축 라벨보다
+볼드·`BAR_X_UNIT_FONT_DELTA`(2pt)만큼 크게 강조한다.
+
+- **feat: `ChartDefaults.BAR_X_UNIT_FONT_DELTA = 2.0` 신설** — 단위 라벨 크기 가산의
+  단일 원본(양 렌더러 공유).
+- iOS는 앱이 주입한 `axisLabelFont`의 볼드 변형(트레이트 없으면 시스템 볼드 폴백),
+  AOS는 `FontWeight.Bold` + `axisLabelFontSize + delta`.
+
+**마이그레이션(앱)**: 없음 — 렌더러 내부 변경(`xAxisUnitLabel` 시그니처 불변). 버전 핀만 올린다.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은

@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
 import com.lumipol.graph.PaceColormap
@@ -303,7 +304,8 @@ internal fun buildBarChartLayers(
     }
 
     // 그래프 오른쪽 하단 단위 라벨(km/mi 등, 0.43.0) — x축 라벨 줄은 그대로 두고 플롯 오른쪽
-    // 끝(오른쪽 인셋 영역)에 x축 라벨과 같은 급으로 덧붙는다. 라벨 숨김이면 함께 숨긴다.
+    // 끝(오른쪽 인셋 영역)에 덧붙는다. 축 라벨보다 강조(볼드·+BAR_X_UNIT_FONT_DELTA, 0.44.0).
+    // 라벨 숨김이면 함께 숨긴다.
     if (style.barShowXAxisLabels && !xAxisUnitLabel.isNullOrEmpty()) {
         layers.add(
             TextLayer(
@@ -314,9 +316,9 @@ internal fun buildBarChartLayers(
                 hAlign = HAlign.LEFT,
                 vAlign = VAlign.BELOW,
                 color = style.axisLabelColor,
-                fontSizeSp = style.axisLabelFontSize,
+                fontSizeSp = style.axisLabelFontSize + BAR_X_UNIT_FONT_DELTA,
                 fontFamily = style.axisLabelFontFamily,
-                fontWeight = style.axisLabelFontWeight,
+                fontWeight = FontWeight.Bold,
             ),
         )
     }
@@ -421,6 +423,7 @@ internal fun applyBarSelection(
 private val BAR_LABEL_GAP = ChartDefaults.BAR_LABEL_GAP               // y틱 라벨과 축 사이(iOS insets.left-4)
 private val BAR_X_LABEL_GAP = ChartDefaults.BAR_X_LABEL_GAP             // x축 라벨과 막대 바닥 사이(iOS maxY+4)
 private val BAR_LABEL_MIN_GAP = ChartDefaults.BAR_LABEL_MIN_GAP           // 솎아낸 이웃 라벨 사이 최소 여백(dp) — 겹침 방지
+private val BAR_X_UNIT_FONT_DELTA = ChartDefaults.BAR_X_UNIT_FONT_DELTA.toFloat() // 단위 라벨 크기 가산(sp) — 축 라벨보다 강조
 private val BAR_CALLOUT_PAD_H = ChartDefaults.CALLOUT_PAD_H           // 선택 말풍선 좌우 내부 여백(dp)
 private val BAR_CALLOUT_PAD_V = ChartDefaults.CALLOUT_PAD_V           // 선택 말풍선 상하 내부 여백(dp)
 private val BAR_CALLOUT_CORNER = ChartDefaults.CALLOUT_CORNER_RADIUS.toFloat()           // 선택 말풍선 모서리 반경(dp)

@@ -42,6 +42,7 @@ object ChartDefaults {
     const val BAR_LABEL_GAP: Double = 4.0       // y틱 라벨과 축 사이
     const val BAR_X_LABEL_GAP: Double = 4.0     // x축 라벨과 막대 바닥 사이
     const val BAR_LABEL_MIN_GAP: Double = 6.0   // 솎아낸 이웃 라벨 사이 최소 여백
+    const val BAR_X_UNIT_FONT_DELTA: Double = 2.0 // x축 단위 라벨(km/mi) 크기 가산 — 축 라벨 +2pt·볼드(0.44.0)
     const val CALLOUT_PAD_H: Double = 8.0
     const val CALLOUT_PAD_V: Double = 4.0
     const val CALLOUT_CORNER_RADIUS: Double = 6.0
