@@ -1,5 +1,6 @@
 package com.lumipol.graph
 
+import com.lumipol.graph.model.BarChartLayout
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -105,6 +106,49 @@ object ChartFormat {
         if (seconds <= 0.0 || seconds.isNaN() || seconds.isInfinite()) return "0:00:00"
         val total = seconds.toInt()
         return "${total / 3600}:${pad2((total % 3600) / 60)}:${pad2(total % 60)}"
+    }
+
+    /**
+     * [timeTick]의 축 단위 컨텍스트판 — 라인차트 시간모드 x축용. [crossesHour]면 전 눈금을
+     * [timeTickHour]로 통일하고(0.47.0 규칙), 원점 생략(0.1분 이하 빈 문자열)은 유지한다.
+     * 트리거는 **총 운동 시간 > 3600초**(스플릿 차트 스냅과 같은 원천) — 눈금 값이 아니라
+     * 축 단위로 판정해야 한 축에 두 표기가 섞이지 않는다. 입력은 분.
+     */
+    fun timeTick(minutes: Double, crossesHour: Boolean): String = when {
+        !crossesHour -> timeTick(minutes)
+        minutes.isNaN() || minutes.isInfinite() || minutes <= 0.1 -> ""
+        else -> timeTickHour(minutes * 60.0)
+    }
+
+    /**
+     * 스플릿 막대 x축 라벨 일괄 생성 — 양 앱이 각자 들고 있던 분기 관용구의 단일 원본(0.48.0).
+     * 모드는 막대 필드로 판별한다(시간모드=endSeconds, 거리모드=endDistanceMeters, 둘 다 없는
+     * 레거시 layout은 `index+1` 폴백). [unitMeters]는 거리모드 표시 단위(km=1000/mi=1609.344).
+     *
+     * 시간모드 표기(우선순위 순):
+     * 1. 축이 1시간을 넘으면(마지막 endSeconds > 3600) 전 라벨 [timeTickHour] — `0:10:00 … 1:01:05`.
+     * 2. sub-minute 버킷(첫 endSeconds < 60)은 [duration] — endMinutes가 1,1,2,2로 뭉개진다.
+     * 3. 부분 버킷은 [splitEndTime](`9:21`), 온전 버킷은 [timeTick]의 endMinutes(`9:00`).
+     * 거리모드는 [splitEndDistance]\(endDistanceMeters/unitMeters).
+     */
+    fun splitXAxisLabels(layout: BarChartLayout, unitMeters: Double): List<String> {
+        require(unitMeters > 0) { "unitMeters must be > 0" }
+        val bars = layout.bars
+        val subMinuteBucket = (bars.firstOrNull()?.endSeconds ?: 60.0) < 60.0
+        val crossesHour = (bars.lastOrNull()?.endSeconds ?: 0.0) > 3600.0
+        return bars.map { bar ->
+            val seconds = bar.endSeconds
+            when {
+                seconds != null -> when {
+                    crossesHour -> timeTickHour(seconds)
+                    subMinuteBucket -> duration(seconds)
+                    bar.isPartial -> splitEndTime(seconds)
+                    else -> timeTick((bar.endMinutes ?: (bar.index + 1)).toDouble())
+                }
+                else -> bar.endDistanceMeters?.let { splitEndDistance(it / unitMeters) }
+                    ?: "${bar.index + 1}"
+            }
+        }
     }
 
     /** 정수 축 tick — 절삭(양 앱 `value.toInt()` 동일). */

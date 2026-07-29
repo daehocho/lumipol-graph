@@ -1,5 +1,8 @@
 package com.lumipol.graph
 
+import com.lumipol.graph.model.BarChartLayout
+import com.lumipol.graph.model.BarColorRole
+import com.lumipol.graph.model.BarLayout
 import com.lumipol.graph.model.ChartConfig
 import com.lumipol.graph.model.XMode
 import kotlin.test.Test
@@ -81,6 +84,48 @@ class ChartFormatTest {
         assertEquals("", ChartFormat.timeTick(0.1))
         assertEquals("15:00", ChartFormat.timeTick(15.0))
         assertEquals("178", ChartFormat.intTick(178.6))
+    }
+
+    private fun timeBar(i: Int, sec: Double, min: Int, partial: Boolean = false) = BarLayout(
+        i, 300.0, 0.5, BarColorRole.ON_TARGET, partial, endMinutes = min, endSeconds = sec,
+    )
+
+    private fun barLayoutOf(vararg bars: BarLayout) =
+        BarChartLayout(bars.toList(), emptyList(), null, null)
+
+    @Test
+    fun split_x_axis_labels_time_mode_branches() {
+        // 분 단위 버킷 — 온전=timeTick(9:00), 마지막 부분=splitEndTime(19:01)
+        val normal = barLayoutOf(timeBar(0, 600.0, 10), timeBar(1, 1141.0, 19, partial = true))
+        assertEquals(listOf("10:00", "19:01"), ChartFormat.splitXAxisLabels(normal, 1000.0))
+        // sub-minute 버킷(첫 끝 < 60초) — 전 라벨 duration(mm:ss)
+        val sub = barLayoutOf(timeBar(0, 30.0, 1), timeBar(1, 55.0, 1, partial = true))
+        assertEquals(listOf("00:30", "00:55"), ChartFormat.splitXAxisLabels(sub, 1000.0))
+        // 1시간 초과(마지막 끝 > 3600) — 전 라벨 timeTickHour로 통일(0.47.0 규칙)
+        val hour = barLayoutOf(timeBar(0, 600.0, 10), timeBar(5, 3600.0, 60), timeBar(6, 3665.0, 61, partial = true))
+        assertEquals(listOf("0:10:00", "1:00:00", "1:01:05"), ChartFormat.splitXAxisLabels(hour, 1000.0))
+    }
+
+    @Test
+    fun split_x_axis_labels_distance_and_legacy_fallback() {
+        fun distBar(i: Int, meters: Double?) = BarLayout(
+            i, 300.0, 0.5, BarColorRole.ON_TARGET, false, endDistanceMeters = meters,
+        )
+        val d = barLayoutOf(distBar(0, 500.0), distBar(1, 890.0))
+        assertEquals(listOf("0.5", "0.89"), ChartFormat.splitXAxisLabels(d, 1000.0))
+        // 끝 필드가 둘 다 없는 레거시 layout — index+1 폴백(양 앱 기존 폴백과 동일)
+        val legacy = barLayoutOf(distBar(0, null), distBar(1, null))
+        assertEquals(listOf("1", "2"), ChartFormat.splitXAxisLabels(legacy, 1000.0))
+    }
+
+    @Test
+    fun time_tick_axis_context_overload() {
+        // crossesHour=false는 기존 timeTick 그대로, true면 전 눈금 h:mm:ss(원점 생략 유지)
+        assertEquals("50:00", ChartFormat.timeTick(50.0, crossesHour = false))
+        assertEquals("0:50:00", ChartFormat.timeTick(50.0, crossesHour = true))
+        assertEquals("3:20:00", ChartFormat.timeTick(200.0, crossesHour = true))
+        assertEquals("", ChartFormat.timeTick(0.1, crossesHour = true))
+        assertEquals("", ChartFormat.timeTick(Double.NaN, crossesHour = true))
     }
 
     @Test

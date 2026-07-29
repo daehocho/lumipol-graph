@@ -127,14 +127,10 @@ private fun BarScreen() {
         RDBarChart(
             layout = layout,
             modifier = Modifier.fillMaxWidth().height(280.dp).padding(top = 12.dp),
-            // 막대 끝 누적 거리로 라벨(0.41.0) — 짧은 런은 코어가 버킷을 100m까지 줄이므로
-            // 인덱스를 km로 읽으면 0.64km 런이 7km처럼 보인다. 단위는 그래프 오른쪽 하단
-            // 단위 라벨(0.43.0)로 한 번만 표기한다.
-            xAxisLabels = layout.bars.map { bar ->
-                bar.endDistanceMeters
-                    ?.let { ChartFormat.splitEndDistance(it / SampleData.barData.splitDistanceMeters) }
-                    ?: "${bar.index + 1}"
-            },
+            // 막대 끝 라벨은 코어 빌더(0.48.0) — 모드 판별·표기 분기(누적 거리/시간, 1시간
+            // 초과 h:mm:ss 통일)를 코어가 소유한다. 단위는 그래프 오른쪽 하단 단위 라벨(0.43.0)로
+            // 한 번만 표기한다.
+            xAxisLabels = ChartFormat.splitXAxisLabels(layout, SampleData.barData.splitDistanceMeters),
             xAxisUnitLabel = "km",
             yLabelFormatter = { secondsPerKm -> SampleData.paceLabel(secondsPerKm / 60.0) },
         )

@@ -188,6 +188,13 @@ object CoreDump {
             section("barChart", HarnessFixtures.barCases.map { (name, data) ->
                 name to renderBarLayout(BarChartEngine.layout(data))
             }),
+            // 스플릿 x축 라벨 빌더(0.48.0) — 앱 관용구 회수분. unitMeters=paceUnit(표시 단위).
+            section("splitXAxisLabels", HarnessFixtures.barCases.map { (name, data) ->
+                name to jarr(
+                    ChartFormat.splitXAxisLabels(BarChartEngine.layout(data), data.splitDistanceMeters)
+                        .map { jstr(it) },
+                )
+            }),
             section("timeBucket", HarnessFixtures.timeBucketCases.map { sec ->
                 "running_${jnum(sec)}" to jnum(BarChartEngine.chooseTimeBucketSeconds(sec))
             }),
@@ -296,6 +303,9 @@ object CoreDump {
                 listOf(0.1, 15.0).forEach { add("timeTick_${jnum(it)}" to jstr(ChartFormat.timeTick(it))) }
                 listOf(600.0, 3600.0, 3665.0, 0.0).forEach {
                     add("timeTickHour_${jnum(it)}" to jstr(ChartFormat.timeTickHour(it)))
+                }
+                listOf(false, true).forEach {
+                    add("timeTick_200_crossesHour_$it" to jstr(ChartFormat.timeTick(200.0, it)))
                 }
                 add("intTick_178.6" to jstr(ChartFormat.intTick(178.6)))
             }),

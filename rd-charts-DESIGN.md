@@ -911,6 +911,27 @@ timeTickHour` 분기를 sub-minute 분기보다 앞에 추가(Runday_IOS/AOS 반
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### 스플릿 x축 라벨 빌더 코어 회수 (0.48.0, 2026-07-30)
+
+0.47.0에서 `crossesHour` 분기 관용구가 앱 2벌×카드 2곳으로 복제됐다(라인 x축 포함
+사실상 4벌). 시간·숫자 라벨은 로케일 무관이라 "로컬라이즈는 앱 소유(B12/D9)" 근거가
+적용되지 않는 영역 — 코어 단일 원본으로 회수한다(ChartA11y 기본 문자열 선례).
+
+- **feat: `ChartFormat.splitXAxisLabels(layout, unitMeters)`** — 스플릿 막대 x축 라벨
+  일괄 생성. 모드 판별(endSeconds/endDistanceMeters/레거시 `index+1` 폴백)과 시간모드
+  분기(1시간 초과 h:mm:ss 통일 → sub-minute duration → 부분 splitEndTime → 온전
+  timeTick)를 전부 코어가 소유한다.
+- **feat: `ChartFormat.timeTick(minutes, crossesHour)` 오버로드** — 라인차트 시간모드
+  x축용. crossesHour(총 운동 시간 > 3600초)면 전 눈금 [timeTickHour], 원점 생략 유지.
+- 골든에 `splitXAxisLabels` 섹션(전 barCases)과 timeTick 오버로드 2케이스 추가.
+
+**마이그레이션(앱)**: 필수는 아니나 권장 — 스플릿 카드의 라벨 분기를
+`ChartFormat.splitXAxisLabels(layout, unitMeters)` 호출로, 라인 x축 시간 분기를
+`ChartFormat.timeTick(value, crossesHour)`로 교체하면 관용구 4벌이 사라진다
+(Runday_IOS/AOS 반영 완료). 기존 코드도 동작은 동일하다.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은

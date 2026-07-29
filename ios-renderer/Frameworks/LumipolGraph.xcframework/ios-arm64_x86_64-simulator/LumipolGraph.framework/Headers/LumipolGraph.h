@@ -315,7 +315,9 @@ __attribute__((swift_name("ChartFormat")))
 - (NSString *)percentFraction:(double)fraction __attribute__((swift_name("percent(fraction:)")));
 - (NSString *)splitEndDistanceValue:(double)value __attribute__((swift_name("splitEndDistance(value:)")));
 - (NSString *)splitEndTimeSeconds:(double)seconds __attribute__((swift_name("splitEndTime(seconds:)")));
+- (NSArray<NSString *> *)splitXAxisLabelsLayout:(LumipolGraphBarChartLayout *)layout unitMeters:(double)unitMeters __attribute__((swift_name("splitXAxisLabels(layout:unitMeters:)")));
 - (NSString *)timeTickMinutes:(double)minutes __attribute__((swift_name("timeTick(minutes:)")));
+- (NSString *)timeTickMinutes:(double)minutes crossesHour:(BOOL)crossesHour __attribute__((swift_name("timeTick(minutes:crossesHour:)")));
 - (NSString *)timeTickHourSeconds:(double)seconds __attribute__((swift_name("timeTickHour(seconds:)")));
 @property (readonly) double PACE_MAX_SECONDS __attribute__((swift_name("PACE_MAX_SECONDS")));
 @property (readonly) double PACE_MIN_SECONDS __attribute__((swift_name("PACE_MIN_SECONDS")));
