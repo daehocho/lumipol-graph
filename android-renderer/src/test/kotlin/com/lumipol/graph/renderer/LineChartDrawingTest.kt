@@ -6,6 +6,7 @@ import com.lumipol.graph.model.AxisTick
 import com.lumipol.graph.model.AxisTicksLayout
 import com.lumipol.graph.model.ChartAxis
 import com.lumipol.graph.model.ChartConfig
+import com.lumipol.graph.model.ChartDomains
 import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.LineChartLayout
 import com.lumipol.graph.model.MarkerLayout
@@ -15,6 +16,7 @@ import com.lumipol.graph.model.Series
 import com.lumipol.graph.model.SeriesLayout
 import com.lumipol.graph.model.SeriesRole
 import com.lumipol.graph.model.Stats
+import com.lumipol.graph.scale.AxisDomain
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -45,6 +47,7 @@ class LineChartDrawingTest {
             MarkerLayout(1.0, "2km", true),
         ),
         stats = Stats(emptyList(), emptyList(), null),
+        domains = ChartDomains(AxisDomain(0.0, 1.0), null, null),
     )
     private val data = LineChartData(
         series = listOf(
@@ -124,6 +127,7 @@ class LineChartDrawingTest {
             ),
             axisTicks = emptyList(), refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
+            domains = ChartDomains(AxisDomain(0.0, 1.0), null, null),
         )
         val dualData = LineChartData(
             series = listOf(
@@ -207,6 +211,7 @@ class LineChartDrawingTest {
             ),
             axisTicks = emptyList(), refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
+            domains = ChartDomains(AxisDomain(0.0, 1.0), null, null),
         )
         val overlayData = LineChartData(
             series = listOf(
@@ -235,6 +240,7 @@ class LineChartDrawingTest {
             ),
             axisTicks = emptyList(), refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
+            domains = ChartDomains(AxisDomain(0.0, 1.0), null, null),
         )
         val overlayData = LineChartData(
             series = listOf(Series("o", emptyList(), Axis.PRIMARY, SeriesRole.OVERLAY)),
@@ -305,6 +311,7 @@ class LineChartDrawingTest {
             series = listOf(SeriesLayout("one", SeriesRole.MAIN, listOf(NormalizedPoint(0.5, 0.5)))),
             axisTicks = emptyList(), refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
+            domains = ChartDomains(AxisDomain(0.0, 1.0), null, null),
         )
         assertTrue(build(layout = single).isEmpty())
     }
@@ -325,6 +332,7 @@ class LineChartDrawingTest {
             ),
             axisTicks = emptyList(), refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
+            domains = ChartDomains(AxisDomain(0.0, 1.0), null, null),
         )
         val data = LineChartData(
             series = listOf(
@@ -355,7 +363,10 @@ class LineChartDrawingTest {
     }
 
     @Test fun no_gradient_when_no_series() {
-        val layout = LineChartLayout(emptyList(), emptyList(), emptyList(), emptyList(), Stats(emptyList(), emptyList(), null))
+        val layout = LineChartLayout(
+            emptyList(), emptyList(), emptyList(), emptyList(), Stats(emptyList(), emptyList(), null),
+            ChartDomains(AxisDomain(0.0, 1.0), null, null),
+        )
         val data = LineChartData(emptyList())
         val layers = buildLineChartLayers(
             layout, data, ChartStyle.defaults(darkTheme = false),

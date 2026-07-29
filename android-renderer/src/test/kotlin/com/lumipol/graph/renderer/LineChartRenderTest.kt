@@ -17,6 +17,7 @@ import com.lumipol.graph.model.AxisTick
 import com.lumipol.graph.model.AxisTicksLayout
 import com.lumipol.graph.model.ChartAxis
 import com.lumipol.graph.model.ChartConfig
+import com.lumipol.graph.model.ChartDomains
 import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.LineChartLayout
 import com.lumipol.graph.model.MarkerLayout
@@ -25,6 +26,7 @@ import com.lumipol.graph.model.Series
 import com.lumipol.graph.model.SeriesLayout
 import com.lumipol.graph.model.SeriesRole
 import com.lumipol.graph.model.Stats
+import com.lumipol.graph.scale.AxisDomain
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -71,6 +73,7 @@ class LineChartRenderTest {
             refBands = emptyList(),
             markers = listOf(MarkerLayout(0.5, "10km", false)),
             stats = Stats(emptyList(), emptyList(), null),
+            domains = ChartDomains(AxisDomain(0.0, 1.0), null, null),
         )
         val data = LineChartData(
             series = listOf(Series("pace", emptyList(), Axis.PRIMARY, SeriesRole.MAIN)),
@@ -106,6 +109,7 @@ class LineChartRenderTest {
             refBands = emptyList(),
             markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
+            domains = ChartDomains(AxisDomain(0.0, 1.0), null, null),
         )
         val data = LineChartData(
             series = listOf(Series("pace", emptyList(), Axis.PRIMARY, SeriesRole.MAIN)),

@@ -112,9 +112,6 @@ object ChartDefaults {
         const val AREA_FILL: Long = 0xFFC7C7CC             // systemGray3 (×AREA_FILL_ALPHA)
         const val MARKER_LINE: Long = 0xFFD1D1D6           // systemGray4
         const val MARKER_EMPHASIS_LINE: Long = 0xFF8E8E93  // systemGray
-        const val BAR_FASTER: Long = 0xFF34C759            // systemGreen
-        const val BAR_ON_TARGET: Long = 0xFF8E8E93         // systemGray
-        const val BAR_SLOWER: Long = 0xFFFF9500            // systemOrange
         const val BAR_REFERENCE_LINE: Long = 0xFF000000    // label (×BAR_REFERENCE_LINE_ALPHA)
         const val BAR_SELECTION_LINE: Long = 0xFF000000    // label (×BAR_SELECTION_LINE_ALPHA)
         const val BAR_CALLOUT_BACKGROUND: Long = 0xFF000000 // label
@@ -141,9 +138,6 @@ object ChartDefaults {
         const val AREA_FILL: Long = 0xFF48484A
         const val MARKER_LINE: Long = 0xFF3A3A3C
         const val MARKER_EMPHASIS_LINE: Long = 0xFF8E8E93
-        const val BAR_FASTER: Long = 0xFF30D158
-        const val BAR_ON_TARGET: Long = 0xFF8E8E93
-        const val BAR_SLOWER: Long = 0xFFFF9F0A
         const val BAR_REFERENCE_LINE: Long = 0xFFFFFFFF
         const val BAR_SELECTION_LINE: Long = 0xFFFFFFFF
         const val BAR_CALLOUT_BACKGROUND: Long = 0xFFFFFFFF

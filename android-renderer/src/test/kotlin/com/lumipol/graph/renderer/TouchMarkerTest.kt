@@ -4,12 +4,14 @@ import com.lumipol.graph.LineChartEngine
 import com.lumipol.graph.model.Axis
 import com.lumipol.graph.model.ChartAxis
 import com.lumipol.graph.model.ChartConfig
+import com.lumipol.graph.model.ChartDomains
 import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.LineChartLayout
 import com.lumipol.graph.model.Point
 import com.lumipol.graph.model.Series
 import com.lumipol.graph.model.SeriesRole
 import com.lumipol.graph.model.Stats
+import com.lumipol.graph.scale.AxisDomain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -197,6 +199,7 @@ class TouchMarkerTest {
             series = emptyList(), axisTicks = emptyList(),
             refBands = emptyList(), markers = emptyList(),
             stats = Stats(emptyList(), emptyList(), null),
+            domains = ChartDomains(AxisDomain(0.0, 1.0), null, null),
         )
         assertNull(makeResult(1.0, emptyLayout))
     }

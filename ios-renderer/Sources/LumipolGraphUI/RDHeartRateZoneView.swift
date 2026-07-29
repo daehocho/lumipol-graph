@@ -82,7 +82,7 @@ public final class RDHeartRateZoneView: UIView {
         for seg in layout.segments {
             let a0 = start + 2 * .pi * CGFloat(seg.startFraction)
             let a1 = start + 2 * .pi * CGFloat(seg.startFraction + seg.sweepFraction)
-            let color = style.donutColors[seg.colorRole] ?? .systemGray
+            let color = style.donutColors[seg.colorRole] ?? style.fallbackDataColor
             let shape = arcLayer(center: center, radius: radius, ringWidth: ring, from: a0, to: a1, color: color)
             layer.addSublayer(shape)
             segmentLayers.append(shape)
@@ -200,7 +200,7 @@ public final class RDHeartRateZoneView: UIView {
         }
         // 디밍: 선택 중이면 비선택 조각의 alpha를 donutDimmedAlpha로 대체.
         for (i, seg) in layout.segments.enumerated() where i < segmentLayers.count {
-            let base = style.donutColors[seg.colorRole] ?? .systemGray
+            let base = style.donutColors[seg.colorRole] ?? style.fallbackDataColor
             let dimmed = selectedIndex != nil && Int(seg.sourceIndex) != selectedIndex
             segmentLayers[i].strokeColor =
                 dimmed ? base.withAlphaComponent(style.donutDimmedAlpha).cgColor : base.cgColor

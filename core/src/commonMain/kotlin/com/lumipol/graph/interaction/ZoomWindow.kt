@@ -59,9 +59,16 @@ data class ZoomWindow(
         return place(lower = startMin - fraction * startSpan, span = startSpan)
     }
 
-    /** 프로그래매틱 줌 — 폭 유지한 채 전체 범위로 클램프. */
-    fun setWindow(targetMin: Double, targetMax: Double): ZoomWindow =
-        place(lower = targetMin, span = min(targetMax - targetMin, fullSpan))
+    /**
+     * 프로그래매틱 줌 — 폭 유지한 채 전체 범위로 클램프.
+     * 역전·퇴화 구간([targetMax] ≤ [targetMin])은 무시(현 상태 그대로 반환, [pinch]의 무효
+     * 배율 규칙과 동일) — 음수 span이 place에 들어가면 windowMax < windowMin 창이 만들어져
+     * isZoomed는 true인데 레이아웃은 전체로 폴백하는 모순 상태가 된다.
+     */
+    fun setWindow(targetMin: Double, targetMax: Double): ZoomWindow {
+        if (targetMax <= targetMin) return this
+        return place(lower = targetMin, span = min(targetMax - targetMin, fullSpan))
+    }
 
     /** 전체 범위로 되돌린다. */
     fun reset(): ZoomWindow = copy(windowMin = fullMin, windowMax = fullMax)

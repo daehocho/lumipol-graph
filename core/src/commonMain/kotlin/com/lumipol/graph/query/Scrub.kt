@@ -34,54 +34,46 @@ fun nearestScrub(data: LineChartData, layout: LineChartLayout, x: Double): Scrub
     val xDomain = layout.domains.x
     if (xDomain.max <= xDomain.min) return null
 
-    val results = nearest(
-        data,
-        x,
-        xMin = xDomain.denormalize(-SCRUB_WINDOW_EPSILON),
-        xMax = xDomain.denormalize(1 + SCRUB_WINDOW_EPSILON),
-    )
+    // 시리즈 항목을 직접 순회해 근접점과 그 시리즈의 role/axis를 짝으로 보존한다 — 코어 API가
+    // id 유일성을 강제하지 않으므로 id 맵(첫 우선)을 쓰면 중복 id의 두 번째 시리즈가 첫 시리즈의
+    // 축으로 정규화돼 그리기(B10 per-item axis)와 어긋난다.
+    val xMin = xDomain.denormalize(-SCRUB_WINDOW_EPSILON)
+    val xMax = xDomain.denormalize(1 + SCRUB_WINDOW_EPSILON)
+    val results = data.series.mapNotNull { s ->
+        val p = s.points.filter { it.x in xMin..xMax }.minByOrNull { abs(it.x - x) }
+            ?: return@mapNotNull null
+        s to p
+    }
     if (results.isEmpty()) return null
 
-    // 첫 시리즈 우선 속성 맵 — 코어 API가 id 유일성을 강제하지 않으므로 중복 시 첫 정의를 따른다.
-    val roleById = HashMap<String, SeriesRole>()
-    val axisById = HashMap<String, Axis>()
-    for (s in data.series) {
-        if (s.id !in roleById) {
-            roleById[s.id] = s.role
-            axisById[s.id] = s.axis
-        }
-    }
-
-    val snapSource = results.firstOrNull { roleById[it.seriesId] == SeriesRole.MAIN } ?: results.first()
-    val snappedX = snapSource.x
+    val snapSource = results.firstOrNull { (s, _) -> s.role == SeriesRole.MAIN } ?: results.first()
+    val snappedX = snapSource.second.x
     val rawNx = xDomain.normalize(snappedX)
     if (rawNx < -SCRUB_WINDOW_EPSILON || rawNx > 1 + SCRUB_WINDOW_EPSILON) return null
     val nx = rawNx.coerceIn(0.0, 1.0)
 
     val perSeries = buildList {
-        for (r in results) {
-            val seriesNx = xDomain.normalize(r.x)
+        for ((s, p) in results) {
+            val seriesNx = xDomain.normalize(p.x)
             if (seriesNx < -SCRUB_WINDOW_EPSILON || seriesNx > 1 + SCRUB_WINDOW_EPSILON) continue
-            val role = roleById[r.seriesId] ?: SeriesRole.MAIN
-            if (role == SeriesRole.OVERLAY) {
+            if (s.role == SeriesRole.OVERLAY) {
                 val overlayNy = layout.series
-                    .firstOrNull { it.id == r.seriesId && it.role == SeriesRole.OVERLAY }
+                    .firstOrNull { it.id == s.id && it.role == SeriesRole.OVERLAY }
                     ?.points?.minByOrNull { abs(it.x - seriesNx) }?.y
-                add(ScrubPoint(r.seriesId, r.x, r.y, nx, overlayNy, role, Axis.PRIMARY, ChartAxis.Y_OVERLAY))
+                add(ScrubPoint(s.id, p.x, p.y, nx, overlayNy, s.role, Axis.PRIMARY, ChartAxis.Y_OVERLAY))
                 continue
             }
-            val axis = axisById[r.seriesId] ?: continue
-            val yDomain = when (axis) {
+            val yDomain = when (s.axis) {
                 Axis.PRIMARY -> layout.domains.yPrimary
                 Axis.SECONDARY -> layout.domains.ySecondary
             } ?: continue
-            val chartAxis = when (axis) {
+            val chartAxis = when (s.axis) {
                 Axis.PRIMARY -> ChartAxis.Y_PRIMARY
                 Axis.SECONDARY -> ChartAxis.Y_SECONDARY
             }
-            add(ScrubPoint(r.seriesId, r.x, r.y, nx, yDomain.normalize(r.y), role, axis, chartAxis))
+            add(ScrubPoint(s.id, p.x, p.y, nx, yDomain.normalize(p.y), s.role, s.axis, chartAxis))
         }
     }
     if (perSeries.isEmpty()) return null
-    return ScrubResult(snappedX, nx, snapSource.seriesId, perSeries)
+    return ScrubResult(snappedX, nx, snapSource.first.id, perSeries)
 }

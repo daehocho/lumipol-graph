@@ -115,16 +115,16 @@ object CoreDump {
                 val dp = ChartDefaults.DarkPalette
                 add("paletteLight" to jarr(listOf(
                     lp.PRIMARY_LINE, lp.SECONDARY_LINE, lp.GRID_LINE, lp.OVERLAY_LINE, lp.REF_BAND,
-                    lp.AREA_FILL, lp.MARKER_LINE, lp.MARKER_EMPHASIS_LINE, lp.BAR_FASTER, lp.BAR_ON_TARGET,
-                    lp.BAR_SLOWER, lp.BAR_REFERENCE_LINE, lp.BAR_SELECTION_LINE, lp.BAR_CALLOUT_BACKGROUND,
+                    lp.AREA_FILL, lp.MARKER_LINE, lp.MARKER_EMPHASIS_LINE,
+                    lp.BAR_REFERENCE_LINE, lp.BAR_SELECTION_LINE, lp.BAR_CALLOUT_BACKGROUND,
                     lp.BAR_CALLOUT_TEXT, lp.DONUT_ZONE1, lp.DONUT_ZONE2, lp.DONUT_ZONE3, lp.DONUT_ZONE4,
                     lp.DONUT_ZONE5, lp.DONUT_EMPTY, lp.DONUT_CENTER_LABEL, lp.DONUT_CENTER_PERCENT,
                     lp.AXIS_LABEL, lp.TOUCH_LINE,
                 ).map { jstr(hex(it)) }))
                 add("paletteDark" to jarr(listOf(
                     dp.PRIMARY_LINE, dp.SECONDARY_LINE, dp.GRID_LINE, dp.OVERLAY_LINE, dp.REF_BAND,
-                    dp.AREA_FILL, dp.MARKER_LINE, dp.MARKER_EMPHASIS_LINE, dp.BAR_FASTER, dp.BAR_ON_TARGET,
-                    dp.BAR_SLOWER, dp.BAR_REFERENCE_LINE, dp.BAR_SELECTION_LINE, dp.BAR_CALLOUT_BACKGROUND,
+                    dp.AREA_FILL, dp.MARKER_LINE, dp.MARKER_EMPHASIS_LINE,
+                    dp.BAR_REFERENCE_LINE, dp.BAR_SELECTION_LINE, dp.BAR_CALLOUT_BACKGROUND,
                     dp.BAR_CALLOUT_TEXT, dp.DONUT_ZONE1, dp.DONUT_ZONE2, dp.DONUT_ZONE3, dp.DONUT_ZONE4,
                     dp.DONUT_ZONE5, dp.DONUT_EMPTY, dp.DONUT_CENTER_LABEL, dp.DONUT_CENTER_PERCENT,
                     dp.AXIS_LABEL, dp.TOUCH_LINE,

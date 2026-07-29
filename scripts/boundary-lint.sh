@@ -59,13 +59,15 @@ check "렌더러 표시 문자열 생성 금지(String.format/%-포맷)" "${ALL_
   'String\.format\(|String\(format:'
 
 # 2. 코어 commonMain libm 재유입 금지(정책 §5) — atan2는 이산 출력 전용으로 허용(B4 KDoc).
-check "코어 libm 재유입 금지(log10/pow/sin/cos/exp/ln)" "core/src/commonMain" -- \
-  '\blog10\(|\bexp\(|kotlin\.math\.pow|\.pow\(|\bsin\(|\bcos\(|\bln\('
+#    \basin( 은 \bsin( 에 안 걸린다(단어 경계) — 역삼각·tan 계열은 별도 나열.
+check "코어 libm 재유입 금지(log10/pow/sin/cos/tan/asin/acos/atan/exp/ln)" "core/src/commonMain" -- \
+  '\blog10\(|\bexp\(|kotlin\.math\.pow|\.pow\(|\bsin\(|\bcos\(|\btan\(|\basin\(|\bacos\(|\batan\(|\bln\('
 
 # 3. 정책성 숫자 상수 신설 금지(휴리스틱) — 렌더러의 새 소수 상수는 ChartDefaults 참조여야 한다.
 #    플랫폼 보정(헤어라인·fontScale 등)은 boundary-allow로 표시.
+#    이름은 숫자 포함(fadeAlpha2 등) 허용, 리터럴 뒤 트레일링 주석이 있어도 잡는다(우회 방지).
 check "렌더러 정책 숫자 상수 신설 금지(코어 상수 참조 필요)" "${ALL_DIRS[@]}" -- \
-  '(private )?(static )?(const )?(val|let) [A-Za-z_]+(: [A-Za-z]+)? = -?[0-9]+\.[0-9]+f?$'
+  '(private )?(static )?(const )?(val|let) [A-Za-z_][A-Za-z0-9_]*(: [A-Za-z]+)? = -?[0-9]+\.[0-9]+f?[[:space:]]*(//.*)?$'
 
 # 4. 스냅/히트테스트 재구현 금지 — 근접 탐색·인덱스 산술은 코어 query 소관(B2/B4).
 check "렌더러 스냅/히트테스트 재구현 금지" "${ALL_DIRS[@]}" -- \

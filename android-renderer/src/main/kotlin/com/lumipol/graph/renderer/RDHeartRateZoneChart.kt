@@ -102,12 +102,18 @@ fun RDHeartRateZoneChart(
     // 최신값을 참조 — 그렇지 않으면 이 플래그만 토글해선 제스처 코루틴이 재시작되지 않아 낡은 값이 쓰인다.
     val hapticsEnabled by rememberUpdatedState(scaledStyle.donutSelectionHapticsEnabled)
     // B11: 앱이 toggle()로 직접 구동한 변경도 탭과 동일 경로(햅틱+통지) — iOS selectSegment 패리티.
+    // 터치 비활성(onSelectSegment == null)이면 훅을 내리지 않는다(이전 설치분도 해제) —
+    // 비인터랙티브로 구성한 차트가 프로그램 구동 선택에 햅틱을 울리면 탭 경로와 비대칭이다.
     SideEffect {
-        selection.onProgrammaticChange = { next ->
-            if (next != null && hapticsEnabled) {
-                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        selection.onProgrammaticChange = if (onSelectSegment == null) {
+            null
+        } else {
+            { next ->
+                if (next != null && hapticsEnabled) {
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                }
+                currentOnSelect?.invoke(next)
             }
-            currentOnSelect?.invoke(next)
         }
     }
     val gesture = if (onSelectSegment == null) {

@@ -147,6 +147,16 @@ class TrackChartBuilderTest {
     }
 
     @Test
+    fun zone_samples_stay_cumulative_when_only_trailing_sample_lacks_cumulative() {
+        // D11: 누적 > 0인 행이 하나라도 있으면 누적 모드 — 말미의 누적 결측(부분 저장) 행이
+        // 기록 전체를 폴백으로 뒤집으면 안 된다(누적 전용 저장소는 폴백 시 전부 dt=0이 된다).
+        val zones = TrackChartBuilder.zoneSamples(
+            listOf(cumulative(0.0, 10.0, hr = 150.0), cumulative(0.0, 25.0, hr = 155.0), cumulative(0.0, 0.0, hr = 160.0)),
+        )
+        assertEquals(listOf(10.0, 15.0, 0.0), zones.map { it.timeInterval })
+    }
+
+    @Test
     fun zone_samples_fall_back_to_point_deltas_for_legacy_records() {
         // D11: 누적 운동시간이 전부 0/누락(2021 이전 기록) → per-point 델타 폴백.
         val legacy = listOf(

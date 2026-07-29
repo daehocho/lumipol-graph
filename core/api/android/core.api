@@ -80,11 +80,8 @@ public final class com/lumipol/graph/ChartDefaults$DarkPalette {
 	public static final field AXIS_LABEL J
 	public static final field BAR_CALLOUT_BACKGROUND J
 	public static final field BAR_CALLOUT_TEXT J
-	public static final field BAR_FASTER J
-	public static final field BAR_ON_TARGET J
 	public static final field BAR_REFERENCE_LINE J
 	public static final field BAR_SELECTION_LINE J
-	public static final field BAR_SLOWER J
 	public static final field DONUT_CENTER_LABEL J
 	public static final field DONUT_CENTER_PERCENT J
 	public static final field DONUT_EMPTY J
@@ -109,11 +106,8 @@ public final class com/lumipol/graph/ChartDefaults$LightPalette {
 	public static final field AXIS_LABEL J
 	public static final field BAR_CALLOUT_BACKGROUND J
 	public static final field BAR_CALLOUT_TEXT J
-	public static final field BAR_FASTER J
-	public static final field BAR_ON_TARGET J
 	public static final field BAR_REFERENCE_LINE J
 	public static final field BAR_SELECTION_LINE J
-	public static final field BAR_SLOWER J
 	public static final field DONUT_CENTER_LABEL J
 	public static final field DONUT_CENTER_PERCENT J
 	public static final field DONUT_EMPTY J
@@ -312,7 +306,6 @@ public final class com/lumipol/graph/model/BarChartData {
 }
 
 public final class com/lumipol/graph/model/BarChartLayout {
-	public fun <init> (Ljava/util/List;Ljava/util/List;Ljava/lang/Double;)V
 	public fun <init> (Ljava/util/List;Ljava/util/List;Ljava/lang/Double;Lcom/lumipol/graph/model/BarColorAnchors;)V
 	public final fun component1 ()Ljava/util/List;
 	public final fun component2 ()Ljava/util/List;
@@ -558,7 +551,6 @@ public final class com/lumipol/graph/model/LineChartData {
 }
 
 public final class com/lumipol/graph/model/LineChartLayout {
-	public fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/lumipol/graph/model/Stats;)V
 	public fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/lumipol/graph/model/Stats;Lcom/lumipol/graph/model/ChartDomains;)V
 	public final fun component1 ()Ljava/util/List;
 	public final fun component2 ()Ljava/util/List;

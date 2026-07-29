@@ -102,6 +102,27 @@ class ScrubTest {
     }
 
     @Test
+    fun duplicate_series_ids_resolve_axis_per_item_not_first_wins() {
+        // 코어는 id 유일성을 강제하지 않는다 — 중복 id가 서로 다른 축이면 각 항목이
+        // 자기 축 도메인으로 정규화돼야 한다(그리기 B10 per-item axis와 동일 해석).
+        val d = LineChartData(
+            series = listOf(
+                Series("dup", listOf(Point(0.0, 5.0), Point(1.0, 6.0))),
+                Series("dup", listOf(Point(0.0, 150.0), Point(1.0, 160.0)), axis = Axis.SECONDARY),
+            ),
+        )
+        val l = LineChartEngine.layout(d)
+        val r = nearestScrub(d, l, 0.9)
+        assertNotNull(r)
+        assertEquals(2, r.perSeries.size)
+        val (first, second) = r.perSeries
+        assertEquals(ChartAxis.Y_PRIMARY, first.chartAxis)
+        assertEquals(l.domains.yPrimary!!.normalize(6.0), first.ny)
+        assertEquals(ChartAxis.Y_SECONDARY, second.chartAxis)
+        assertEquals(l.domains.ySecondary!!.normalize(160.0), second.ny)
+    }
+
+    @Test
     fun windowed_layout_excludes_series_with_no_points_inside_window() {
         // 창 [0.5, 1.5]: pace/hr는 창 안 1.0 포인트 보유, short는 전 포인트(2.0)가 창 밖 → 결과 제외.
         val d = LineChartData(

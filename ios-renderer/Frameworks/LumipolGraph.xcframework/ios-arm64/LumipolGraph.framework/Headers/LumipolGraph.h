@@ -247,11 +247,8 @@ __attribute__((swift_name("ChartDefaults.DarkPalette")))
 @property (readonly) int64_t AXIS_LABEL __attribute__((swift_name("AXIS_LABEL")));
 @property (readonly) int64_t BAR_CALLOUT_BACKGROUND __attribute__((swift_name("BAR_CALLOUT_BACKGROUND")));
 @property (readonly) int64_t BAR_CALLOUT_TEXT __attribute__((swift_name("BAR_CALLOUT_TEXT")));
-@property (readonly) int64_t BAR_FASTER __attribute__((swift_name("BAR_FASTER")));
-@property (readonly) int64_t BAR_ON_TARGET __attribute__((swift_name("BAR_ON_TARGET")));
 @property (readonly) int64_t BAR_REFERENCE_LINE __attribute__((swift_name("BAR_REFERENCE_LINE")));
 @property (readonly) int64_t BAR_SELECTION_LINE __attribute__((swift_name("BAR_SELECTION_LINE")));
-@property (readonly) int64_t BAR_SLOWER __attribute__((swift_name("BAR_SLOWER")));
 @property (readonly) int64_t DONUT_CENTER_LABEL __attribute__((swift_name("DONUT_CENTER_LABEL")));
 @property (readonly) int64_t DONUT_CENTER_PERCENT __attribute__((swift_name("DONUT_CENTER_PERCENT")));
 @property (readonly) int64_t DONUT_EMPTY __attribute__((swift_name("DONUT_EMPTY")));
@@ -281,11 +278,8 @@ __attribute__((swift_name("ChartDefaults.LightPalette")))
 @property (readonly) int64_t AXIS_LABEL __attribute__((swift_name("AXIS_LABEL")));
 @property (readonly) int64_t BAR_CALLOUT_BACKGROUND __attribute__((swift_name("BAR_CALLOUT_BACKGROUND")));
 @property (readonly) int64_t BAR_CALLOUT_TEXT __attribute__((swift_name("BAR_CALLOUT_TEXT")));
-@property (readonly) int64_t BAR_FASTER __attribute__((swift_name("BAR_FASTER")));
-@property (readonly) int64_t BAR_ON_TARGET __attribute__((swift_name("BAR_ON_TARGET")));
 @property (readonly) int64_t BAR_REFERENCE_LINE __attribute__((swift_name("BAR_REFERENCE_LINE")));
 @property (readonly) int64_t BAR_SELECTION_LINE __attribute__((swift_name("BAR_SELECTION_LINE")));
-@property (readonly) int64_t BAR_SLOWER __attribute__((swift_name("BAR_SLOWER")));
 @property (readonly) int64_t DONUT_CENTER_LABEL __attribute__((swift_name("DONUT_CENTER_LABEL")));
 @property (readonly) int64_t DONUT_CENTER_PERCENT __attribute__((swift_name("DONUT_CENTER_PERCENT")));
 @property (readonly) int64_t DONUT_EMPTY __attribute__((swift_name("DONUT_EMPTY")));
@@ -542,7 +536,6 @@ __attribute__((swift_name("BarChartData")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("BarChartLayout")))
 @interface LumipolGraphBarChartLayout : LumipolGraphBase
-- (instancetype)initWithBars:(NSArray<LumipolGraphBarLayout *> *)bars yTicks:(NSArray<LumipolGraphAxisTick *> *)yTicks referenceLinePosition:(LumipolGraphDouble * _Nullable)referenceLinePosition __attribute__((swift_name("init(bars:yTicks:referenceLinePosition:)"))) __attribute__((objc_designated_initializer));
 - (instancetype)initWithBars:(NSArray<LumipolGraphBarLayout *> *)bars yTicks:(NSArray<LumipolGraphAxisTick *> *)yTicks referenceLinePosition:(LumipolGraphDouble * _Nullable)referenceLinePosition colorAnchors:(LumipolGraphBarColorAnchors * _Nullable)colorAnchors __attribute__((swift_name("init(bars:yTicks:referenceLinePosition:colorAnchors:)"))) __attribute__((objc_designated_initializer));
 - (LumipolGraphBarChartLayout *)doCopyBars:(NSArray<LumipolGraphBarLayout *> *)bars yTicks:(NSArray<LumipolGraphAxisTick *> *)yTicks referenceLinePosition:(LumipolGraphDouble * _Nullable)referenceLinePosition colorAnchors:(LumipolGraphBarColorAnchors * _Nullable)colorAnchors __attribute__((swift_name("doCopy(bars:yTicks:referenceLinePosition:colorAnchors:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
@@ -785,7 +778,6 @@ __attribute__((swift_name("LineChartData")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("LineChartLayout")))
 @interface LumipolGraphLineChartLayout : LumipolGraphBase
-- (instancetype)initWithSeries:(NSArray<LumipolGraphSeriesLayout *> *)series axisTicks:(NSArray<LumipolGraphAxisTicksLayout *> *)axisTicks refBands:(NSArray<LumipolGraphRefBandLayout *> *)refBands markers:(NSArray<LumipolGraphMarkerLayout *> *)markers stats:(LumipolGraphStats *)stats __attribute__((swift_name("init(series:axisTicks:refBands:markers:stats:)"))) __attribute__((objc_designated_initializer));
 - (instancetype)initWithSeries:(NSArray<LumipolGraphSeriesLayout *> *)series axisTicks:(NSArray<LumipolGraphAxisTicksLayout *> *)axisTicks refBands:(NSArray<LumipolGraphRefBandLayout *> *)refBands markers:(NSArray<LumipolGraphMarkerLayout *> *)markers stats:(LumipolGraphStats *)stats domains:(LumipolGraphChartDomains *)domains __attribute__((swift_name("init(series:axisTicks:refBands:markers:stats:domains:)"))) __attribute__((objc_designated_initializer));
 - (LumipolGraphLineChartLayout *)doCopySeries:(NSArray<LumipolGraphSeriesLayout *> *)series axisTicks:(NSArray<LumipolGraphAxisTicksLayout *> *)axisTicks refBands:(NSArray<LumipolGraphRefBandLayout *> *)refBands markers:(NSArray<LumipolGraphMarkerLayout *> *)markers stats:(LumipolGraphStats *)stats domains:(LumipolGraphChartDomains *)domains __attribute__((swift_name("doCopy(series:axisTicks:refBands:markers:stats:domains:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));

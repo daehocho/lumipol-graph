@@ -224,11 +224,12 @@ final class TouchMarkerTests: XCTestCase {
     }
 
     func testReturnsNilWhenAxisScaleUnavailable() {
-        // 직접 생성한 빈 레이아웃(레거시 생성자) — Y 도메인이 없어 어떤 시리즈도 배치 불능 → nil
+        // 직접 생성한 빈 레이아웃 — Y 도메인이 없어 어떤 시리즈도 배치 불능 → nil
         // (0.30.0: 구 "tick 역산 불능" 경로의 대체 의미론)
         let emptyLayout = LineChartLayout(
             series: [], axisTicks: [], refBands: [], markers: [],
-            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil),
+            domains: ChartDomains(x: AxisDomain(min: 0, max: 1), yPrimary: nil, ySecondary: nil)
         )
         let result = TouchMarker.make(atRawX: 1.0, context: TouchMarker.Context(
             data: data, layout: emptyLayout, style: .default, plotArea: plotArea,

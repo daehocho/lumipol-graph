@@ -192,6 +192,26 @@ class ComposeInteractionTest {
     }
 
     @Test
+    fun disabledInteractionDoesNotInstallProgrammaticHook() {
+        // 터치 비활성(onSelectSegment=null)로 구성한 차트는 프로그램 구동 선택(toggle)에
+        // 햅틱·통지 훅을 걸지 않는다 — 탭이 죽은 차트가 toggle()에 진동하면 경로 간 비대칭.
+        lateinit var externalSelection: DonutSelectionState
+        rule.setContent {
+            externalSelection = rememberDonutSelectionState(donutData)
+            RDHeartRateZoneChart(
+                data = donutData,
+                modifier = Modifier.size(240.dp),
+                onSelectSegment = null,
+                selection = externalSelection,
+            )
+        }
+        rule.runOnIdle { externalSelection.toggle(1) }
+        rule.waitForIdle()
+        assertEquals(1, externalSelection.selectedIndex, "상태 공유(디밍·센터 라벨 반영)는 유지")
+        assertNull(externalSelection.onProgrammaticChange, "비활성 차트는 훅을 설치하지 않아야 함")
+    }
+
+    @Test
     fun donutTapInvokesLatestOnSelectSegmentAfterRecomposition() {
         // data는 그대로 두고 onSelectSegment 람다만 교체(리컴포지션) — pointerInput 키가 안 바뀌어도
         // 탭은 항상 최신 람다로 통지되어야 한다(낡은 클로저로 통지되면 stale 선택 상태 버그).
@@ -225,6 +245,7 @@ class ComposeInteractionTest {
         },
         yTicks = listOf(AxisTick(300.0, 0.0), AxisTick(360.0, 1.0)),
         referenceLinePosition = null,
+        colorAnchors = null,
     )
 
     // barLayout4()와 구조적으로 달라 data class equals가 false를 내는 대체 레이아웃(layout 교체 시나리오용).
@@ -235,6 +256,7 @@ class ComposeInteractionTest {
         },
         yTicks = listOf(AxisTick(500.0, 0.0), AxisTick(560.0, 1.0)),
         referenceLinePosition = null,
+        colorAnchors = null,
     )
 
     @Test

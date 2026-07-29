@@ -86,6 +86,14 @@ class ZoomWindowTest {
     }
 
     @Test
+    fun setWindowIgnoresInvertedOrDegenerateRange() {
+        // 역전(max < min)·퇴화(max == min) 구간은 무시 — pinch의 무효 배율 규칙과 동일.
+        val zoomed = makeState().setWindow(3.0, 5.0)
+        assertEquals(zoomed, zoomed.setWindow(5.0, 3.0))
+        assertEquals(zoomed, zoomed.setWindow(4.0, 4.0))
+    }
+
+    @Test
     fun resetRestoresFullDomain() {
         val state = makeState().pinchBy(3.0, anchor = 0.3).reset()
         assertEquals(0.0, state.windowMin)

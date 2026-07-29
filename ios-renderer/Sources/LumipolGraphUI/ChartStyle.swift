@@ -77,6 +77,8 @@ public struct ChartStyle {
         .zone4: .systemOrange,
         .zone5: .systemRed,
     ]
+    /// 데이터 색 role이 주입 맵(donutColors)에 없을 때의 폴백 — 코어 정책 상수(B7, AOS fallbackDataColor와 동일 원본).
+    public var fallbackDataColor: UIColor = UIColor(argb: ChartDefaults.shared.FALLBACK_DATA_COLOR)
     public var donutRingWidth: CGFloat = CGFloat(ChartDefaults.shared.DONUT_RING_WIDTH)
     public var donutEmptyColor: UIColor = UIColor.systemGray4.withAlphaComponent(CGFloat(ChartDefaults.shared.DONUT_EMPTY_ALPHA))
 

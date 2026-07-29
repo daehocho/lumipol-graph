@@ -79,7 +79,7 @@ final class SnapshotTests: XCTestCase {
             bars.append(BarLayout(index: Int32(i), value: value, heightFraction: heightFraction,
                                    colorRole: role(for: i), isPartial: false, endMinutes: nil))
         }
-        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: KotlinDouble(double: 0.5))
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: KotlinDouble(double: 0.5), colorAnchors: nil)
         view.render(layout, style: .default,
                     barLabels: bars.map { _ in "5'00\"" }, xAxisLabels: nil, yLabelFormatter: nil)
         view.layoutIfNeeded()
@@ -97,7 +97,7 @@ final class SnapshotTests: XCTestCase {
                       heightFraction: 0.25 + 0.08 * Double(i),
                       colorRole: .onTarget, isPartial: false, endMinutes: nil)
         }
-        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: KotlinDouble(double: 0.5))
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: KotlinDouble(double: 0.5), colorAnchors: nil)
         view.render(layout)   // provider 미지정 → 기본 연속 팔레트
         view.layoutIfNeeded()
         assertSnapshot(of: view, as: .image)

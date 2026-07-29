@@ -29,7 +29,7 @@ class RDBarChartTest {
             )
         }
         val ticks = listOf(AxisTick(300.0, 0.2), AxisTick(360.0, 0.8))
-        return BarChartLayout(bars = bars, yTicks = ticks, referenceLinePosition = refPos)
+        return BarChartLayout(bars = bars, yTicks = ticks, referenceLinePosition = refPos, colorAnchors = null)
     }
 
     private fun build(
@@ -139,7 +139,8 @@ class RDBarChartTest {
             BarLayout(2, value = 400.0, heightFraction = 0.9, colorRole = BarColorRole.ON_TARGET, isPartial = false),
         )
         val layout = BarChartLayout(bars = bars,
-            yTicks = listOf(AxisTick(200.0, 0.0), AxisTick(400.0, 1.0)), referenceLinePosition = null)
+            yTicks = listOf(AxisTick(200.0, 0.0), AxisTick(400.0, 1.0)), referenceLinePosition = null,
+            colorAnchors = null)
         val rects = bars(buildBarChartLayers(layout, style, width, height))
         assertEquals(1f, rects[0].color.blue)   // 가장 빠름 → 파랑 구간
         assertEquals(1f, rects[2].color.red)    // 가장 느림 → 빨강
@@ -170,7 +171,7 @@ class RDBarChartTest {
 
     @Test
     fun emptyLayoutRendersNoBars() {
-        val layers = build(BarChartLayout(bars = emptyList(), yTicks = emptyList(), referenceLinePosition = null))
+        val layers = build(BarChartLayout(bars = emptyList(), yTicks = emptyList(), referenceLinePosition = null, colorAnchors = null))
         assertEquals(0, bars(layers).size)
         assertTrue(layers.isEmpty())
     }
@@ -249,6 +250,7 @@ class RDBarChartTest {
             bars = listOf(BarLayout(0, 300.0, 0.5, BarColorRole.ON_TARGET, false)),
             yTicks = listOf(AxisTick(300.0, 0.5)),
             referenceLinePosition = null,
+            colorAnchors = null,
         )
         val layers = build(layout, yLabelFormatter = { "P${it.toInt()}" })
         assertTrue(texts(layers).contains("P300"))
@@ -263,6 +265,7 @@ class RDBarChartTest {
             ),
             yTicks = emptyList(),
             referenceLinePosition = null,
+            colorAnchors = null,
         )
         val texts = texts(build(layout, xAxisLabels = listOf("1", "2")))
         assertTrue(texts.contains("1"))
@@ -275,6 +278,7 @@ class RDBarChartTest {
             bars = listOf(BarLayout(0, 300.0, 0.5, BarColorRole.ON_TARGET, false)),
             yTicks = emptyList(),
             referenceLinePosition = null,
+            colorAnchors = null,
         )
         val texts = texts(build(layout, style = style.copy(barShowXAxisLabels = false), xAxisLabels = listOf("1")))
         assertFalse(texts.contains("1"))

@@ -10,7 +10,10 @@ public final class RDBarChartView: UIView {
 
     public var style: ChartStyle = .default
     /// VoiceOver 낭독 문자열 주입(로컬라이즈는 앱 소유 — B12/D9). nil이면 코어 기본(ChartA11y.barChart).
-    public var accessibilityDescriptionOverride: String?
+    /// render 이후에 설정해도 즉시 반영된다(RDHeartRateZoneView와 동일 계약).
+    public var accessibilityDescriptionOverride: String? {
+        didSet { applyAccessibilityLabel() }
+    }
     public private(set) var barLayers: [CALayer] = []
     public private(set) var selectedIndex: Int?
     private var selectionLayers: [CALayer] = []
@@ -56,8 +59,7 @@ public final class RDBarChartView: UIView {
         selectionLayers = []
         // VoiceOver 요약(B12/D9 — 3차트 낭독을 SDK 기본으로). 문자열 규칙은 코어 ChartA11y.
         isAccessibilityElement = true
-        accessibilityLabel = accessibilityDescriptionOverride
-            ?? ChartA11y.shared.barChart(barCount: Int32(layout.bars.count), barLabels: barLabels ?? [])
+        applyAccessibilityLabel()
         setNeedsLayout()
         layoutIfNeeded()  // layoutSubviews()→redraw()를 1회 유발 (테스트가 render 직후 barLayers 동기 접근)
     }
@@ -66,6 +68,13 @@ public final class RDBarChartView: UIView {
         super.layoutSubviews()
         contentLayer.frame = bounds
         redraw()
+    }
+
+    /// 오버라이드 우선, 없으면 코어 기본 문자열. render 전(레이아웃 없음)에는 미적용 — 최초 render가 적용한다.
+    private func applyAccessibilityLabel() {
+        guard let layout else { return }
+        accessibilityLabel = accessibilityDescriptionOverride
+            ?? ChartA11y.shared.barChart(barCount: Int32(layout.bars.count), barLabels: barLabels ?? [])
     }
 
     private func redraw() {

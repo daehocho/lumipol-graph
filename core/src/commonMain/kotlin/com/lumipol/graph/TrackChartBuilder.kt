@@ -96,12 +96,15 @@ object TrackChartBuilder {
 
     /**
      * 원천 → HR존 집계 입력. dt 재구성 규칙은 D11 결정(iOS 폴백 채택):
-     * - 누적 운동시간이 존재하면(마지막 행 누적 > 0) 누적 델타 — 일시정지 제외, 역전은 0으로 클램프
+     * - 누적 운동시간이 존재하면(누적 > 0인 행이 하나라도 있으면) 누적 델타 — 일시정지 제외,
+     *   역전은 0으로 클램프. iOS 원본은 마지막 행만 검사했지만 그건 exerciseTime 오름차순
+     *   정렬 하에서만 "전부 비었는지"와 동치다 — 코어는 입력 순서를 정렬하지 않으므로
+     *   의도(전부 0이면 폴백)를 직접 검사한다. 말미의 누적 결측 행은 dt=0으로 흡수된다.
      * - 누적이 전부 비어 있으면(2021.01 데이터 정합 이전 기록) per-point 시간 델타로 폴백 —
      *   폴백 없이는 구 기록의 심박존이 통째로 무데이터가 된다
      */
     fun zoneSamples(samples: List<RawTrackSample>): List<HeartRateZoneSample> {
-        val hasCumulativeTime = (samples.lastOrNull()?.cumulativeSeconds ?: 0.0) > 0.0
+        val hasCumulativeTime = samples.any { (it.cumulativeSeconds ?: 0.0) > 0.0 }
         var prevSeconds = 0.0
         return samples.map { s ->
             val dt: Double
@@ -182,6 +185,7 @@ object TrackChartBuilder {
         val rLat2 = lat2 * PI / 180.0
         // boundary-allow: Haversine 폴백 — 결과를 1e-6m 양자화해 결정론 확보(위 KDoc)
         val a = sinHalfSq(dLat) + kotlin.math.cos(rLat1) * kotlin.math.cos(rLat2) * sinHalfSq(dLon)
+        // boundary-allow: Haversine 폴백 전용 asin — 위 KDoc의 양자화 규칙 참조
         val meters = 2.0 * EARTH_RADIUS_METERS * asin(sqrt(a.coerceIn(0.0, 1.0)))
         return floor(meters * 1e6 + 0.5) / 1e6
     }

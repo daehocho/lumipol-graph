@@ -51,17 +51,7 @@ data class LineChartLayout(
     val markers: List<MarkerLayout>,
     val stats: Stats,
     val domains: ChartDomains,
-) {
-    // ObjC export는 기본 인자를 내보내지 않는다(DonutSegment 선례) — 기존 호출부(테스트 전용
-    // 직접 생성) 보존용. 프로덕션 레이아웃은 항상 엔진이 만들며 이 폴백 도메인(0~1)을 쓰지 않는다.
-    constructor(
-        series: List<SeriesLayout>,
-        axisTicks: List<AxisTicksLayout>,
-        refBands: List<RefBandLayout>,
-        markers: List<MarkerLayout>,
-        stats: Stats,
-    ) : this(series, axisTicks, refBands, markers, stats, ChartDomains(AxisDomain(0.0, 1.0), null, null))
-}
+)
 
 data class NearestResult(val seriesId: String, val x: Double, val y: Double)
 
@@ -127,14 +117,7 @@ data class BarChartLayout(
     val yTicks: List<AxisTick>,
     val referenceLinePosition: Double?,
     val colorAnchors: BarColorAnchors?,
-) {
-    // ObjC export 기본 인자 소실 대응 — 기존 호출부 보존용(위 LineChartLayout과 동일 선례).
-    constructor(
-        bars: List<BarLayout>,
-        yTicks: List<AxisTick>,
-        referenceLinePosition: Double?,
-    ) : this(bars, yTicks, referenceLinePosition, null)
-}
+)
 
 /**
  * 도넛 한 조각. fraction은 0.0~1.0(12시 0, 시계방향). value=원본 크기.

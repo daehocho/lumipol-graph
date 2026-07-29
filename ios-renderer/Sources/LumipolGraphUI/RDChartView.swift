@@ -29,7 +29,10 @@ public final class RDChartView: UIView {
     public weak var scrubDelegate: RDChartScrubDelegate?
 
     /// VoiceOver 낭독 문자열 주입(로컬라이즈는 앱 소유 — B12/D9). nil이면 코어 기본(ChartA11y.lineChart).
-    public var accessibilityDescriptionOverride: String?
+    /// render 이후에 설정해도 즉시 반영된다(RDHeartRateZoneView와 동일 계약).
+    public var accessibilityDescriptionOverride: String? {
+        didSet { applyAccessibilityLabel() }
+    }
 
     // MARK: - Zoom (X축 확대/팬)
 
@@ -138,14 +141,20 @@ public final class RDChartView: UIView {
         self.chartLayout = makeFullLayout(data: data)
         // VoiceOver 요약(B12/D9 — 3차트 낭독을 SDK 기본으로). 문자열 규칙은 코어 ChartA11y.
         isAccessibilityElement = true
-        accessibilityLabel = accessibilityDescriptionOverride
-            ?? ChartA11y.shared.lineChart(
-                seriesCount: Int32(data.series.count),
-                hasBackgroundArea: !(self.backgroundArea?.isEmpty ?? true)
-            )
+        applyAccessibilityLabel()
         needsEntranceAnimation = isAnimationEnabled && isFirstRender
         isFirstRender = false
         setNeedsLayout()
+    }
+
+    /// 오버라이드 우선, 없으면 코어 기본 문자열. render 전(데이터 없음)에는 미적용 — 최초 render가 적용한다.
+    private func applyAccessibilityLabel() {
+        guard let data else { return }
+        accessibilityLabel = accessibilityDescriptionOverride
+            ?? ChartA11y.shared.lineChart(
+                seriesCount: Int32(data.series.count),
+                hasBackgroundArea: !(backgroundArea?.isEmpty ?? true)
+            )
     }
 
     /// 전체 구간(1x) layout. 시리즈 없이 배경 area만 있으면 X 도메인이 area x범위여야 하는데,
@@ -228,7 +237,14 @@ public final class RDChartView: UIView {
             animation.fromValue = 0
             animation.toValue = 1
             animation.duration = ChartDefaults.shared.ENTRANCE_DURATION_SECONDS
-            animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            // 이징 곡선도 코어 상수(D5/A3 단일 원본) — AOS EntranceEasing과 동일 계수.
+            // named .easeOut은 (0,0,0.58,1)과 값이 같아도 코어 상수 변경을 따라가지 못한다.
+            animation.timingFunction = CAMediaTimingFunction(
+                controlPoints: Float(ChartDefaults.shared.ENTRANCE_EASING_X1),
+                Float(ChartDefaults.shared.ENTRANCE_EASING_Y1),
+                Float(ChartDefaults.shared.ENTRANCE_EASING_X2),
+                Float(ChartDefaults.shared.ENTRANCE_EASING_Y2)
+            )
             shape.add(animation, forKey: "strokeEnd")
         }
     }

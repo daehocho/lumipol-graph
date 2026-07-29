@@ -23,7 +23,8 @@ final class ChartLayerBuilderTests: XCTestCase {
             MarkerLayout(position: 0.5, label: "1km", emphasis: false),
             MarkerLayout(position: 1.0, label: "2km", emphasis: true),
         ],
-        stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+        stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil),
+        domains: ChartDomains(x: AxisDomain(min: 0, max: 1), yPrimary: nil, ySecondary: nil)
     )
     private let data = LineChartData(
         series: [
@@ -118,7 +119,8 @@ final class ChartLayerBuilderTests: XCTestCase {
                 ]),
             ],
             axisTicks: [], refBands: [], markers: [],
-            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil),
+            domains: ChartDomains(x: AxisDomain(min: 0, max: 1), yPrimary: nil, ySecondary: nil)
         )
         let dualData = LineChartData(
             series: [
@@ -152,7 +154,8 @@ final class ChartLayerBuilderTests: XCTestCase {
     func testNoGradientPassWhenNoSeries() {
         let empty = LineChartLayout(
             series: [], axisTicks: [], refBands: [], markers: [],
-            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil),
+            domains: ChartDomains(x: AxisDomain(min: 0, max: 1), yPrimary: nil, ySecondary: nil)
         )
         let emptyData = LineChartData(
             series: [], referenceBands: [], segmentMarkers: [],
@@ -237,7 +240,8 @@ final class ChartLayerBuilderTests: XCTestCase {
                 ]),
             ],
             axisTicks: [], refBands: [], markers: [],
-            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil),
+            domains: ChartDomains(x: AxisDomain(min: 0, max: 1), yPrimary: nil, ySecondary: nil)
         )
         let overlayData = LineChartData(
             series: [
@@ -272,7 +276,8 @@ final class ChartLayerBuilderTests: XCTestCase {
                 ]),
             ],
             axisTicks: [], refBands: [], markers: [],
-            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil),
+            domains: ChartDomains(x: AxisDomain(min: 0, max: 1), yPrimary: nil, ySecondary: nil)
         )
         let overlayData = LineChartData(
             series: [
@@ -300,7 +305,8 @@ final class ChartLayerBuilderTests: XCTestCase {
         let single = LineChartLayout(
             series: [SeriesLayout(id: "one", role: .main, points: [NormalizedPoint(x: 0.5, y: 0.5)])],
             axisTicks: [], refBands: [], markers: [],
-            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil)
+            stats: Stats(perSeries: [], segments: [], segmentSeriesId: nil),
+            domains: ChartDomains(x: AxisDomain(min: 0, max: 1), yPrimary: nil, ySecondary: nil)
         )
         let layers = ChartLayerBuilder.build(
             layout: single, data: data, style: .default, plotArea: plotArea,

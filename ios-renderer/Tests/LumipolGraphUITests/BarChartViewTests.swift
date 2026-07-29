@@ -15,7 +15,7 @@ final class BarChartViewTests: XCTestCase {
             )
         }
         let ticks = [AxisTick(value: 300, position: 0.2), AxisTick(value: 360, position: 0.8)]
-        return BarChartLayout(bars: bars, yTicks: ticks, referenceLinePosition: refPos.map { KotlinDouble(double: $0) })
+        return BarChartLayout(bars: bars, yTicks: ticks, referenceLinePosition: refPos.map { KotlinDouble(double: $0) }, colorAnchors: nil)
     }
 
     func testRendersOneLayerPerBar() {
@@ -26,7 +26,7 @@ final class BarChartViewTests: XCTestCase {
 
     func testEmptyLayoutRendersNoBars() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
-        view.render(BarChartLayout(bars: [], yTicks: [], referenceLinePosition: nil))
+        view.render(BarChartLayout(bars: [], yTicks: [], referenceLinePosition: nil, colorAnchors: nil))
         XCTAssertEqual(view.barLayers.count, 0)
     }
 
@@ -44,7 +44,7 @@ final class BarChartViewTests: XCTestCase {
             BarLayout(index: 1, value: 330, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil),
             BarLayout(index: 2, value: 360, heightFraction: 0.7, colorRole: .slower, isPartial: false, endMinutes: nil),
         ]
-        return BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+        return BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil, colorAnchors: nil)
     }
 
     private func rgbaOf(_ cg: CGColor?) -> (CGFloat, CGFloat, CGFloat) {
@@ -122,7 +122,7 @@ final class BarChartViewTests: XCTestCase {
     // 앵커 없는 레거시 layout(직접 생성)은 국소 폴백(min/max/산술평균)으로 크래시 없이 그린다.
     func testAnchorsFallBackWhenAllPartial() {
         let bars = [BarLayout(index: 0, value: 250, heightFraction: 0.5, colorRole: .onTarget, isPartial: true, endMinutes: nil)]
-        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil, colorAnchors: nil)
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
         var captured: [BarPaceColorInput] = []
         var style = ChartStyle.default
@@ -138,7 +138,7 @@ final class BarChartViewTests: XCTestCase {
             BarLayout(index: 0, value: 300, heightFraction: 0.6, colorRole: .faster, isPartial: false, endMinutes: nil),
             BarLayout(index: 1, value: 360, heightFraction: 0.3, colorRole: .slower, isPartial: true, endMinutes: nil),
         ]
-        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil, colorAnchors: nil)
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
         var captured: [BarPaceColorInput] = []
         var style = ChartStyle.default
@@ -156,7 +156,7 @@ final class BarChartViewTests: XCTestCase {
             BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .faster, isPartial: false, endMinutes: nil),
             BarLayout(index: 1, value: 360, heightFraction: 0.3, colorRole: .slower, isPartial: true, endMinutes: nil),
         ]
-        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil, colorAnchors: nil)
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
         view.render(layout)
         XCTAssertEqual(view.barLayers[0].opacity, 1.0, accuracy: 0.001)
@@ -193,7 +193,7 @@ final class BarChartViewTests: XCTestCase {
         let layout = BarChartLayout(
             bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil)],
             yTicks: [AxisTick(value: 300, position: 0.5)],
-            referenceLinePosition: nil
+            referenceLinePosition: nil, colorAnchors: nil
         )
         var style = ChartStyle.default
         style.barShowYAxisLabels = true
@@ -210,7 +210,7 @@ final class BarChartViewTests: XCTestCase {
                 BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil),
                 BarLayout(index: 1, value: 310, heightFraction: 0.6, colorRole: .slower, isPartial: false, endMinutes: nil),
             ],
-            yTicks: [], referenceLinePosition: nil
+            yTicks: [], referenceLinePosition: nil, colorAnchors: nil
         )
         view.render(layout, style: .default, barLabels: nil, xAxisLabels: ["1", "2"], yLabelFormatter: nil)
         view.layoutIfNeeded()
@@ -245,7 +245,7 @@ final class BarChartViewTests: XCTestCase {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
         let layout = BarChartLayout(
             bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil)],
-            yTicks: [], referenceLinePosition: nil
+            yTicks: [], referenceLinePosition: nil, colorAnchors: nil
         )
         var style = ChartStyle.default
         style.barShowXAxisLabels = false
@@ -349,7 +349,7 @@ final class BarChartViewTests: XCTestCase {
             BarLayout(index: 0, value: 300, heightFraction: 0.15, colorRole: .faster, isPartial: false, endMinutes: nil),  // 짧음
             BarLayout(index: 1, value: 330, heightFraction: 0.9, colorRole: .slower, isPartial: false, endMinutes: nil),
         ]
-        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil)
+        let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil, colorAnchors: nil)
         view.render(layout, style: style, barLabels: ["4'50\"", "5'30\""], xAxisLabels: nil, yLabelFormatter: nil)
         view.selectBar(at: 0)   // 짧은(빠른) 막대
         let plot = view.bounds.inset(by: style.plotInsets)
