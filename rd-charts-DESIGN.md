@@ -758,6 +758,36 @@ AOS `animateEntrance = true`를 명시(각 1줄, 트랙 C 앱 커밋에 포함).
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### 스플릿 막대 최소 개수 — 짧은 런 자동 세분화 (0.41.0, 2026-07-29, **breaking(API)**)
+
+0.64km 기록의 분석 탭이 막대 1개만 그렸다. 거리모드가 `splitDistanceMeters`(1km) 단위로만
+끊었기 때문이다. 막대 하한(`MIN_BARS = 5`)을 두 모드에 공통으로 넣는다.
+
+- **feat: `BarChartEngine.chooseDistanceBucketMeters(totalDistanceMeters, unitMeters)` 신설** —
+  `unit, unit/2, unit/5, unit/10, unit/20` 중 막대가 5개 이상이 되는 첫 후보를 버킷으로 쓴다.
+  `layout()`이 거리모드에서 내부 호출하므로 앱 입력은 그대로다. 5막대 이상 런은 버킷이
+  `unit` 그대로라 **기존 출력이 비트 단위로 동일**하다.
+- **breaking(의미): `BarChartData.splitDistanceMeters`는 이제 페이스 단위 전용** — 버킷 크기와
+  겸직이 끝났다(시간모드가 쓰던 분리 규약을 거리모드로 확장). 100m 버킷에서도 `BarLayout.value`는
+  sec/km다.
+- **feat: `chooseTimeBucketSeconds`가 30초·15초로 하향** — 기존 1/2/5/10분 선택이 5막대 미만일
+  때만 적용해 5분 이상 런의 선택은 불변(3분 런: 1분 3막대 → 30초 6막대).
+- **breaking(API): `BarLayout`에 `endDistanceMeters`·`endSeconds` 추가** — 거리모드는 막대 끝
+  누적 거리(m, 부분 스플릿은 총거리), 시간모드는 끝 누적 초(반올림 없음). `endMinutes`는 그대로다.
+- **fix: `niceScale` 틱 루프 무한 반복** — 값 스팬이 1 ULP 수준이면 step이 ULP보다 작아
+  `t += step`이 제자리를 돌아 OOM으로 죽었다(막대가 전부 같은 페이스이고 ref만 1 ULP 다른 런에서
+  실측 — 막대가 잘게 쪼개지며 밟을 확률이 올라갔다). min==max와 같은 패딩 경로로 회수한다.
+
+**마이그레이션(앱)**:
+1. Kotlin은 기본 인자라 무변경. **Swift는 `BarLayout(...)` 생성자에 두 인자를 추가**해야 한다
+   (ObjC export는 기본 인자를 내보내지 않는다).
+2. 거리모드 x축 라벨을 인덱스(`index + 1`)에서 `endDistanceMeters / unitMeters`의
+   `ChartFormat.distanceTick`으로 바꾼다 — 100m 버킷에서 인덱스는 km처럼 읽혀 오독을 부른다.
+3. 시간모드는 `bars.first().endSeconds < 60`이면 sub-minute 버킷이므로 `ChartFormat.duration(endSeconds)`
+   (`00:30`), 아니면 종전 `endMinutes` 정수를 쓴다.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은
