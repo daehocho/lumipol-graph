@@ -28,4 +28,11 @@ object PaceSeriesId {
      * 폴백으로 살아남는다. 축 슬롯 배정([SeriesSelection.assignSlots])에는 [LINE_PRIORITY].
      */
     val DISPLAY_PRIORITY: List<Int> = LINE_PRIORITY + ALTITUDE
+
+    /**
+     * 같은 물리 스케일대(≈100~200)를 쓰는 지표 그룹 — [SeriesSelection.slotAxes]의
+     * `sharedScaleIds` 인자. 이 그룹만 선택되면 좌우에 사실상 같은 눈금이 중복되므로
+     * 한 축(PRIMARY)으로 병합한다(도메인은 합집합 — 3지표 시 SECONDARY 병합과 같은 규칙).
+     */
+    val SHARED_SCALE_IDS: Set<Int> = setOf(HEART, CADENCE)
 }

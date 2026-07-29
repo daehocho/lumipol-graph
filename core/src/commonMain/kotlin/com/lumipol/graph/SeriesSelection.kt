@@ -46,21 +46,54 @@ object SeriesSelection {
         priority.filter { it in selected && it in withData }
 
     /**
-     * [assignSlots] 결과 index → 축. 0 = PRIMARY, 1 이후 = 전부 SECONDARY(도메인 공유).
-     * role은 전부 MAIN — 축 슬롯에서 OVERLAY는 더 이상 나오지 않는다(0.29.0).
+     * [assignSlots] 결과 전체 → 슬롯별 축(0.40.0). 슬롯 0 = PRIMARY, 이후 = SECONDARY(도메인 공유) —
+     * 단 슬롯 0과 해당 슬롯이 모두 [sharedScaleIds]에 속하면 PRIMARY를 공유한다
+     * (심박+케이던스만 선택 시 좌우 중복 눈금 제거 — 도메인은 yValues 합집합으로 병합).
+     * role은 전부 MAIN — 축 슬롯에서 OVERLAY는 나오지 않는다(0.29.0).
      * 스케일이 다른 지표를 축 밖에 겹치려면 앱이 직접 OVERLAY를 조립한다.
+     *
+     * @param sharedScaleIds 한 축을 공유해도 되는 지표 id 그룹 — 보통 [PaceSeriesId.SHARED_SCALE_IDS].
      */
+    fun slotAxes(slots: List<Int>, sharedScaleIds: Set<Int>): List<Axis> {
+        val first = slots.firstOrNull() ?: return emptyList()
+        return slots.mapIndexed { index, id ->
+            if (index == 0 || (first in sharedScaleIds && id in sharedScaleIds)) Axis.PRIMARY
+            else Axis.SECONDARY
+        }
+    }
+
+    /**
+     * [assignSlots] 결과 index → 축. 0 = PRIMARY, 1 이후 = 전부 SECONDARY(도메인 공유).
+     */
+    @Deprecated(
+        "슬롯 index만으로는 스케일 그룹 병합(심박+케이던스 한 축)을 표현할 수 없다 — slotAxes로 대체(0.40.0)",
+        ReplaceWith("slotAxes(slots, sharedScaleIds)"),
+    )
     fun slotAxis(index: Int): Axis {
         require(index >= 0) { "index must be >= 0" }
         return if (index == 0) Axis.PRIMARY else Axis.SECONDARY
     }
 
     /**
-     * 화면에서 뒤집을 Y축 집합(C5) — 페이스는 "위=빠름"이라 페이스가 앉은 축만 반전한다.
-     * [paceSlot]은 [assignSlots] 결과에서 페이스의 index(없으면 음수).
+     * 화면에서 뒤집을 Y축 집합(0.40.0) — [slotAxes] 결과 기반. 페이스는 "위=빠름"이라
+     * 페이스가 앉은 축만 반전한다. [paceSlot]은 [assignSlots] 결과에서 페이스의 index(없으면 음수).
      * 앱 2벌 분기(`paceOnPrimary ? [.primary] : []` / 슬롯 0/1 분기 — AOS는 슬롯 2+에서 반전
      * 누락 버그)를 단일 규칙으로 회수: 페이스가 어느 슬롯이든 그 슬롯의 축을 반전.
      */
+    fun invertedAxesFor(paceSlot: Int, axes: List<Axis>): Set<Axis> {
+        if (paceSlot < 0) return emptySet()
+        require(paceSlot < axes.size) { "paceSlot must be < axes.size" }
+        return setOf(axes[paceSlot])
+    }
+
+    /**
+     * 화면에서 뒤집을 Y축 집합(C5) — [slotAxis] 기반 구 매핑.
+     */
+    @Deprecated(
+        "slotAxis 기반 매핑 — slotAxes 결과를 받는 오버로드로 대체(0.40.0)",
+        ReplaceWith("invertedAxesFor(paceSlot, axes)"),
+    )
     fun invertedAxesFor(paceSlot: Int): Set<Axis> =
+        @Suppress("DEPRECATION")
         if (paceSlot < 0) emptySet() else setOf(slotAxis(paceSlot))
 }

@@ -105,4 +105,36 @@ class SeriesSelectionTest {
     @Test fun slot_axis_rejects_negative_index() {
         assertFailsWith<IllegalArgumentException> { SeriesSelection.slotAxis(-1) }
     }
+
+    // MARK: slotAxes (0.40.0 — 스케일 그룹 공유)
+
+    @Test fun slot_axes_merges_shared_scale_group_onto_primary() {
+        val shared = PaceSeriesId.SHARED_SCALE_IDS
+        // 심박+케이던스 → 둘 다 PRIMARY(왼쪽 한 축) — 좌우 중복 눈금 제거
+        assertEquals(
+            listOf(Axis.PRIMARY, Axis.PRIMARY),
+            SeriesSelection.slotAxes(listOf(PaceSeriesId.HEART, PaceSeriesId.CADENCE), shared),
+        )
+        // 페이스+심박+케이던스 → 기존과 동일(페이스 PRIMARY, 심박∪케이던스 SECONDARY)
+        assertEquals(
+            listOf(Axis.PRIMARY, Axis.SECONDARY, Axis.SECONDARY),
+            SeriesSelection.slotAxes(listOf(PaceSeriesId.PACE, PaceSeriesId.HEART, PaceSeriesId.CADENCE), shared),
+        )
+        // 페이스+심박 → 기존과 동일
+        assertEquals(
+            listOf(Axis.PRIMARY, Axis.SECONDARY),
+            SeriesSelection.slotAxes(listOf(PaceSeriesId.PACE, PaceSeriesId.HEART), shared),
+        )
+        // 단일·빈 슬롯
+        assertEquals(listOf(Axis.PRIMARY), SeriesSelection.slotAxes(listOf(PaceSeriesId.CADENCE), shared))
+        assertEquals(emptyList(), SeriesSelection.slotAxes(emptyList(), shared))
+    }
+
+    @Test fun inverted_axes_for_uses_assigned_axes() {
+        val axes = listOf(Axis.PRIMARY, Axis.SECONDARY, Axis.SECONDARY)
+        assertEquals(emptySet(), SeriesSelection.invertedAxesFor(-1, axes))
+        assertEquals(setOf(Axis.PRIMARY), SeriesSelection.invertedAxesFor(0, axes))
+        assertEquals(setOf(Axis.SECONDARY), SeriesSelection.invertedAxesFor(1, axes))
+        assertFailsWith<IllegalArgumentException> { SeriesSelection.invertedAxesFor(3, axes) }
+    }
 }
