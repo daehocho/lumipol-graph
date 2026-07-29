@@ -99,7 +99,8 @@ data class ScrubResult(
 )
 
 /** 막대 1칸. value=스플릿 평균 페이스(sec/unit, 시간가중).
- *  heightFraction·position은 0.0~1.0, 반전 축 — 값이 작을수록(빠를수록) 크다. */
+ *  heightFraction·position은 0.0~1.0, 반전 축 — 값이 작을수록(빠를수록) 크다.
+ *  끝 위치 3종은 x축 라벨용이며 모드에 따라 채워지는 것이 다르다(0.41.0). */
 data class BarLayout(
     val index: Int,
     val value: Double,
@@ -107,6 +108,8 @@ data class BarLayout(
     val colorRole: BarColorRole,
     val isPartial: Boolean,
     val endMinutes: Int? = null, // 시간모드 버킷 끝 표시용 정수 분(반올림·최소1). 거리모드 null
+    val endDistanceMeters: Double? = null, // 거리모드 버킷 끝 누적 거리(m, 부분은 총거리). 시간모드 null
+    val endSeconds: Double? = null, // 시간모드 버킷 끝 누적 초(반올림 없음). 거리모드 null
 )
 
 /**

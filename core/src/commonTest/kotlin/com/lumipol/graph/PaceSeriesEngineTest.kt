@@ -45,8 +45,9 @@ class DomainsAndAnchorsTest {
 
     // B5: 색 앵커 단일 원본 — 온전 스플릿 우선, 런 평균 클램프.
     @Test fun bar_layout_exports_color_anchors() {
-        val samples = List(10) { SplitSample(100.0, 28.0) } +
-            List(10) { SplitSample(100.0, 33.0) } +
+        // 4.5km — 버킷이 1km로 유지되는 길이(0.41.0 이후 4km 미만은 잘게 쪼개져 부분 스플릿이 사라진다)
+        val samples = List(20) { SplitSample(100.0, 28.0) } +
+            List(20) { SplitSample(100.0, 33.0) } +
             List(5) { SplitSample(100.0, 60.0) } // 0.5km 부분 스플릿(600s/km) — 앵커에서 배제 기대
         val l = BarChartEngine.layout(BarChartData(samples, 1000.0))
         val a = l.colorAnchors!!

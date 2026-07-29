@@ -26,48 +26,52 @@ class BarChartEngineTest {
 
     @Test
     fun exact_km_produces_one_bar_per_km_no_partial() {
-        val data = BarChartData(evenSamples(3, 300.0), splitDistanceMeters = 1000.0)
+        // 5km 정확(막대 5개 → 버킷 하향 없음) → 1km당 1막대, 부분 없음
+        val data = BarChartData(evenSamples(5, 300.0), splitDistanceMeters = 1000.0)
         val layout = BarChartEngine.layout(data)
-        assertEquals(3, layout.bars.size)
+        assertEquals(5, layout.bars.size)
         assertTrue(layout.bars.none { it.isPartial })
         layout.bars.forEach { assertEquals(300.0, it.value, 1e-6) }
     }
 
     @Test
     fun remainder_becomes_partial_last_bar() {
-        // 1km(300s) + 0.5km(150s) → 막대 2개, 마지막 부분. value는 sec/unit 정규화(150/0.5=300).
+        // 4km(1200s) + 0.5km(150s) = 4.5km → 5막대(버킷 1km 유지), 마지막 부분.
+        // value는 sec/unit 정규화(150/0.5=300).
         val data = BarChartData(
-            listOf(SplitSample(1000.0, 300.0), SplitSample(500.0, 150.0)),
+            evenSamples(4, 300.0) + SplitSample(500.0, 150.0),
             splitDistanceMeters = 1000.0,
         )
         val layout = BarChartEngine.layout(data)
-        assertEquals(2, layout.bars.size)
-        assertTrue(layout.bars[1].isPartial)
-        assertEquals(300.0, layout.bars[1].value, 1e-6)
+        assertEquals(5, layout.bars.size)
+        assertTrue(layout.bars[4].isPartial)
+        assertEquals(300.0, layout.bars[4].value, 1e-6)
     }
 
     @Test
     fun value_is_time_weighted_not_arithmetic_mean() {
-        // 한 km 안: 900m를 270s(=300s/km 페이스) + 100m를 20s(=200s/km 페이스).
+        // 마지막 km 안: 900m를 270s(=300s/km 페이스) + 100m를 20s(=200s/km 페이스).
         // 시간가중 = 290s / (1000/1000) = 290. 산술평균이면 (300+200)/2=250 → 다름.
+        // 앞 4km는 버킷을 1km로 유지시키기 위한 채움(막대 5개).
         val data = BarChartData(
-            listOf(SplitSample(900.0, 270.0), SplitSample(100.0, 20.0)),
+            evenSamples(4, 300.0) + listOf(SplitSample(900.0, 270.0), SplitSample(100.0, 20.0)),
             splitDistanceMeters = 1000.0,
         )
         val layout = BarChartEngine.layout(data)
-        assertEquals(1, layout.bars.size)
-        assertEquals(290.0, layout.bars[0].value, 1e-6)
+        assertEquals(5, layout.bars.size)
+        assertEquals(290.0, layout.bars[4].value, 1e-6)
     }
 
     @Test
     fun color_role_relative_to_average_when_no_target() {
-        // 페이스: 250, 300, 350 (평균 300). tol=10 → faster, onTarget, slower.
+        // 페이스: 250, 300, 350, 300, 300 (시간가중 평균 300). tol=10 → faster, onTarget, slower.
         val data = BarChartData(
-            listOf(SplitSample(1000.0, 250.0), SplitSample(1000.0, 300.0), SplitSample(1000.0, 350.0)),
+            listOf(250.0, 300.0, 350.0, 300.0, 300.0).map { SplitSample(1000.0, it) },
             splitDistanceMeters = 1000.0,
             toleranceSecPerUnit = 10.0,
         )
         val bars = BarChartEngine.layout(data).bars
+        assertEquals(5, bars.size)
         assertEquals(BarColorRole.FASTER, bars[0].colorRole)
         assertEquals(BarColorRole.ON_TARGET, bars[1].colorRole)
         assertEquals(BarColorRole.SLOWER, bars[2].colorRole)
@@ -88,14 +92,14 @@ class BarChartEngineTest {
 
     @Test
     fun mile_split_distance_bins_by_mile() {
-        // 1609.344m(480s) + 800m(240s) → 1.5마일. 막대 2개, 마지막 부분.
+        // 4마일(1920s) + 800m(240s) = 4.5마일 → 5막대(버킷 마일 유지), 마지막 부분.
         val data = BarChartData(
-            listOf(SplitSample(1609.344, 480.0), SplitSample(800.0, 240.0)),
+            List(4) { SplitSample(1609.344, 480.0) } + SplitSample(800.0, 240.0),
             splitDistanceMeters = 1609.344,
         )
         val layout = BarChartEngine.layout(data)
-        assertEquals(2, layout.bars.size)
-        assertTrue(layout.bars[1].isPartial)
+        assertEquals(5, layout.bars.size)
+        assertTrue(layout.bars[4].isPartial)
     }
 
     @Test
@@ -111,9 +115,9 @@ class BarChartEngineTest {
 
     @Test
     fun inverted_axis_faster_pace_gets_taller_bar() {
-        // 페이스 250(빠름), 300, 350(느림) → 빠를수록 heightFraction이 커야 한다(축 반전).
+        // 페이스 250(빠름)…350(느림) 5막대 → 빠를수록 heightFraction이 커야 한다(축 반전).
         val data = BarChartData(
-            listOf(SplitSample(1000.0, 250.0), SplitSample(1000.0, 300.0), SplitSample(1000.0, 350.0)),
+            listOf(250.0, 275.0, 300.0, 325.0, 350.0).map { SplitSample(1000.0, it) },
             splitDistanceMeters = 1000.0,
         )
         val bars = BarChartEngine.layout(data).bars
@@ -168,23 +172,56 @@ class BarChartEngineTest {
 
     @Test
     fun single_sample_spanning_multiple_units_splits_correctly() {
-        // 2.5km를 750s에 커버(=300s/km) → 1km,1km 두 개 full + 0.5km partial, 전부 300s/unit.
-        val data = BarChartData(listOf(SplitSample(2500.0, 750.0)), splitDistanceMeters = 1000.0)
+        // 5.5km를 1650s에 커버(=300s/km) → 1km full 5개 + 0.5km partial, 전부 300s/unit.
+        val data = BarChartData(listOf(SplitSample(5500.0, 1650.0)), splitDistanceMeters = 1000.0)
         val bars = BarChartEngine.layout(data).bars
-        assertEquals(3, bars.size)
-        assertTrue(!bars[0].isPartial && !bars[1].isPartial)
-        assertTrue(bars[2].isPartial)
+        assertEquals(6, bars.size)
+        assertTrue(bars.take(5).none { it.isPartial })
+        assertTrue(bars[5].isPartial)
         bars.forEach { assertEquals(300.0, it.value, 1e-6) }
     }
 
     @Test
-    fun single_partial_bar_only() {
-        // 0.3km만 있는 짧은 러닝 → 부분 막대 1개, 정규화 안정(min==max 패딩).
+    fun very_short_run_subdivides_to_min_bars() {
+        // 0.3km(90s = 300s/km)만 있는 짧은 러닝 → 50m 버킷 6막대. 값은 여전히 sec/km(300).
         val layout = BarChartEngine.layout(
             BarChartData(listOf(SplitSample(300.0, 90.0)), 1000.0))
-        assertEquals(1, layout.bars.size)
-        assertTrue(layout.bars[0].isPartial)
-        assertTrue(layout.bars[0].heightFraction in 0.0..1.0)
+        assertEquals(6, layout.bars.size)
+        layout.bars.forEach {
+            assertEquals(300.0, it.value, 1e-6)
+            assertTrue(it.heightFraction in 0.0..1.0)
+        }
+    }
+
+    @Test
+    fun short_run_keeps_pace_unit_while_bucket_shrinks() {
+        // 0.64km를 8분(480s)에 → 750s/km. 버킷은 100m로 줄어도 value는 sec/km라야 한다.
+        // 100m를 75s에 지나는 페이스이므로 100m 버킷 값도 750, sec/100m였다면 75가 나온다.
+        val samples = List(64) { SplitSample(10.0, 7.5) } // 10m씩 7.5s = 750s/km
+        val layout = BarChartEngine.layout(BarChartData(samples, splitDistanceMeters = 1000.0))
+        assertEquals(7, layout.bars.size) // 온전 6 + 부분 1(40m)
+        layout.bars.forEach { assertEquals(750.0, it.value, 1e-6) }
+        assertTrue(layout.bars.last().isPartial)
+    }
+
+    @Test
+    fun distance_mode_end_distance_is_cumulative_meters() {
+        // 위와 같은 0.64km → 100m 버킷: 100,200,…,600 + 부분은 총거리 640
+        val samples = List(64) { SplitSample(10.0, 7.5) }
+        val ends = BarChartEngine.layout(
+            BarChartData(samples, splitDistanceMeters = 1000.0)).bars.map { it.endDistanceMeters!! }
+        val expected = listOf(100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 640.0)
+        assertEquals(expected.size, ends.size)
+        for (i in expected.indices) assertEquals(expected[i], ends[i], 1e-6)
+    }
+
+    @Test
+    fun time_mode_end_distance_null() {
+        val data = BarChartData(
+            evenTimeSamples(720, 300.0), splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 120.0,
+        )
+        assertTrue(BarChartEngine.layout(data).bars.all { it.endDistanceMeters == null })
     }
 
     // MARK: chooseDistanceBucketMeters
