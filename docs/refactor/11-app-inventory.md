@@ -40,6 +40,11 @@
 | 9 | 존 이름·제목·칩 | StringTable 34/142/5091-5099/6611/6627-6633 | 동일 id 세트(원격 테이블 공유) | 동일 |
 | 10 | 막대 x축 | 거리: `1...count` 인덱스 / 시간: `endMinutes` | 거리: `index+1` / 시간: `endMinutes ?: index+1` | 동일(폴백만 AOS 추가) |
 
+> **10행 현행화(2026-07-29)**: 양 앱 모두 0.42.0~0.43.0에서 `endDistanceMeters`/`endSeconds` +
+> `splitEndDistance`/`splitEndTime` + `xAxisUnitLabel`로 마이그레이션 완료 — `index+1`/`endMinutes`
+> 직표기는 null 폴백으로만 남아 있다(iOS `RDSplitChartView.swift`, AOS `SplitChartCard.kt`).
+> 이 행을 현행 관용구로 인용하지 말 것.
+
 ## 3. 앱이 SDK 위에/옆에 그리는 것
 
 z축 오버레이는 양 앱 모두 없음(무데이터 라벨 센터 겹침 제외). 전부 형제 뷰지만, **SDK가 범례를
