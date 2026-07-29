@@ -340,7 +340,20 @@ object CoreDump {
                 add("slots_pace_cad_only" to jarr(
                     SeriesSelection.assignSlots(PaceSeriesId.LINE_PRIORITY, setOf(0, 1, 2), setOf(0, 2)).map { jint(it) },
                 ))
+                @Suppress("DEPRECATION")
                 add("slotAxis_0_to_3" to jarr((0..3).map { jstr(SeriesSelection.slotAxis(it).name) }))
+                add("slotAxes_hr_cad" to jarr(
+                    SeriesSelection.slotAxes(
+                        listOf(PaceSeriesId.HEART, PaceSeriesId.CADENCE),
+                        PaceSeriesId.SHARED_SCALE_IDS,
+                    ).map { jstr(it.name) },
+                ))
+                add("slotAxes_pace_hr_cad" to jarr(
+                    SeriesSelection.slotAxes(
+                        listOf(PaceSeriesId.PACE, PaceSeriesId.HEART, PaceSeriesId.CADENCE),
+                        PaceSeriesId.SHARED_SCALE_IDS,
+                    ).map { jstr(it.name) },
+                ))
             }),
         )
         return sections.joinToString(",\n", "{\n", "\n}\n")

@@ -94,6 +94,7 @@ class SeriesSelectionTest {
 
     // MARK: slotAxis
 
+    @Suppress("DEPRECATION") // 구 API 동작 보존 검증 — 신 규칙은 slot_axes_* 테스트
     @Test fun slot_axis_first_primary_rest_all_secondary() {
         // 0.29.0 규약: 오버레이 슬롯 폐지 — 1 이후는 전부 보조축(도메인 공유).
         assertEquals(Axis.PRIMARY, SeriesSelection.slotAxis(0))
@@ -102,6 +103,7 @@ class SeriesSelectionTest {
         assertEquals(Axis.SECONDARY, SeriesSelection.slotAxis(3))
     }
 
+    @Suppress("DEPRECATION")
     @Test fun slot_axis_rejects_negative_index() {
         assertFailsWith<IllegalArgumentException> { SeriesSelection.slotAxis(-1) }
     }

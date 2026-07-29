@@ -84,6 +84,7 @@ class ChartFormatTest {
         assertEquals(null, data.segments[2].label)
     }
 
+    @Suppress("DEPRECATION") // 구 API 동작 보존 검증 — 신 API는 SeriesSelectionTest
     @Test
     fun inverted_axes_follow_pace_slot() {
         assertEquals(emptySet(), SeriesSelection.invertedAxesFor(-1))
