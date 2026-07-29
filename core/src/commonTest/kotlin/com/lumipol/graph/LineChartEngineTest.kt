@@ -3,6 +3,8 @@ package com.lumipol.graph
 import com.lumipol.graph.model.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class LineChartEngineTest {
@@ -194,5 +196,76 @@ class LineChartEngineTest {
         assertEquals((177.0 - 50.0) / 150.0, hr[1].y, 1e-9)
         assertEquals((60.0 - 50.0) / 150.0, cad[0].y, 1e-9)
         assertEquals((180.0 - 50.0) / 150.0, cad[1].y, 1e-9)
+    }
+
+    // MARK: Y_OVERLAY 고도 눈금 (0.40.0)
+
+    private val overlayArea = listOf(Point(0.0, 10.0), Point(2.0, 14.0), Point(4.0, 12.0), Point(6.0, 20.0))
+
+    private fun overlayTicks(layout: LineChartLayout) =
+        layout.axisTicks.firstOrNull { it.axis == ChartAxis.Y_OVERLAY }?.ticks
+
+    @Test
+    fun overlay_ticks_emitted_when_secondary_axis_free() {
+        // 페이스(PRIMARY)+고도 — SECONDARY 비어 있음 → min/max 2눈금, position은 밴드 내 fraction
+        val d = LineChartData(series = listOf(Series("pace", listOf(Point(0.0, 5.0), Point(6.0, 6.0)))))
+        val ticks = overlayTicks(LineChartEngine.layout(d, overlayArea))
+        assertNotNull(ticks)
+        assertEquals(listOf(10.0 to 0.0, 20.0 to 1.0), ticks.map { it.value to it.position })
+    }
+
+    @Test
+    fun overlay_ticks_suppressed_when_secondary_occupied() {
+        // 페이스+심박(SECONDARY)+고도 — 양축 점유 → 실루엣만(눈금 미방출)
+        val d = LineChartData(series = listOf(
+            Series("pace", listOf(Point(0.0, 5.0), Point(6.0, 6.0))),
+            Series("hr", listOf(Point(0.0, 120.0), Point(6.0, 160.0)), axis = Axis.SECONDARY),
+        ))
+        assertNull(overlayTicks(LineChartEngine.layout(d, overlayArea)))
+    }
+
+    @Test
+    fun overlay_ticks_emitted_for_area_only_layout() {
+        // 고도 단독 — 시리즈 없음 → 방출(기존 BG01 경로)
+        val ticks = overlayTicks(LineChartEngine.layout(LineChartData(emptyList()), overlayArea))
+        assertNotNull(ticks)
+        assertEquals(listOf(10.0, 20.0), ticks.map { it.value })
+    }
+
+    @Test
+    fun overlay_ticks_absent_without_area() {
+        val d = LineChartData(series = listOf(Series("pace", listOf(Point(0.0, 5.0), Point(6.0, 6.0)))))
+        assertNull(overlayTicks(LineChartEngine.layout(d)))
+        assertNull(overlayTicks(LineChartEngine.layout(d, null)))
+        assertNull(overlayTicks(LineChartEngine.layout(d, listOf(Point(1.0, 5.0))))) // 2점 미만 퇴화
+    }
+
+    @Test
+    fun overlay_ticks_flat_area_emits_single_tick() {
+        // 완전 평지 — min==max → 겹치는 라벨 대신 1눈금
+        val flat = listOf(Point(0.0, 10.0), Point(6.0, 10.0))
+        val ticks = overlayTicks(LineChartEngine.layout(LineChartData(emptyList()), flat))
+        assertNotNull(ticks)
+        assertEquals(listOf(10.0 to 0.0), ticks.map { it.value to it.position })
+    }
+
+    @Test
+    fun overlay_ticks_near_flat_uses_min_span_floor() {
+        // 고저차 0.2m < AREA_MIN_VALUE_SPAN 0.5 → 실루엣과 동일하게 분모 하한 적용, max 위치 0.4
+        val nearFlat = listOf(Point(0.0, 10.0), Point(6.0, 10.2))
+        val ticks = overlayTicks(LineChartEngine.layout(LineChartData(emptyList()), nearFlat))
+        assertNotNull(ticks)
+        assertEquals(2, ticks.size)
+        assertEquals(10.2, ticks[1].value, 1e-9)
+        assertEquals(0.2 / ChartDefaults.AREA_MIN_VALUE_SPAN, ticks[1].position, 1e-9)
+    }
+
+    @Test
+    fun overlay_ticks_in_windowed_layout_match_full_basis() {
+        // 줌 창 layout(4-인자 오버로드) — 실루엣이 전체 정규화를 유지하므로 눈금도 전체 기준
+        val d = LineChartData(series = listOf(Series("pace", listOf(Point(0.0, 5.0), Point(6.0, 6.0)))))
+        val full = overlayTicks(LineChartEngine.layout(d, overlayArea))
+        val windowed = overlayTicks(LineChartEngine.layout(d, 1.0, 3.0, overlayArea))
+        assertEquals(full, windowed)
     }
 }

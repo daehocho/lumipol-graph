@@ -2,7 +2,10 @@ package com.lumipol.graph.model
 
 import com.lumipol.graph.scale.AxisDomain
 
-/** 출력 전용 축 식별(X + 두 Y축 + 오버레이(축 없음, 실값 표시용)). */
+/**
+ * 출력 전용 축 식별(X + 두 Y축 + 오버레이). Y_OVERLAY는 스크럽 포맷 태그이자
+ * 0.40.0부터 고도 실루엣 눈금 채널 — Y_SECONDARY가 빌 때만 방출된다(렌더러는 오른쪽에 배치).
+ */
 enum class ChartAxis { X, Y_PRIMARY, Y_SECONDARY, Y_OVERLAY }
 
 /**
@@ -34,7 +37,9 @@ data class SeriesLayout(
         this(id, role, points, Axis.PRIMARY)
 }
 
-data class AxisTick(val value: Double, val position: Double) // position 0.0~1.0
+// position 0.0~1.0. 단 Y_OVERLAY(고도 눈금)의 position은 실루엣 밴드 내 fraction
+// (0=플롯 바닥, 1=밴드 상단 = areaHeightFraction 높이) — 플롯 전체 0~1이 아니다.
+data class AxisTick(val value: Double, val position: Double)
 data class AxisTicksLayout(val axis: ChartAxis, val ticks: List<AxisTick>)
 
 data class RefBandLayout(val axis: Axis, val lower: Double, val upper: Double)      // 0.0~1.0
