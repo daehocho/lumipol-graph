@@ -50,15 +50,30 @@ object BarChartEngine {
         return unitMeters * DISTANCE_BUCKET_FRACTIONS.last()
     }
 
-    /** 총 러닝 시간(초)으로 시간 버킷 크기(초)를 고른다. iOS bucketMinutes 규칙과 동일. */
+    /** 시간모드 하향 후보(초) — 기존 분 후보로 [MIN_BARS]를 못 채울 때만 쓴다. */
+    private val SHORT_BUCKET_SECOND_CANDIDATES = listOf(30.0, 15.0)
+
+    /**
+     * 총 러닝 시간(초)으로 시간 버킷 크기(초)를 고른다.
+     * 1) 기존 규칙(iOS bucketMinutes 동일) — 막대가 [MAX_BARS] 이하가 되는 최소 분 후보.
+     * 2) 그 결과가 [MIN_BARS] 미만일 때만 30초·15초로 내려간다 — 5분 이상 런의 선택은 불변(0.41.0).
+     */
     fun chooseTimeBucketSeconds(runningSeconds: Double): Double {
         val totalMinutes = runningSeconds / 60.0
+        var chosen = BUCKET_MINUTE_CANDIDATES.last() * 60.0
         for (n in BUCKET_MINUTE_CANDIDATES) {
-            val bars = ceil(totalMinutes / n).toInt()
-            if (bars <= MAX_BARS) return n * 60.0
+            if (ceil(totalMinutes / n).toInt() <= MAX_BARS) { chosen = n * 60.0; break }
         }
-        return BUCKET_MINUTE_CANDIDATES.last() * 60.0
+        if (barCount(runningSeconds, chosen) >= MIN_BARS) return chosen
+        for (c in SHORT_BUCKET_SECOND_CANDIDATES) {
+            if (barCount(runningSeconds, c) >= MIN_BARS) return c
+        }
+        return SHORT_BUCKET_SECOND_CANDIDATES.last()
     }
+
+    private fun barCount(runningSeconds: Double, bucketSeconds: Double): Int =
+        if (!(runningSeconds > 0.0) || runningSeconds.isInfinite()) 0
+        else ceil(runningSeconds / bucketSeconds).toInt()
 
     fun layout(data: BarChartData): BarChartLayout {
         val paceUnit = data.splitDistanceMeters
@@ -185,12 +200,18 @@ object BarChartEngine {
             if (d <= 0.0 || t <= 0.0 || d.isNaN() || t.isNaN() || d.isInfinite() || t.isInfinite()) continue
             accDist += d; accTime += t; elapsed += t; onValid(d, t)
             if (accTime >= bucket) {
-                raw.add(RawBar(accTime / (accDist / paceUnit), isPartial = false, endMinutes = endMin()))
+                raw.add(RawBar(
+                    accTime / (accDist / paceUnit), isPartial = false,
+                    endMinutes = endMin(), endSeconds = elapsed,
+                ))
                 accDist = 0.0; accTime = 0.0
             }
         }
         if (accDist > 0.0 && accTime > 0.0) {
-            raw.add(RawBar(accTime / (accDist / paceUnit), isPartial = true, endMinutes = endMin()))
+            raw.add(RawBar(
+                accTime / (accDist / paceUnit), isPartial = true,
+                endMinutes = endMin(), endSeconds = elapsed,
+            ))
         }
         return raw
     }

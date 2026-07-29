@@ -292,6 +292,24 @@ class BarChartEngineTest {
         assertEquals(600.0, BarChartEngine.chooseTimeBucketSeconds(7200.0), 1e-9)
     }
 
+    @Test
+    fun bucket_selection_drops_below_one_minute_for_very_short_run() {
+        // 3분(180s): 1분→3막대(5개 미만) → 30초(6막대)
+        assertEquals(30.0, BarChartEngine.chooseTimeBucketSeconds(180.0), 1e-9)
+        // 2분(120s): 1분→2, 30초→4 모두 미달 → 15초(8막대)
+        assertEquals(15.0, BarChartEngine.chooseTimeBucketSeconds(120.0), 1e-9)
+        // 1분(60s): 15초로도 4막대 → 하한 유지
+        assertEquals(15.0, BarChartEngine.chooseTimeBucketSeconds(60.0), 1e-9)
+    }
+
+    @Test
+    fun bucket_selection_five_minute_run_unchanged() {
+        // 회귀 가드: 5분은 1분 버킷 5막대 — 30초 후보가 생겨도 기존 선택이 이겨야 한다.
+        assertEquals(60.0, BarChartEngine.chooseTimeBucketSeconds(300.0), 1e-9)
+        // 4분(240s)은 1분→4막대라 하향 대상 → 30초(8막대)
+        assertEquals(30.0, BarChartEngine.chooseTimeBucketSeconds(240.0), 1e-9)
+    }
+
     // MARK: 시간모드 집계
 
     // 5'00"/km(=300s/km) 균일 러닝 N초를 1초 간격 샘플로.
@@ -371,6 +389,24 @@ class BarChartEngineTest {
         // 런 총합 평균 ref = 360/(totalDist/1000) ≈ 291.7. 250<281.7 → FASTER, 350>301.7 → SLOWER.
         assertEquals(BarColorRole.FASTER, bars.first().colorRole)
         assertEquals(BarColorRole.SLOWER, bars.last().colorRole)
+    }
+
+    @Test
+    fun time_mode_end_seconds_are_cumulative_and_unrounded() {
+        // 180s를 30초 버킷으로 → endSeconds = 30,60,90,120,150,180 (분 반올림이면 1,1,2,2,3,3로 뭉갠다)
+        val data = BarChartData(
+            evenTimeSamples(180, 300.0), splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 30.0,
+        )
+        val bars = BarChartEngine.layout(data).bars
+        assertEquals(listOf(30.0, 60.0, 90.0, 120.0, 150.0, 180.0), bars.map { it.endSeconds!! })
+        assertEquals(listOf(1, 1, 2, 2, 3, 3), bars.map { it.endMinutes })
+    }
+
+    @Test
+    fun distance_mode_end_seconds_null() {
+        val data = BarChartData(evenSamples(5, 300.0), splitDistanceMeters = 1000.0)
+        assertTrue(BarChartEngine.layout(data).bars.all { it.endSeconds == null })
     }
 
     @Test
