@@ -69,7 +69,8 @@ private fun trimTrailingZeros(text: String): String =
  * @param data 코어 [LineChartData]. 시리즈 없이 [backgroundArea]만 있으면 area 단독 모드로 폴백한다.
  * @param invertedAxes 화면에서 뒤집을 Y축(예: 페이스 — 위=빠름). 코어 출력은 값-공간 그대로.
  * @param backgroundArea 페이스 라인 뒤 배경 고도 실루엣(장식). 스크럽 시 보간 실값을 [onScrubBackground]로.
- * @param labelFormatter 축 tick 값 → 표시 문자열. 오버레이 시리즈가 있으면 [ChartAxis.Y_OVERLAY]로도 호출.
+ * @param labelFormatter 축 tick 값 → 표시 문자열. 오버레이 시리즈나 고도 눈금(0.40.0)이 있으면
+ *   [ChartAxis.Y_OVERLAY]로도 호출된다 — 축 keyed 맵·강제 언래핑 포매터는 이 케이스를 반드시 처리할 것.
  * @param isZoomEnabled X축 핀치 줌 + 확대 팬 활성화(기본 off).
  * @param maxZoomScale 최대 확대 배율(전체 구간 대비).
  * @param zoomXRange 프로그래매틱 줌 창(원본 X 도메인). iOS `zoom(toXRange:)` 대응 — non-null이고

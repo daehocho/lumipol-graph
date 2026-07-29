@@ -372,6 +372,20 @@ private fun axisLabelsLayer(
                 fontFamily = style.axisLabelFontFamily,
                 fontWeight = style.axisLabelFontWeight,
             )
+            // 고도 실루엣 눈금(0.40.0) — position은 밴드 내 fraction이라 축 매핑(plot.y) 대신
+            // 실루엣(AreaSilhouette.build)과 동일한 바닥 기준 자체 매핑을 쓴다(축 반전 무관).
+            ChartAxis.Y_OVERLAY -> TextLayer(
+                name = "axisLabels.yOverlay.$i",
+                text = text,
+                anchorX = plot.maxX + AXIS_LABEL_GAP * density,
+                anchorY = plot.maxY - tick.position * style.areaHeightFraction * plot.height,
+                hAlign = HAlign.LEFT,
+                vAlign = VAlign.CENTER,
+                color = style.axisLabelColor,
+                fontSizeSp = style.axisLabelFontSize,
+                fontFamily = style.axisLabelFontFamily,
+                fontWeight = style.axisLabelFontWeight,
+            )
             else -> TextLayer( // Y_SECONDARY (및 방어적 기본)
                 name = "axisLabels.ySecondary.$i",
                 text = text,
@@ -392,6 +406,7 @@ private fun axisLabelsLayer(
 private fun axisName(axis: ChartAxis): String = when (axis) {
     ChartAxis.X -> "x"
     ChartAxis.Y_PRIMARY -> "yPrimary"
+    ChartAxis.Y_OVERLAY -> "yOverlay"
     else -> "ySecondary"
 }
 

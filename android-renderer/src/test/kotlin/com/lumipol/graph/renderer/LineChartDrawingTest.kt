@@ -189,6 +189,27 @@ class LineChartDrawingTest {
     }
 
     @Test
+    fun overlayAxisLabelsAnchorToSilhouetteBand() {
+        // Y_OVERLAY 눈금(0.40.0): 오른쪽 배치, y = 바닥 − position × areaHeightFraction × 플롯높이.
+        // 축 반전과 무관(실루엣과 동일한 자체 매핑).
+        val overlayLayout = layout.copy(
+            axisTicks = layout.axisTicks + AxisTicksLayout(
+                ChartAxis.Y_OVERLAY,
+                listOf(AxisTick(10.0, 0.0), AxisTick(20.0, 1.0)),
+            ),
+        )
+        val inverted = PlotArea(100.0, 100.0, Insets(0f, 0f, 0f, 0f), invertedAxes = setOf(Axis.PRIMARY))
+        val labels = (build(layout = overlayLayout, plot = inverted).named("axisLabels.yOverlay") as ContainerLayer)
+            .children.filterIsInstance<TextLayer>()
+        assertEquals(2, labels.size)
+        // 오른쪽 바깥(maxX + AXIS_LABEL_GAP), 왼쪽 정렬
+        assertTrue(labels.all { it.anchorX > 100.0 && it.hAlign == HAlign.LEFT })
+        // position 0 → 플롯 바닥(100), position 1 → 바닥 − areaHeightFraction × 100
+        assertEquals(100.0, labels[0].anchorY, 1e-9)
+        assertEquals(100.0 - style.areaHeightFraction * 100.0, labels[1].anchorY, 1e-9)
+    }
+
+    @Test
     fun invertedAxisKeepsBandFrame() {
         val inverted = PlotArea(100.0, 100.0, Insets(0f, 0f, 0f, 0f), invertedAxes = setOf(Axis.PRIMARY))
         val band = build(plot = inverted).named("band.0") as RectLayer

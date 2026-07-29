@@ -72,7 +72,8 @@ internal class LineChartInteraction(
     fun layoutForCurrentWindow(): LineChartLayout {
         val z = zoom
         if (z != null && z.isZoomed) {
-            if (z.windowMax > z.windowMin) return LineChartEngine.layout(data, z.windowMin, z.windowMax)
+            // area를 함께 넘겨야 확대 상태에서도 고도 눈금(Y_OVERLAY)이 유지된다(0.40.0).
+            if (z.windowMax > z.windowMin) return LineChartEngine.layout(data, z.windowMin, z.windowMax, sortedArea)
         }
         return makeFullLayout()
     }
