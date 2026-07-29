@@ -25,6 +25,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lumipol.graph.BarChartEngine
+import com.lumipol.graph.ChartFormat
 import com.lumipol.graph.model.Axis
 import com.lumipol.graph.model.BarChartData
 import com.lumipol.graph.model.ChartAxis
@@ -126,7 +127,13 @@ private fun BarScreen() {
         RDBarChart(
             layout = layout,
             modifier = Modifier.fillMaxWidth().height(280.dp).padding(top = 12.dp),
-            xAxisLabels = List(layout.bars.size) { "${it + 1}km" },
+            // 막대 끝 누적 거리로 라벨(0.41.0) — 짧은 런은 코어가 버킷을 100m까지 줄이므로
+            // 인덱스를 km로 읽으면 0.64km 런이 7km처럼 보인다.
+            xAxisLabels = layout.bars.map { bar ->
+                bar.endDistanceMeters
+                    ?.let { "${ChartFormat.distanceTick(it / SampleData.barData.splitDistanceMeters)}km" }
+                    ?: "${bar.index + 1}"
+            },
             yLabelFormatter = { secondsPerKm -> SampleData.paceLabel(secondsPerKm / 60.0) },
         )
     }
