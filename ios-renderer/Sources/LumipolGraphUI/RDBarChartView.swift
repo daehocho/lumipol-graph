@@ -22,6 +22,7 @@ public final class RDBarChartView: UIView {
     private var layout: BarChartLayout?
     private var barLabels: [String]?
     private var xAxisLabels: [String]?
+    private var xAxisUnitLabel: String?
     private var yLabelFormatter: ((Double) -> String)?
     private let contentLayer = CALayer()
 
@@ -43,17 +44,22 @@ public final class RDBarChartView: UIView {
         addGestureRecognizer(longPress)
     }
 
+    /// - Parameter xAxisUnitLabel: 그래프 오른쪽 하단 단위 라벨(km/mi 등). 기존 x축 라벨 줄은
+    ///   밀리지 않고 플롯 오른쪽 끝(오른쪽 인셋 영역)에 덧붙는다. nil/빈 문자열이면 생략,
+    ///   `barShowXAxisLabels`가 false면 함께 숨긴다.
     public func render(
         _ layout: BarChartLayout,
         style: ChartStyle = .default,
         barLabels: [String]? = nil,
         xAxisLabels: [String]? = nil,
-        yLabelFormatter: ((Double) -> String)? = nil
+        yLabelFormatter: ((Double) -> String)? = nil,
+        xAxisUnitLabel: String? = nil
     ) {
         self.layout = layout
         self.style = style
         self.barLabels = barLabels
         self.xAxisLabels = xAxisLabels
+        self.xAxisUnitLabel = xAxisUnitLabel
         self.yLabelFormatter = yLabelFormatter
         selectedIndex = nil
         selectionLayers = []
@@ -171,6 +177,15 @@ public final class RDBarChartView: UIView {
                 let baseline = plot.maxY + CGFloat(ChartDefaults.shared.BAR_X_LABEL_GAP)  // 막대 바닥 축선 아래 여백
                 addLabel(text: xLabels[i], at: CGPoint(x: rect.midX, y: baseline), align: .topCenter)
             }
+        }
+
+        // 그래프 오른쪽 하단 단위 라벨(km/mi 등, 0.43.0) — x축 라벨과 같은 급으로 플롯 오른쪽
+        // 끝(오른쪽 인셋 영역)에 덧붙는다. x축 라벨 숨김이면 함께 숨긴다.
+        if style.barShowXAxisLabels, let unit = xAxisUnitLabel, !unit.isEmpty {
+            let baseline = plot.maxY + CGFloat(ChartDefaults.shared.BAR_X_LABEL_GAP)
+            addLabel(text: unit,
+                     at: CGPoint(x: plot.maxX + CGFloat(ChartDefaults.shared.BAR_LABEL_GAP), y: baseline),
+                     align: .topLeft)
         }
 
         // 참조선(목표/평균)
@@ -301,7 +316,7 @@ public final class RDBarChartView: UIView {
         String(Int(value.rounded()))  // 앱이 barLabels/롱프레스 말풍선으로 표시 페이스를 다루므로 y틱은 원값(초)만
     }
 
-    private enum LabelAlign { case left, center, right, topCenter }
+    private enum LabelAlign { case left, center, right, topCenter, topLeft }
     private func addLabel(text: String, at point: CGPoint, align: LabelAlign) {
         let tl = ChartLayerBuilder.textLayer(text, font: style.axisLabelFont, color: style.axisLabelColor)
         let size = tl.frame.size
@@ -311,6 +326,7 @@ public final class RDBarChartView: UIView {
         case .center: origin.x -= size.width / 2; origin.y -= size.height
         case .right: origin.x -= size.width; origin.y -= size.height / 2
         case .topCenter: origin.x -= size.width / 2
+        case .topLeft: break
         }
         tl.frame = CGRect(origin: origin, size: size)
         contentLayer.addSublayer(tl)

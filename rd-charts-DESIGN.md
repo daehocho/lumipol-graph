@@ -809,6 +809,29 @@ AOS `animateEntrance = true`를 명시(각 1줄, 트랙 C 앱 커밋에 포함).
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### 시간모드 마지막 부분 버킷 라벨 — 실제 끝 시각 + x축 단위 라벨 (0.43.0, 2026-07-29)
+
+1분 버킷 런에서 마지막 두 막대가 `9:00, 9:00`으로 중복됐다. `endMinutes`가
+반올림(`round(경과초/60)`)이라 잔여가 30초 미만이면 직전 온전 막대와 같은 분으로
+뭉개진다. 거리모드의 총거리 스냅(0.42.0)과 대칭으로, 시간모드도 마지막 부분 버킷은
+실제 끝 시각을 보여준다. 거리모드 x축 숫자(0.2 …)에 단위가 없던 것도 함께 해소.
+
+- **feat: `ChartFormat.splitEndTime(seconds)` 신설** — 무패딩 분 `m:ss`(1시간 이상
+  `h:mm:ss`). 온전 막대의 `timeTick`(`9:00`)과 표기가 정합한다(`duration`은 `09:21`로 갈림).
+  무효(≤0·NaN·Inf)는 `0:00`. 엔진 출력은 무변경 — `endSeconds`가 이미 정확한 끝 초다.
+- **feat: 렌더러 x축 단위 라벨** — iOS `RDBarChartView.render(xAxisUnitLabel:)`,
+  AOS `RDBarChart(xAxisUnitLabel =)`. 기존 x축 라벨 줄은 밀리지 않고 플롯 오른쪽
+  끝(오른쪽 인셋 영역, `BAR_LABEL_GAP` 간격)에 x축 라벨과 같은 급으로 덧붙는다.
+  nil/빈 문자열이면 생략, `barShowXAxisLabels=false`면 함께 숨긴다.
+
+**마이그레이션(앱)**:
+1. 시간모드 분 단위 버킷에서 `isPartial` 막대만 `ChartFormat.timeTick(endMinutes)` 대신
+   `ChartFormat.splitEndTime(endSeconds)`로 — `1:00 … 9:00 9:21`. sub-minute 버킷
+   (`duration`)은 그대로다.
+2. 거리모드에서 `xAxisUnitLabel`에 거리 단위 문자열(km/mi)을 넘긴다. 시간모드는 nil.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은

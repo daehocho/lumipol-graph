@@ -254,6 +254,41 @@ final class BarChartViewTests: XCTestCase {
         XCTAssertFalse(view.allTextLayerStrings.contains("1"))
     }
 
+    // 그래프 오른쪽 하단 단위 라벨(0.43.0) — x축 라벨 줄은 밀리지 않고 플롯 오른쪽 끝에 덧붙는다.
+    func testXAxisUnitLabelDrawnAtPlotRightEdge() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+        view.render(sampleLayout(barCount: 5), style: .default, barLabels: nil,
+                    xAxisLabels: ["0.2", "0.4", "0.6", "0.8", "0.89"], yLabelFormatter: nil,
+                    xAxisUnitLabel: "km")
+        view.layoutIfNeeded()
+        let unitLayers = (view.layer.sublayers ?? [])
+            .flatMap { $0.sublayers ?? [] }
+            .compactMap { $0 as? CATextLayer }
+            .filter { ($0.string as? String) == "km" }
+        XCTAssertEqual(unitLayers.count, 1)
+        let plotMaxX = view.bounds.width - ChartStyle.default.plotInsets.right
+        XCTAssertGreaterThanOrEqual(unitLayers[0].frame.minX, plotMaxX, "플롯 오른쪽 끝 바깥(오른쪽 인셋 영역)")
+        // 기존 x축 라벨은 전부 유지.
+        for label in ["0.2", "0.4", "0.6", "0.8", "0.89"] {
+            XCTAssertTrue(view.allTextLayerStrings.contains(label))
+        }
+    }
+
+    func testXAxisUnitLabelOmittedWhenNilOrLabelsHidden() {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+        view.render(sampleLayout(barCount: 3), style: .default, barLabels: nil,
+                    xAxisLabels: ["1", "2", "3"], yLabelFormatter: nil)
+        view.layoutIfNeeded()
+        XCTAssertFalse(view.allTextLayerStrings.contains("km"))
+
+        var style = ChartStyle.default
+        style.barShowXAxisLabels = false
+        view.render(sampleLayout(barCount: 3), style: style, barLabels: nil,
+                    xAxisLabels: ["1", "2", "3"], yLabelFormatter: nil, xAxisUnitLabel: "km")
+        view.layoutIfNeeded()
+        XCTAssertFalse(view.allTextLayerStrings.contains("km"))
+    }
+
     func testDimsUnselectedBars() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
         view.render(sampleLayout(barCount: 4))   // barLabels 없이도 dim은 동작

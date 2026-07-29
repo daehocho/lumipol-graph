@@ -49,6 +49,8 @@ import kotlin.math.roundToInt
  * @param barLabels 막대 값 라벨(표시 페이스 등). 정적 표시는 하지 않고 TalkBack 요약·롱프레스 말풍선
  *   값 소스로만 쓰인다. null이면 값 없음.
  * @param xAxisLabels 막대 아래 구간 라벨. null이면 생략.
+ * @param xAxisUnitLabel 그래프 오른쪽 하단 단위 라벨(km/mi 등). 기존 x축 라벨 줄은 밀리지 않고
+ *   플롯 오른쪽 끝에 덧붙는다. null/빈 문자열이면 생략, x축 라벨 숨김이면 함께 숨김.
  * @param yLabelFormatter y틱 값 포매터. null이면 정수 반올림.
  * @param animateEntrance baseline→값 높이 성장 애니. iOS는 정적이라 기본 off(UX 패리티).
  * @param onSelectedIndexChange 롱프레스 스크럽 선택 인덱스 변경 통지(해제 시 null). null이면 미통지.
@@ -62,6 +64,7 @@ fun RDBarChart(
     style: ChartStyle = ChartStyle.defaults(isSystemInDarkTheme()),
     barLabels: List<String>? = null,
     xAxisLabels: List<String>? = null,
+    xAxisUnitLabel: String? = null,
     yLabelFormatter: ((Double) -> String)? = null,
     animateEntrance: Boolean = false,
     onSelectedIndexChange: ((Int?) -> Unit)? = null,
@@ -143,6 +146,7 @@ fun RDBarChart(
             growth = growth,
             density = density,
             xLabelWidthPx = xLabelWidthPx,
+            xAxisUnitLabel = xAxisUnitLabel,
         )
         // layout 교체 직후 selectedIndex가 새(더 짧은) layout 범위를 벗어난 1프레임을 방지(리뷰 #1).
         val sel = selectedIndex?.takeIf { it < layout.bars.size }
@@ -192,6 +196,7 @@ internal fun buildBarChartLayers(
     growth: Float = 1f,
     density: Float = 1f,
     xLabelWidthPx: Double = 0.0,
+    xAxisUnitLabel: String? = null,
 ): List<LineChartLayer> {
     if (layout.bars.isEmpty()) return emptyList()
     val plot = PlotArea(sizeWidth, sizeHeight, style.plotInsets)
@@ -295,6 +300,25 @@ internal fun buildBarChartLayers(
                 )
             }
         }
+    }
+
+    // 그래프 오른쪽 하단 단위 라벨(km/mi 등, 0.43.0) — x축 라벨 줄은 그대로 두고 플롯 오른쪽
+    // 끝(오른쪽 인셋 영역)에 x축 라벨과 같은 급으로 덧붙는다. 라벨 숨김이면 함께 숨긴다.
+    if (style.barShowXAxisLabels && !xAxisUnitLabel.isNullOrEmpty()) {
+        layers.add(
+            TextLayer(
+                name = "barXUnit",
+                text = xAxisUnitLabel,
+                anchorX = plot.maxX + BAR_LABEL_GAP * density,
+                anchorY = plot.maxY + BAR_X_LABEL_GAP * density,
+                hAlign = HAlign.LEFT,
+                vAlign = VAlign.BELOW,
+                color = style.axisLabelColor,
+                fontSizeSp = style.axisLabelFontSize,
+                fontFamily = style.axisLabelFontFamily,
+                fontWeight = style.axisLabelFontWeight,
+            ),
+        )
     }
 
     // 참조선(목표/평균)

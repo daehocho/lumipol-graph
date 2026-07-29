@@ -76,6 +76,20 @@ object ChartFormat {
         return if (negative) "-$body" else body
     }
 
+    /**
+     * 스플릿 막대 끝 누적 시간(초) → 무패딩 분 `m:ss`(1시간 이상은 `h:mm:ss`).
+     * 시간모드 마지막 부분 버킷용 — `endMinutes` 반올림이면 잔여 30초 미만이 직전 온전
+     * 막대와 같은 라벨(9:00, 9:00)로 뭉개진다. 온전 막대의 [timeTick](`9:00`)과 표기 정합.
+     */
+    fun splitEndTime(seconds: Double): String {
+        if (seconds <= 0.0 || seconds.isNaN() || seconds.isInfinite()) return "0:00"
+        val total = seconds.toInt()
+        val hour = total / 3600
+        val min = (total - hour * 3600) / 60
+        val sec = total % 60
+        return if (hour > 0) "$hour:${pad2(min)}:${pad2(sec)}" else "$min:${pad2(sec)}"
+    }
+
     /** 시간 축 tick(분) → `N:00`. 0.1 이하는 빈 문자열(원점 라벨 생략 — 양 앱 동일). */
     fun timeTick(minutes: Double): String =
         if (minutes.isNaN() || minutes.isInfinite() || minutes <= 0.1) "" else "${minutes.toInt()}:00"

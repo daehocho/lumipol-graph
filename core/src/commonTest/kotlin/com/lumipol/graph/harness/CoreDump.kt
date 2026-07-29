@@ -290,6 +290,9 @@ object CoreDump {
                 listOf(0.83844, 0.89, 1.0, 42.195).forEach {
                     add("splitEndDistance_${jnum(it)}" to jstr(ChartFormat.splitEndDistance(it)))
                 }
+                listOf(561.0, 540.0, 29.9, 3665.0, 0.0).forEach {
+                    add("splitEndTime_${jnum(it)}" to jstr(ChartFormat.splitEndTime(it)))
+                }
                 listOf(0.1, 15.0).forEach { add("timeTick_${jnum(it)}" to jstr(ChartFormat.timeTick(it))) }
                 add("intTick_178.6" to jstr(ChartFormat.intTick(178.6)))
             }),

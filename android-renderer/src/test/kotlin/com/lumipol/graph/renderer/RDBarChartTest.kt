@@ -88,6 +88,39 @@ class RDBarChartTest {
         assertEquals(4, bars(build(sampleLayout(4))).size)
     }
 
+    // 그래프 오른쪽 하단 단위 라벨(0.43.0) — x축 라벨 줄은 그대로 두고 플롯 오른쪽 끝에 덧붙는다.
+    @Test
+    fun emitsXAxisUnitLabelAtPlotRightEdge() {
+        val layers = buildBarChartLayers(
+            sampleLayout(5), style, width, height,
+            xAxisLabels = List(5) { "0.${(it + 1) * 2}" }, yLabelFormatter = null,
+            xAxisUnitLabel = "km",
+        )
+        val unit = layers.filterIsInstance<TextLayer>().single { it.name == "barXUnit" }
+        assertEquals("km", unit.text)
+        val plot = PlotArea(width, height, style.plotInsets)
+        assertTrue(unit.anchorX >= plot.maxX, "플롯 오른쪽 끝(${plot.maxX}) 바깥, 실제 ${unit.anchorX}")
+        assertEquals(HAlign.LEFT, unit.hAlign)
+        assertEquals(VAlign.BELOW, unit.vAlign)
+        // 기존 x축 라벨은 전부 유지(밀리지 않음).
+        assertEquals(5, named(layers, "barXLabel.").size)
+    }
+
+    @Test
+    fun omitsXAxisUnitLabelWhenNullOrLabelsHidden() {
+        val noUnit = buildBarChartLayers(
+            sampleLayout(5), style, width, height,
+            xAxisLabels = List(5) { "$it" }, yLabelFormatter = null,
+        )
+        assertTrue(noUnit.filterIsInstance<TextLayer>().none { it.name == "barXUnit" })
+        val hidden = buildBarChartLayers(
+            sampleLayout(5), style.copy(barShowXAxisLabels = false), width, height,
+            xAxisLabels = List(5) { "$it" }, yLabelFormatter = null,
+            xAxisUnitLabel = "km",
+        )
+        assertTrue(hidden.filterIsInstance<TextLayer>().none { it.name == "barXUnit" })
+    }
+
     @Test
     fun axisLabelFontFamilyAndWeightPropagateToBarLabels() {
         // QA Minor-6: 바 차트 라벨(y축·막대 위·x축)도 ChartStyle 주입 폰트를 실어야 한다(iOS

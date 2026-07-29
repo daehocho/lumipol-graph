@@ -64,6 +64,18 @@ class ChartFormatTest {
     }
 
     @Test
+    fun split_end_time_uses_unpadded_minutes() {
+        // 시간모드 마지막 부분 버킷의 실제 끝 시각 — timeTick(9:00)과 같은 무패딩 분 표기.
+        // duration(MM:SS 패딩)이면 09:21이 되어 옆 온전 막대(9:00)와 표기가 갈린다.
+        assertEquals("9:21", ChartFormat.splitEndTime(561.0))
+        assertEquals("9:00", ChartFormat.splitEndTime(540.0))
+        assertEquals("0:29", ChartFormat.splitEndTime(29.9))
+        assertEquals("1:01:05", ChartFormat.splitEndTime(3665.0))
+        assertEquals("0:00", ChartFormat.splitEndTime(0.0))
+        assertEquals("0:00", ChartFormat.splitEndTime(Double.NaN))
+    }
+
+    @Test
     fun time_and_int_ticks() {
         assertEquals("", ChartFormat.timeTick(0.05))
         assertEquals("", ChartFormat.timeTick(0.1))
