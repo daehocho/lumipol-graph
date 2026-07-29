@@ -111,8 +111,13 @@ object ChartFormat {
     /**
      * [timeTick]의 축 단위 컨텍스트판 — 라인차트 시간모드 x축용. [crossesHour]면 전 눈금을
      * [timeTickHour]로 통일하고(0.47.0 규칙), 원점 생략(0.1분 이하 빈 문자열)은 유지한다.
-     * 트리거는 **총 운동 시간 > 3600초**(스플릿 차트 스냅과 같은 원천) — 눈금 값이 아니라
-     * 축 단위로 판정해야 한 축에 두 표기가 섞이지 않는다. 입력은 분.
+     * 트리거는 **총 운동 시간 > 3600초** — 눈금 값이 아니라 축 단위로 판정해야 한 축에 두
+     * 표기가 섞이지 않는다. 입력은 분.
+     *
+     * 같은 화면의 스플릿 카드와 표기를 맞추려면 **같은 값**을 [splitXAxisLabels]의
+     * `crossesHour`에도 넘겨야 한다 — 스플릿 쪽 축 끝(`endSeconds`)은 유효 델타 합이라
+     * 총 운동 시간과 다를 수 있고(부분 버킷이 없으면 총 시간 스냅이 걸리지 않는다),
+     * 각자 판정하면 한 화면에서 `1:00:00`과 `60:00`이 동시에 찍힌다(0.49.0).
      */
     fun timeTick(minutes: Double, crossesHour: Boolean): String = when {
         !crossesHour -> timeTick(minutes)
@@ -130,17 +135,38 @@ object ChartFormat {
      * 2. sub-minute 버킷(첫 endSeconds < 60)은 [duration] — endMinutes가 1,1,2,2로 뭉개진다.
      * 3. 부분 버킷은 [splitEndTime](`9:21`), 온전 버킷은 [timeTick]의 endMinutes(`9:00`).
      * 거리모드는 [splitEndDistance]\(endDistanceMeters/unitMeters).
+     *
+     * 축 끝만으로 판정하는 이 오버로드는 같은 화면 라인차트와 갈릴 수 있다 — 트리거를 쥔
+     * 호출자는 3인자판을 쓴다(0.49.0).
      */
-    fun splitXAxisLabels(layout: BarChartLayout, unitMeters: Double): List<String> {
+    fun splitXAxisLabels(layout: BarChartLayout, unitMeters: Double): List<String> =
+        splitXAxisLabels(layout, unitMeters, crossesHour = false)
+
+    /**
+     * [splitXAxisLabels]의 트리거 주입판 — 축 밖 원천(총 운동 시간)으로 1시간 초과를 아는
+     * 호출자용(0.49.0). 라인차트 [timeTick]에 넘기는 `crossesHour`를 **그대로** 넘기면 한 화면의
+     * 두 카드가 같은 표기 체계를 쓴다.
+     *
+     * 판정은 `crossesHour || 마지막 endSeconds > 3600`(OR)이다 — 주입 트리거가 false여도 축 끝이
+     * 1시간을 넘으면 h:mm:ss로 통일한다. 축 끝 판정을 살려 두는 이유: 그 경우 부분 버킷
+     * [splitEndTime]이 `1:01:05`(시), 온전 버킷 [timeTick]이 `61:00`(분)을 내 **한 축 안에서**
+     * 두 표기가 섞인다(0.47.0이 없앤 문제). 즉 2인자판은 이 함수의 `crossesHour = false`와 같다.
+     *
+     * 트리거 원천 계약: 총 운동 시간(`BarChartData.totalDurationSeconds`와 같은 값) > 3600초.
+     * 막대의 `endSeconds`는 **유효 델타 합**이라 일시정지 기록에서 총 시간보다 작고, 총 시간
+     * 스냅([BarChartEngine] 시간 집계)은 마지막 **부분** 버킷에만 걸리므로 잔여 0으로 딱 나누어
+     * 떨어지는 분할에서는 축 끝이 총 시간에 못 미친다.
+     */
+    fun splitXAxisLabels(layout: BarChartLayout, unitMeters: Double, crossesHour: Boolean): List<String> {
         require(unitMeters > 0) { "unitMeters must be > 0" }
         val bars = layout.bars
         val subMinuteBucket = (bars.firstOrNull()?.endSeconds ?: 60.0) < 60.0
-        val crossesHour = (bars.lastOrNull()?.endSeconds ?: 0.0) > 3600.0
+        val hourAxis = crossesHour || (bars.lastOrNull()?.endSeconds ?: 0.0) > 3600.0
         return bars.map { bar ->
             val seconds = bar.endSeconds
             when {
                 seconds != null -> when {
-                    crossesHour -> timeTickHour(seconds)
+                    hourAxis -> timeTickHour(seconds)
                     subMinuteBucket -> duration(seconds)
                     bar.isPartial -> splitEndTime(seconds)
                     else -> timeTick((bar.endMinutes ?: (bar.index + 1)).toDouble())

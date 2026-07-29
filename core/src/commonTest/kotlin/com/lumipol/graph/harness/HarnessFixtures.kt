@@ -175,6 +175,26 @@ object HarnessFixtures {
             totalDurationSeconds = 833.0,
             totalDistanceMeters = 890.0,
         ),
+        // 1시간 초과 시간모드(총 3700s, 버킷 600s → 온전 6 + 부분 1) — 0.47.0/0.48.0의 핵심 분기
+        // (전 라벨 h:mm:ss 통일)를 플랫폼 등가성 하네스로 고정한다. 종전 최장 픽스처는 833s였다.
+        "B14_time_mode_over_hour" to BarChartData(
+            bars(3700 to SplitSample(1000.0 / 300.0, 1.0)),
+            splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 600.0,
+            totalDurationSeconds = 3700.0,
+            totalDistanceMeters = 12333.333333333334,
+        ),
+        // 유효 합(3600s)이 버킷으로 딱 나누어떨어져 **부분 버킷이 없고**, 총 시간(3700s)은 1시간을
+        // 넘는 런 — 총 시간 스냅이 부분 버킷 분기에만 있어 축 끝은 3600에서 멈춘다. 축 끝만 보는
+        // 2인자 splitXAxisLabels와 총 시간을 보는 3인자판(=라인차트 트리거)이 갈리는 지점으로,
+        // 두 섹션이 이 케이스에서 서로 다른 표기를 고정한다(0.49.0).
+        "B15_time_mode_exact_hour_no_partial" to BarChartData(
+            bars(3600 to SplitSample(1000.0 / 300.0, 1.0)),
+            splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 600.0,
+            totalDurationSeconds = 3700.0,
+            totalDistanceMeters = 12000.0,
+        ),
     )
 
     /** chooseTimeBucketSeconds 입력(초) — 버킷 후보 경계 전후 + 하향(30/15초) 경계. */

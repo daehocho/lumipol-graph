@@ -316,6 +316,7 @@ __attribute__((swift_name("ChartFormat")))
 - (NSString *)splitEndDistanceValue:(double)value __attribute__((swift_name("splitEndDistance(value:)")));
 - (NSString *)splitEndTimeSeconds:(double)seconds __attribute__((swift_name("splitEndTime(seconds:)")));
 - (NSArray<NSString *> *)splitXAxisLabelsLayout:(LumipolGraphBarChartLayout *)layout unitMeters:(double)unitMeters __attribute__((swift_name("splitXAxisLabels(layout:unitMeters:)")));
+- (NSArray<NSString *> *)splitXAxisLabelsLayout:(LumipolGraphBarChartLayout *)layout unitMeters:(double)unitMeters crossesHour:(BOOL)crossesHour __attribute__((swift_name("splitXAxisLabels(layout:unitMeters:crossesHour:)")));
 - (NSString *)timeTickMinutes:(double)minutes __attribute__((swift_name("timeTick(minutes:)")));
 - (NSString *)timeTickMinutes:(double)minutes crossesHour:(BOOL)crossesHour __attribute__((swift_name("timeTick(minutes:crossesHour:)")));
 - (NSString *)timeTickHourSeconds:(double)seconds __attribute__((swift_name("timeTickHour(seconds:)")));
@@ -389,8 +390,10 @@ __attribute__((swift_name("LineChartEngine")))
 @property (class, readonly, getter=shared) LumipolGraphLineChartEngine *shared __attribute__((swift_name("shared")));
 - (LumipolGraphDouble * _Nullable)interpolatedYPoints:(NSArray<LumipolGraphPoint *> *)points x:(double)x __attribute__((swift_name("interpolatedY(points:x:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data __attribute__((swift_name("layout(data:)")));
+- (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data backgroundArea:(NSArray<LumipolGraphPoint *> * _Nullable)backgroundArea __attribute__((swift_name("layout(data:backgroundArea:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("layout(data:xMin:xMax:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data backgroundArea:(NSArray<LumipolGraphPoint *> * _Nullable)backgroundArea areaMinValueSpan:(double)areaMinValueSpan __attribute__((swift_name("layout(data:backgroundArea:areaMinValueSpan:)")));
+- (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data xMin:(double)xMin xMax:(double)xMax backgroundArea:(NSArray<LumipolGraphPoint *> * _Nullable)backgroundArea __attribute__((swift_name("layout(data:xMin:xMax:backgroundArea:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data xMin:(double)xMin xMax:(double)xMax backgroundArea:(NSArray<LumipolGraphPoint *> * _Nullable)backgroundArea areaMinValueSpan:(double)areaMinValueSpan __attribute__((swift_name("layout(data:xMin:xMax:backgroundArea:areaMinValueSpan:)")));
 - (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x __attribute__((swift_name("nearest(data:x:)"))) __attribute__((deprecated("스냅 소스 선택·창 필터·정규화 좌표를 렌더러가 재구성해야 한다 — 코어가 확정하는 nearestScrub로 대체(B2)")));
 - (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("nearest(data:x:xMin:xMax:)"))) __attribute__((deprecated("스냅 소스 선택·창 필터·정규화 좌표를 렌더러가 재구성해야 한다 — 코어가 확정하는 nearestScrub로 대체(B2)")));
@@ -1191,6 +1194,7 @@ __attribute__((swift_name("LabelThinningKt")))
 @interface LumipolGraphLabelThinningKt : LumipolGraphBase
 + (BOOL)isLabelVisibleIndex:(int32_t)index count:(int32_t)count stride:(int32_t)stride __attribute__((swift_name("isLabelVisible(index:count:stride:)")));
 + (int32_t)labelStrideCount:(int32_t)count plotWidthPx:(double)plotWidthPx labelWidthPx:(double)labelWidthPx gapPx:(double)gapPx __attribute__((swift_name("labelStride(count:plotWidthPx:labelWidthPx:gapPx:)")));
++ (int32_t)labelStrideCount:(int32_t)count plotWidthPx:(double)plotWidthPx labelWidthPx:(double)labelWidthPx gapPx:(double)gapPx lastLabelWidthPx:(double)lastLabelWidthPx __attribute__((swift_name("labelStride(count:plotWidthPx:labelWidthPx:gapPx:lastLabelWidthPx:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))

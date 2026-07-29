@@ -136,6 +136,41 @@ class RDBarChartTest {
         assertEquals(HAlign.CENTER, lastNarrow.hAlign)
     }
 
+    // 클램프 이동량을 stride에 반영(0.49.0) — 종전엔 중앙 정렬 전제로만 간격을 잡아, 클램프로
+    // 왼쪽으로 민 마지막 라벨이 직전 표시 라벨을 파고들었다(리뷰 실측 n=9에서 1.6px).
+    @Test
+    fun clampedLastXAxisLabelDoesNotOverlapPreviousLabel() {
+        val n = 9
+        val labelW = 44.0
+        val plot = PlotArea(width, height, style.plotInsets)
+        val layers = buildBarChartLayers(
+            sampleLayout(n), style, width, height,
+            xAxisLabels = List(n) { "1:0$it:05" }, yLabelFormatter = null,
+            xLabelWidthPx = labelW, lastXLabelWidthPx = labelW,
+            xAxisUnitLabel = "km",
+        )
+        val shown = named(layers, "barXLabel.")
+        val last = shown.single { it.name == "barXLabel.${n - 1}" }
+        assertEquals(HAlign.RIGHT, last.hAlign) // 슬롯(≈29px)보다 넓어 클램프됨
+        val prev = shown.filter { it.name != last.name }.maxByOrNull { it.anchorX }!!
+        val minGap = com.lumipol.graph.ChartDefaults.BAR_LABEL_MIN_GAP
+        val gap = (last.anchorX - labelW) - (prev.anchorX + labelW / 2)
+        assertTrue(gap >= minGap - 1e-9, "클램프된 마지막 라벨과 ${prev.name} 간격 $gap < ${minGap}px")
+        // 슬롯보다 좁은 마지막 라벨은 클램프가 없으므로 stride도 종전과 같아야 한다(불필요한 솎기 금지).
+        val narrow = buildBarChartLayers(
+            sampleLayout(n), style, width, height,
+            xAxisLabels = List(n) { "$it" }, yLabelFormatter = null,
+            xLabelWidthPx = labelW, lastXLabelWidthPx = 10.0,
+        )
+        val baseline = buildBarChartLayers(
+            sampleLayout(n), style, width, height,
+            xAxisLabels = List(n) { "$it" }, yLabelFormatter = null,
+            xLabelWidthPx = labelW,
+        )
+        assertEquals(named(baseline, "barXLabel.").size, named(narrow, "barXLabel.").size)
+        assertTrue(named(narrow, "barXLabel.").size > shown.size, "클램프 케이스가 더 솎여야 한다")
+    }
+
     @Test
     fun omitsXAxisUnitLabelWhenNullOrLabelsHidden() {
         val noUnit = buildBarChartLayers(

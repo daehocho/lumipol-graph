@@ -107,6 +107,50 @@ class ChartFormatTest {
     }
 
     @Test
+    fun split_x_axis_labels_hour_gate_is_strict_at_exactly_3600() {
+        // 게이트는 엄격 초과(> 3600) — 정확히 1시간에 끝난 런은 분 표기를 유지한다. `>=`로 바뀌면
+        // 전 라벨이 60:00 → 1:00:00으로 뒤집히는데 종전 테스트(마지막 3665)는 그걸 못 잡았다.
+        val exact = barLayoutOf(timeBar(0, 1800.0, 30), timeBar(1, 3600.0, 60))
+        assertEquals(listOf("30:00", "60:00"), ChartFormat.splitXAxisLabels(exact, 1000.0))
+        // 1초만 넘으면 전 라벨 h:mm:ss.
+        val over = barLayoutOf(timeBar(0, 1800.0, 30), timeBar(1, 3601.0, 60))
+        assertEquals(listOf("0:30:00", "1:00:01"), ChartFormat.splitXAxisLabels(over, 1000.0))
+    }
+
+    @Test
+    fun split_x_axis_labels_accepts_injected_crosses_hour_trigger() {
+        // 0.49.0: 축 끝(유효 델타 합)이 1시간 이하라도 총 운동 시간이 넘으면 h:mm:ss로 통일한다 —
+        // 부분 버킷이 없는 분할에서는 총 시간 스냅이 걸리지 않아 축 끝만으로는 판정할 수 없고,
+        // 같은 화면 라인차트(timeTick(minutes, crossesHour))와 표기가 갈렸다.
+        val noPartial = barLayoutOf(timeBar(0, 600.0, 10), timeBar(1, 3600.0, 60))
+        assertEquals(
+            listOf("10:00", "60:00"),
+            ChartFormat.splitXAxisLabels(noPartial, 1000.0, crossesHour = false),
+        )
+        assertEquals(
+            listOf("0:10:00", "1:00:00"),
+            ChartFormat.splitXAxisLabels(noPartial, 1000.0, crossesHour = true),
+        )
+        // 2인자판은 crossesHour=false와 동일(기존 호출부 무회귀).
+        assertEquals(
+            ChartFormat.splitXAxisLabels(noPartial, 1000.0),
+            ChartFormat.splitXAxisLabels(noPartial, 1000.0, crossesHour = false),
+        )
+        // OR 규칙: 주입이 false여도 축 끝이 넘으면 통일한다 — 안 그러면 부분 버킷
+        // splitEndTime(1:01:05, 시)과 온전 timeTick(61:00, 분)이 한 축에 섞인다.
+        val overRun = barLayoutOf(timeBar(0, 3660.0, 61), timeBar(1, 3665.0, 61, partial = true))
+        assertEquals(
+            listOf("1:01:00", "1:01:05"),
+            ChartFormat.splitXAxisLabels(overRun, 1000.0, crossesHour = false),
+        )
+        // 거리모드는 트리거와 무관.
+        val dist = barLayoutOf(
+            BarLayout(0, 300.0, 0.5, BarColorRole.ON_TARGET, false, endDistanceMeters = 500.0),
+        )
+        assertEquals(listOf("0.5"), ChartFormat.splitXAxisLabels(dist, 1000.0, crossesHour = true))
+    }
+
+    @Test
     fun split_x_axis_labels_distance_and_legacy_fallback() {
         fun distBar(i: Int, meters: Double?) = BarLayout(
             i, 300.0, 0.5, BarColorRole.ON_TARGET, false, endDistanceMeters = meters,

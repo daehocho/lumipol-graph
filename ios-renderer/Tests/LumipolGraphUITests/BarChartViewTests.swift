@@ -280,6 +280,45 @@ final class BarChartViewTests: XCTestCase {
         }
     }
 
+    // 마지막 x라벨 우측 클램프(0.47.0) — AOS RDBarChartTest.clampsOverflowingLastXAxisLabelToPlotRightEdge
+    // 대응(iOS 쪽이 비어 있어 .topRight 분기 회귀를 CI가 못 잡던 공백을 메움, 0.49.0).
+    func testClampsOverflowingLastXAxisLabelToPlotRightEdge() throws {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        let style = ChartStyle.default
+        // slot = (320 - 44 - 44)/9 ≈ 25.8px < "1:0n:05"(1시간 초과 축 표기, 0.47.0) 폭
+        let labels = (0..<9).map { "1:0\($0):05" }
+        view.render(sampleLayout(barCount: 9), style: style, barLabels: nil,
+                    xAxisLabels: labels, yLabelFormatter: nil, xAxisUnitLabel: "km")
+        view.layoutIfNeeded()
+        let plotMaxX = view.bounds.width - style.plotInsets.right
+        let xLabels = view.xAxisLabelLayers(style: style).filter { ($0.string as? String) != "km" }
+        let last = try XCTUnwrap(xLabels.last { ($0.string as? String) == labels[8] })
+        XCTAssertEqual(last.frame.maxX, plotMaxX, accuracy: 0.5, "마지막 라벨 오른쪽 끝을 플롯 끝에 맞춤")
+
+        // 클램프 이동량이 stride의 gap 예산을 먹어 직전 표시 라벨과 겹치던 결함(0.49.0) 회귀 방지.
+        let others = xLabels.filter { $0 !== last }
+        let prev = try XCTUnwrap(others.last)
+        XCTAssertGreaterThanOrEqual(
+            last.frame.minX - prev.frame.maxX,
+            CGFloat(ChartDefaults.shared.BAR_LABEL_MIN_GAP) - 0.5,
+            "클램프된 마지막 라벨과 직전 라벨 간격"
+        )
+    }
+
+    func testNarrowLastXAxisLabelStaysCentered() throws {
+        let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+        let style = ChartStyle.default
+        view.render(sampleLayout(barCount: 5), style: style, barLabels: nil,
+                    xAxisLabels: ["1", "2", "3", "4", "5"], yLabelFormatter: nil, xAxisUnitLabel: "km")
+        view.layoutIfNeeded()
+        let xLabels = view.xAxisLabelLayers(style: style).filter { ($0.string as? String) != "km" }
+        let last = try XCTUnwrap(xLabels.last { ($0.string as? String) == "5" })
+        // 슬롯(≈46px)보다 좁으므로 클램프 없이 마지막 막대 중심 정렬 — plot.maxX에 붙지 않는다.
+        let plot = view.bounds.inset(by: style.plotInsets)
+        let slot = plot.width / 5
+        XCTAssertEqual(last.frame.midX, plot.minX + slot * 4 + slot / 2, accuracy: 0.5)
+    }
+
     func testXAxisUnitLabelOmittedWhenNilOrLabelsHidden() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
         view.render(sampleLayout(barCount: 3), style: .default, barLabels: nil,
@@ -494,5 +533,15 @@ extension RDBarChartView {
         (layer.sublayers ?? [])
             .flatMap { $0.sublayers ?? [] }
             .compactMap { ($0 as? CATextLayer)?.string as? String }
+    }
+
+    /// x축 라벨 레이어(플롯 아래 줄) — 프레임 기준 겹침·정렬 검증용(테스트용).
+    func xAxisLabelLayers(style: ChartStyle = .default) -> [CATextLayer] {
+        let plotMaxY = bounds.height - style.plotInsets.bottom
+        return (layer.sublayers ?? [])
+            .flatMap { $0.sublayers ?? [] }
+            .compactMap { $0 as? CATextLayer }
+            .filter { $0.frame.minY >= plotMaxY }
+            .sorted { $0.frame.minX < $1.frame.minX }
     }
 }

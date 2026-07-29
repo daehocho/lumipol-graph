@@ -17,6 +17,14 @@ object LineChartEngine {
     fun layout(data: LineChartData): LineChartLayout = layout(data, backgroundArea = null)
 
     /**
+     * [layout] 3인자판의 기본 인자 대응 오버로드 — Kotlin 기본 인자는 ObjC로 내보내지지 않으므로
+     * (마지막 파라미터에 기본값을 붙이면 셀렉터가 **교체**된다) 명시 오버로드로 선언한다.
+     * `layout(data:backgroundArea:)` 셀렉터의 단일 소유자. [ChartDefaults.AREA_MIN_VALUE_SPAN] 사용.
+     */
+    fun layout(data: LineChartData, backgroundArea: List<Point>?): LineChartLayout =
+        layout(data, backgroundArea, ChartDefaults.AREA_MIN_VALUE_SPAN)
+
+    /**
      * 배경 area(고도 등) 인식 layout. 시리즈 없이 area만 있는 기록은 X 도메인을 area x범위로 잡는다
      * (시리즈가 없으면 X 도메인이 0~1로 붕괴해 렌더러 좌표계가 어긋난다 — 플랫폼 중립 규칙이므로
      * 코어가 책임진다). [backgroundArea]는 **x 오름차순** 전제. area가 퇴화(2점 미만·폭 0)면
@@ -25,12 +33,12 @@ object LineChartEngine {
      *
      * [areaMinValueSpan]은 고도 눈금 위치의 분모 하한 — 렌더러가 실루엣에 쓰는
      * `ChartStyle.areaMinValueSpan`과 **같은 값**을 넘겨야 라벨-실루엣 정렬 불변식이 유지된다
-     * (기본값만 믿으면 앱이 스타일을 오버라이드했을 때 라벨이 실루엣에서 떨어진다).
+     * (생략판을 쓰면 앱이 스타일을 오버라이드했을 때 라벨이 실루엣에서 떨어진다).
      */
     fun layout(
         data: LineChartData,
         backgroundArea: List<Point>?,
-        areaMinValueSpan: Double = ChartDefaults.AREA_MIN_VALUE_SPAN,
+        areaMinValueSpan: Double,
     ): LineChartLayout {
         if (data.series.isEmpty() && backgroundArea != null && backgroundArea.size >= 2) {
             val first = backgroundArea.first()
@@ -55,6 +63,15 @@ object LineChartEngine {
     fun layout(data: LineChartData, xMin: Double, xMax: Double): LineChartLayout =
         layout(data, xMin, xMax, backgroundArea = null)
 
+    /** 줌 창 + 배경 area의 기본 인자 대응 오버로드 — 위 [layout]과 같은 이유(ObjC 셀렉터 보존)로
+     *  명시 선언한다. `layout(data:xMin:xMax:backgroundArea:)` 셀렉터의 단일 소유자. */
+    fun layout(
+        data: LineChartData,
+        xMin: Double,
+        xMax: Double,
+        backgroundArea: List<Point>?,
+    ): LineChartLayout = layout(data, xMin, xMax, backgroundArea, ChartDefaults.AREA_MIN_VALUE_SPAN)
+
     /** 줌 창 + 배경 area — 고도 눈금([ChartAxis.Y_OVERLAY])은 줌과 무관하게 전체 정규화 기준
      *  (실루엣이 창과 무관하게 자체 min~max 정규화를 유지하는 것과 정합).
      *  [areaMinValueSpan]은 area-인식 전체 layout과 동일한 계약. */
@@ -63,7 +80,7 @@ object LineChartEngine {
         xMin: Double,
         xMax: Double,
         backgroundArea: List<Point>?,
-        areaMinValueSpan: Double = ChartDefaults.AREA_MIN_VALUE_SPAN,
+        areaMinValueSpan: Double,
     ): LineChartLayout {
         if (!(xMax > xMin)) return layout(data, backgroundArea, areaMinValueSpan)
         val xNice = niceScale(xMin, xMax, data.config.maxTicks)

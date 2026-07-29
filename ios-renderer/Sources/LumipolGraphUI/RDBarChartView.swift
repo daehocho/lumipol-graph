@@ -143,14 +143,21 @@ public final class RDBarChartView: UIView {
         // 개수 임계치가 아니라 슬롯 폭 대비 라벨 폭으로 계산 — 코어 labelStride(양 플랫폼 공유).
         // 폭 측정은 CATextLayer를 만들지 않고 문자열 사이즈로 직접 구한다.
         let labelAttrs: [NSAttributedString.Key: Any] = [.font: style.axisLabelFont]
+        func labelWidth(_ text: String) -> Double {
+            ceil((text as NSString).size(withAttributes: labelAttrs).width)
+        }
+        // 마지막 라벨 우측 클램프(아래) 이동량까지 반영한 stride(0.49.0) — 중앙 정렬 전제로만
+        // 잡으면 클램프가 gap 예산을 먹어 직전 표시 라벨과 겹친다.
         func stride(for labels: [String]?) -> Int {
             guard let labels = labels, !labels.isEmpty else { return 1 }
             var maxW = 0.0
             for s in labels.prefix(n) {
-                maxW = max(maxW, ceil((s as NSString).size(withAttributes: labelAttrs).width))
+                maxW = max(maxW, labelWidth(s))
             }
+            let lastW = n <= labels.count ? labelWidth(labels[n - 1]) : 0.0
             return Int(LabelThinningKt.labelStride(
-                count: Int32(n), plotWidthPx: Double(plot.width), labelWidthPx: maxW, gapPx: Self.labelMinGap))
+                count: Int32(n), plotWidthPx: Double(plot.width), labelWidthPx: maxW,
+                gapPx: Self.labelMinGap, lastLabelWidthPx: lastW))
         }
         let xLabelStride = stride(for: xAxisLabels)
 
@@ -178,8 +185,8 @@ public final class RDBarChartView: UIView {
                 // 마지막 라벨 우측 클램프(0.47.0) — 넓은 라벨(42.2 등)이 플롯 끝을 넘어 단위
                 // 라벨(km)과 겹치지 않게, 넘칠 때만 오른쪽 끝을 plot.maxX에 맞춰 왼쪽으로 민다.
                 let text = xLabels[i]
-                let labelWidth = ceil((text as NSString).size(withAttributes: labelAttrs).width)
-                if i == n - 1, rect.midX + labelWidth / 2 > plot.maxX {
+                let width = labelWidth(text)
+                if i == n - 1, rect.midX + width / 2 > plot.maxX {
                     addLabel(text: text, at: CGPoint(x: plot.maxX, y: baseline), align: .topRight)
                 } else {
                     addLabel(text: text, at: CGPoint(x: rect.midX, y: baseline), align: .topCenter)

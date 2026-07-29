@@ -28,6 +28,41 @@ fun labelStride(count: Int, plotWidthPx: Double, labelWidthPx: Double, gapPx: Do
 }
 
 /**
+ * 마지막 라벨 우측 클램프(0.47.0)를 반영한 stride(양 플랫폼 공유, 0.49.0).
+ *
+ * 렌더러는 마지막 라벨이 슬롯을 넘칠 때(`lastLabelWidthPx > slot`) 오른쪽 끝을 플롯 끝에 맞춰
+ * `(lastLabelWidthPx - slot)/2`만큼 왼쪽으로 민다. [labelStride]는 중앙 정렬 전제로 간격을
+ * 잡으므로 그 이동량이 확보해 둔 여백([gapPx])을 먹어 **직전 표시 라벨과 겹친다**
+ * (예: 9막대·slot 25.8·라벨 44px → stride 2, 겹침 1.6px). 클램프 이동량을 미리 폭에 얹어
+ * 겹침을 없앤다 — 클램프가 걸리는 조합에서만 stride가 올라간다(그 밖은 [labelStride]와 동일).
+ *
+ * 남는 한계: 첫(0)·마지막은 [isLabelVisible]이 강제 표시하므로 `count <= stride`면 둘의 간격이
+ * stride 미만이 될 수 있다(막대 수가 stride보다 적은 극단 조합) — 클램프와 무관한 기존 성질이다.
+ *
+ * @param count 막대(슬롯) 수.
+ * @param plotWidthPx 플롯 영역 가로 폭(px).
+ * @param labelWidthPx 표시할 라벨 중 가장 넓은 폭(px).
+ * @param lastLabelWidthPx 마지막 라벨 폭(px) — 클램프 판정·이동량의 원천. 0 이하면 클램프 없음.
+ * @param gapPx 이웃 라벨 사이 최소 여백(px). 음수는 0으로 간주.
+ * @return 1 이상. 입력이 축퇴면 1(솎지 않음).
+ */
+fun labelStride(
+    count: Int,
+    plotWidthPx: Double,
+    labelWidthPx: Double,
+    gapPx: Double,
+    lastLabelWidthPx: Double,
+): Int {
+    if (count <= 0 || plotWidthPx <= 0.0 || labelWidthPx <= 0.0) return 1
+    val slot = plotWidthPx / count
+    if (slot <= 0.0) return 1
+    // 렌더러 클램프 조건(마지막 막대 중심 + 라벨 절반 > plot.maxX)은 slot 기준으로 정확히
+    // lastLabelWidthPx > slot이고, 그때 이동량은 (lastLabelWidthPx - slot)/2다.
+    val clampShift = max(0.0, (lastLabelWidthPx - slot) / 2.0)
+    return labelStride(count, plotWidthPx, labelWidthPx + clampShift, gapPx)
+}
+
+/**
  * [labelStride]로 솎을 때 [index] 라벨을 그릴지 여부(양 플랫폼 공유).
  *
  * 단순 `index % stride == 0`은 마지막 스플릿(피니시·부분 스플릿) 라벨을 떨어뜨린다 — 시작은 보이고

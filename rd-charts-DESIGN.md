@@ -867,10 +867,14 @@ AOS `animateEntrance = true`를 명시(각 1줄, 트랙 C 앱 커밋에 포함).
   유무로 판정해, 심박 공백 구간으로 줌하면 고도 눈금이 제스처 중 깜빡이며 등장했고
   "SECONDARY 있는 차트엔 Y_OVERLAY가 안 온다"는 앱 포매터 가정이 깨졌다. 이제
   차트에 SECONDARY 시리즈/밴드가 하나라도 있으면 창과 무관하게 미방출.
-- **feat: `LineChartEngine.layout(backgroundArea:)` 두 오버로드에 `areaMinValueSpan`
-  파라미터 추가**(기본 `ChartDefaults.AREA_MIN_VALUE_SPAN`) — 고도 눈금 위치의 분모
-  하한이 상수 하드코딩이라, 앱이 `ChartStyle.areaMinValueSpan`을 오버라이드하면 라벨이
-  실루엣 피크에서 이탈했다. 양 렌더러가 스타일 값을 그대로 전달한다.
+- **feat(breaking·API): `LineChartEngine.layout(backgroundArea:)` 두 오버로드에
+  `areaMinValueSpan` 파라미터 추가**(기본 `ChartDefaults.AREA_MIN_VALUE_SPAN`) — 고도 눈금
+  위치의 분모 하한이 상수 하드코딩이라, 앱이 `ChartStyle.areaMinValueSpan`을 오버라이드하면
+  라벨이 실루엣 피크에서 이탈했다. 양 렌더러가 스타일 값을 그대로 전달한다.
+  당시 "기본값 있는 마지막 파라미터라 소스 호환"으로 판단했으나 **ObjC 노출 API에는 성립하지
+  않는다** — Kotlin 기본 인자는 ObjC로 내보내지지 않아 셀렉터가 교체된다.
+  `layout(data:backgroundArea:)`·`layout(data:xMin:xMax:backgroundArea:)` 두 셀렉터가
+  헤더에서 사라졌다(0.49.0에서 명시 오버로드로 복원 — 아래 항목).
 - **fix: `chooseTimeBucketSeconds` 비유한 입력 가드** — 0.41.0 `barCount()` 도입으로
   NaN/±Inf가 0막대 취급 → 15초 최소로 떨어져 오염된 기록이 수백 막대로 조각났다.
   이전 동작 복원: +Inf → 600s 캡, NaN/-Inf → 60s. 유한 0·음수는 15s 폴백 유지(골든 고정).
@@ -929,6 +933,55 @@ timeTickHour` 분기를 sub-minute 분기보다 앞에 추가(Runday_IOS/AOS 반
 `ChartFormat.splitXAxisLabels(layout, unitMeters)` 호출로, 라인 x축 시간 분기를
 `ChartFormat.timeTick(value, crossesHour)`로 교체하면 관용구 4벌이 사라진다
 (Runday_IOS/AOS 반영 완료). 기존 코드도 동작은 동일하다.
+
+**xcframework 재빌드 필요** — 포함됨.
+
+### 코드리뷰 후속 — crossesHour 원천 통일·클램프 겹침·셀렉터 복원 (0.49.0, 2026-07-30)
+
+0.46.0~0.48.0 3개 저장소(SDK·Runday_IOS·Runday_AOS) 일괄 코드리뷰 확정 사항.
+
+- **fix(breaking·API 복원): `LineChartEngine.layout` 두 셀렉터 부활** —
+  `layout(data:backgroundArea:)`·`layout(data:xMin:xMax:backgroundArea:)`. 0.46.0이
+  마지막 파라미터에 **기본값**을 붙여 ObjC 셀렉터를 교체해 버렸다(Kotlin 기본 인자는
+  ObjC로 안 나간다 — `SeriesLayout`이 같은 함정을 이미 주석으로 남겨 뒀다).
+  기본값을 제거하고 위임 오버로드를 명시 선언해 신·구 셀렉터가 공존한다.
+- **feat: `ChartFormat.splitXAxisLabels(layout, unitMeters, crossesHour)`** — 1시간 초과
+  트리거의 **원천 통일**. 라인차트는 총 운동 시간(`runningTime > 3600`), 스플릿은 마지막 막대
+  `endSeconds > 3600`로 판정했는데, 총 시간 스냅(0.45.0)이 마지막 **부분** 버킷 분기에만
+  걸리므로 잔여 0으로 딱 나누어떨어지는 분할에서는 두 값이 갈린다 — 같은 화면 위아래에
+  `1:00:00`(라인)과 `60:00`(스플릿)이 동시에 찍혔다(0.47.0이 없애려던 혼재 표기).
+  이제 앱이 라인차트에 넘기는 트리거를 그대로 넘긴다. 판정은 `주입값 || 축 끝 > 3600`(OR) —
+  주입이 false여도 축 끝이 넘으면 통일해 **한 축 안에서** 시/분 표기가 섞이는 것을 막는다.
+  2인자판은 `crossesHour = false`와 동일(기존 호출부 무회귀).
+- **fix: 마지막 x라벨 우측 클램프가 직전 표시 라벨과 겹치던 문제(양 렌더러)** —
+  `labelStride`는 중앙 정렬 전제로 이웃 간격 ≥ 라벨폭+6px을 잡는데, 클램프는 마지막 라벨을
+  `(lastW - slot)/2`만큼 왼쪽으로 밀어 그 여백을 먹었다(9막대·slot 25.8·라벨 44px에서 1.6px
+  겹침, 실측 ratio 1.7~3에서 1~3px). **feat: `labelStride(count, plotWidthPx, labelWidthPx,
+  gapPx, lastLabelWidthPx)` 오버로드** — 클램프 이동량을 폭에 얹어 stride를 잡는다.
+  클램프가 걸리는 조합에서만 stride가 올라간다(마지막 라벨이 슬롯 이하면 종전과 동일).
+- **fix: AOS 클램프 판정 폭의 인덱스** — `xAxisLabels.lastOrNull()`이라 막대보다 라벨이 많으면
+  **그리지도 않는** 라벨 폭으로 판정했다(iOS는 `xLabels[n-1]`). `getOrNull(bars.size - 1)` +
+  최대 폭 측정도 `take(n)`으로 iOS(`prefix(n)`)와 정합. 같은 입력에 플랫폼별 배치가 갈리던
+  비대칭 소거.
+- **fix: `heightFractions`의 NaN 규칙을 고도 눈금과 통일** — `overlayAxisTicks`는 0.46.0
+  1패스 리팩터 이후 NaN을 무시하는데(비교 기반) 실루엣은 `minOrNull()`로 전파해, 고도 한 점만
+  NaN이면 눈금은 정상인데 실루엣 전체가 사라져 "라벨-실루엣 정렬" 불변식이 깨졌다. 이제
+  min/max 스캔에서 NaN을 건너뛴다(오염된 점만 NaN, 전부 NaN이면 평지와 같이 0).
+- 테스트: 정확히 3600초 게이트 경계(엄격 `>`), 트리거 주입판 4케이스, 클램프 인식 stride
+  (n=2..45 전 구간 겹침 스캔), iOS 우측 클램프 2건(AOS 대응이 없던 공백), NaN 규칙 2건.
+- 골든: `HarnessFixtures.barCases`에 1시간 초과 시간모드 2케이스 추가(B14 부분 버킷 있음,
+  B15 잔여 0으로 부분 없음 — 트리거가 갈리는 그 입력) + `splitXAxisLabelsHourTrigger` 섹션.
+  종전 최장 픽스처가 833초라 h:mm:ss 통일 경로가 플랫폼 등가성 하네스에 없었다.
+- `require(unitMeters > 0)`(ChartFormat)는 **현행 유지** — 인자가 `DistanceUnit` 표시 단위
+  상수이지 데이터 유래 입력이 아니므로 경계 정책 §4-2("require는 프로그래머 오류에만")에 부합.
+
+**마이그레이션(앱)**:
+1. 스플릿 카드 라벨 호출을 3인자판으로 교체하고, **라인차트와 같은 `crossesHour` 값**을
+   넘긴다(`총 운동 시간 > 3600`). 두 카드가 각자 판정하면 표기가 갈린다.
+2. 라벨 폭이 넓은 시간축(1시간 초과 `1:01:05`)에서 x라벨이 한 칸 더 솎일 수 있다 —
+   겹침 제거의 결과이고 배치 규칙(우측 클램프) 자체는 0.47.0 확정안 그대로다.
+3. `LineChartEngine.layout`을 직접 호출하는 iOS 코드가 있다면 두 구 셀렉터가 다시 쓸 수 있다
+   (현재 Runday_IOS/AOS에는 직접 호출부 없음).
 
 **xcframework 재빌드 필요** — 포함됨.
 

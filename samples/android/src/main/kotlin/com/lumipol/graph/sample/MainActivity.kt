@@ -129,8 +129,14 @@ private fun BarScreen() {
             modifier = Modifier.fillMaxWidth().height(280.dp).padding(top = 12.dp),
             // 막대 끝 라벨은 코어 빌더(0.48.0) — 모드 판별·표기 분기(누적 거리/시간, 1시간
             // 초과 h:mm:ss 통일)를 코어가 소유한다. 단위는 그래프 오른쪽 하단 단위 라벨(0.43.0)로
-            // 한 번만 표기한다.
-            xAxisLabels = ChartFormat.splitXAxisLabels(layout, SampleData.barData.splitDistanceMeters),
+            // 한 번만 표기한다. crossesHour는 **라인차트 시간축과 같은 원천**(총 운동 시간)을
+            // 넘긴다(0.49.0) — 축 끝(유효 델타 합)으로 각자 판정하면 같은 기록의 두 카드가
+            // 1:00:00 / 60:00으로 갈린다.
+            xAxisLabels = ChartFormat.splitXAxisLabels(
+                layout,
+                SampleData.barData.splitDistanceMeters,
+                crossesHour = (SampleData.barData.totalDurationSeconds ?: 0.0) > 3600.0,
+            ),
             xAxisUnitLabel = "km",
             yLabelFormatter = { secondsPerKm -> SampleData.paceLabel(secondsPerKm / 60.0) },
         )

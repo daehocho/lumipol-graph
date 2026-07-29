@@ -195,6 +195,17 @@ object CoreDump {
                         .map { jstr(it) },
                 )
             }),
+            // 트리거 주입판(0.49.0) — 앱이 라인차트에 넘기는 것과 같은 원천(총 운동 시간 > 3600).
+            // 위 섹션과 다른 케이스는 축 끝이 1시간 이하인데 총 시간은 넘는 분할(B15)뿐이다.
+            section("splitXAxisLabelsHourTrigger", HarnessFixtures.barCases.map { (name, data) ->
+                name to jarr(
+                    ChartFormat.splitXAxisLabels(
+                        BarChartEngine.layout(data),
+                        data.splitDistanceMeters,
+                        crossesHour = (data.totalDurationSeconds ?: 0.0) > 3600.0,
+                    ).map { jstr(it) },
+                )
+            }),
             section("timeBucket", HarnessFixtures.timeBucketCases.map { sec ->
                 "running_${jnum(sec)}" to jnum(BarChartEngine.chooseTimeBucketSeconds(sec))
             }),

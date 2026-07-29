@@ -82,12 +82,17 @@ fun RDBarChart(
     val scaledStyle = remember(style, density) { style.scaledForDensity(density) }
     // 라벨 최대 폭은 layout/스타일/글꼴배율이 바뀔 때만 측정(등장 애니로 growth가 매 프레임 바뀌어도
     // 재측정하지 않도록 그리기 경로 밖에서 memoize — 리뷰 #3). stride 자체는 폭·크기로 싸게 계산.
-    val xLabelWidthPx = remember(xAxisLabels, scaledStyle, fontScale, measurer) {
-        maxLabelWidthPx(measurer, xAxisLabels, scaledStyle, fontScale)
+    // 측정 범위는 **실제로 그리는 라벨**(막대 수만큼)로 자른다 — 남는 라벨을 넘겨도 stride·클램프
+    // 판정이 iOS(labels.prefix(n))와 갈리지 않게(0.49.0).
+    val barCount = layout.bars.size
+    val xLabelWidthPx = remember(xAxisLabels, barCount, scaledStyle, fontScale, measurer) {
+        maxLabelWidthPx(measurer, xAxisLabels?.take(barCount), scaledStyle, fontScale)
     }
     // 마지막 x라벨 폭 — 우측 클램프(0.47.0) 판정용. stride처럼 그리기 밖에서 1회 측정.
-    val lastXLabelWidthPx = remember(xAxisLabels, scaledStyle, fontScale, measurer) {
-        xAxisLabels?.lastOrNull()?.let {
+    // 인덱스는 그리는 라벨의 마지막(getOrNull(n-1)) — lastOrNull()이면 막대보다 라벨이 많을 때
+    // 그리지도 않는 라벨 폭으로 클램프를 판정한다(0.49.0).
+    val lastXLabelWidthPx = remember(xAxisLabels, barCount, scaledStyle, fontScale, measurer) {
+        xAxisLabels?.getOrNull(barCount - 1)?.let {
             measureLabelWidthPx(
                 measurer = measurer,
                 text = it,
@@ -227,7 +232,10 @@ internal fun buildBarChartLayers(
     // 측정해 주입한다(그리기 경로에서 프레임마다 재측정하지 않도록). 표시 여부는 isLabelVisible(첫·마지막
     // 항상 표시).
     val gap = BAR_LABEL_MIN_GAP * density
-    val xLabelStride = if (xAxisLabels.isNullOrEmpty()) 1 else labelStride(n, plot.width, xLabelWidthPx, gap)
+    // 마지막 라벨 우측 클램프 이동량까지 반영한 stride(0.49.0) — 중앙 정렬 전제로만 잡으면
+    // 클램프가 gap 예산을 먹어 직전 표시 라벨과 겹친다.
+    val xLabelStride = if (xAxisLabels.isNullOrEmpty()) 1
+    else labelStride(n, plot.width, xLabelWidthPx, gap, lastXLabelWidthPx)
 
     // Y 그리드 + 틱 라벨
     for ((i, tick) in layout.yTicks.withIndex()) {
