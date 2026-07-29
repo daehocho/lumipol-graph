@@ -24,6 +24,18 @@ class NiceScaleTest {
     }
 
     @Test
+    fun handles_ulp_wide_span_without_hanging() {
+        // 스팬이 1 ULP면 step이 ULP보다 작아 `t += step`이 제자리 → 틱 루프가 안 끝나던 회귀.
+        // (막대가 전부 같은 페이스이고 ref만 1 ULP 다른 런에서 실측)
+        val lo = 300.00000000000034
+        val hi = 300.0000000000004
+        assertTrue(hi - lo > 0.0 && lo + (hi - lo) / 4.0 == lo, "테스트 전제: 스팬이 ULP 수준")
+        val s = niceScale(lo, hi, maxTicks = 5, headroomFraction = 0.05)
+        assertTrue(s.ticks.size in 2..8, "틱이 유한 개여야 한다: ${s.ticks.size}")
+        assertTrue(s.niceMin < lo && s.niceMax > hi)
+    }
+
+    @Test
     fun handles_reversed_min_max() {
         val s = niceScale(97.0, 0.0)
         assertEquals(0.0, s.niceMin, 1e-9)

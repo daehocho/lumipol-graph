@@ -36,6 +36,14 @@ fun niceScale(min: Double, max: Double, maxTicks: Int = 5, headroomFraction: Dou
     val step = niceNum(range / (maxTicks - 1), round = true)
     val niceMin = floor(lo / step) * step
     val niceMax = ceil(hi / step) * step
+    // step이 값 크기의 ULP보다 작으면 아래 `t += step`이 제자리라 틱 루프가 끝나지 않는다.
+    // 실측 경로: 막대가 전부 같은 페이스이고 ref만 1 ULP 다른 런(스팬 5.7e-14 @ 300).
+    // 사실상 같은 값이므로 min==max와 같은 패딩 경로로 보낸다. NaN/Inf는 종전 전파 동작 유지.
+    if (step.isFinite() && (step <= 0.0 || niceMin + step <= niceMin)) {
+        val mid = (lo0 + hi0) * 0.5
+        val pad = if (mid == 0.0) 1.0 else abs(mid) * 0.5
+        return niceScale(mid - pad, mid + pad, maxTicks, headroomFraction)
+    }
     val ticks = buildList {
         var t = niceMin
         while (t <= niceMax + step * 0.5) {
