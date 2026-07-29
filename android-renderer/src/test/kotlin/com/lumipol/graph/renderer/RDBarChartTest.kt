@@ -112,6 +112,30 @@ class RDBarChartTest {
         assertEquals(5, named(layers, "barXLabel.").size)
     }
 
+    // 마지막 x라벨 우측 클램프(0.47.0) — 넓은 라벨이 플롯 끝을 넘으면 단위 라벨(km)과 겹치지
+    // 않게 오른쪽 끝을 plot.maxX에 맞춘다. 넘치지 않으면 기존 중앙 정렬 그대로.
+    @Test
+    fun clampsOverflowingLastXAxisLabelToPlotRightEdge() {
+        val plot = PlotArea(width, height, style.plotInsets)
+        val wide = buildBarChartLayers(
+            sampleLayout(12), style, width, height,
+            xAxisLabels = List(12) { if (it == 11) "42.2" else "${it + 1}" }, yLabelFormatter = null,
+            lastXLabelWidthPx = plot.width / 12 + 40.0, // 슬롯보다 넓어 중앙 정렬이면 plot.maxX를 넘는다
+            xAxisUnitLabel = "km",
+        )
+        val last = wide.filterIsInstance<TextLayer>().single { it.name == "barXLabel.11" }
+        assertEquals(HAlign.RIGHT, last.hAlign)
+        assertEquals(plot.maxX, last.anchorX, 1e-9)
+        val narrow = buildBarChartLayers(
+            sampleLayout(5), style, width, height,
+            xAxisLabels = List(5) { "${it + 1}" }, yLabelFormatter = null,
+            lastXLabelWidthPx = 12.0,
+            xAxisUnitLabel = "km",
+        )
+        val lastNarrow = narrow.filterIsInstance<TextLayer>().single { it.name == "barXLabel.4" }
+        assertEquals(HAlign.CENTER, lastNarrow.hAlign)
+    }
+
     @Test
     fun omitsXAxisUnitLabelWhenNullOrLabelsHidden() {
         val noUnit = buildBarChartLayers(

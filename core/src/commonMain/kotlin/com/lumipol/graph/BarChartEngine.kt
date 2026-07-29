@@ -57,6 +57,9 @@ object BarChartEngine {
      * 총 러닝 시간(초)으로 시간 버킷 크기(초)를 고른다.
      * 1) 기존 규칙(iOS bucketMinutes 동일) — 막대가 [MAX_BARS] 이하가 되는 최소 분 후보.
      * 2) 그 결과가 [MIN_BARS] 미만일 때만 30초·15초로 내려간다 — 5분 이상 런의 선택은 불변(0.41.0).
+     *
+     * [MIN_BARS]는 **샘플이 버킷보다 촘촘할 때만** 보장된다 — 시간모드 집계(aggregateByTime)는
+     * 샘플 내부를 분할하지 않으므로 굵은 샘플(랩 단위 델타) 입력이면 예측 막대 수에 못 미친다.
      */
     fun chooseTimeBucketSeconds(runningSeconds: Double): Double {
         // 비유한 총시간 가드 — barCount()가 NaN/±Inf를 0막대로 취급하면 15초 최소로 떨어져
@@ -198,6 +201,12 @@ object BarChartEngine {
 
     // 시간 버킷 집계. 버킷 경계에서 오버플로를 나누지 않고(현행 iOS와 동일) 통째 flush.
     // endMinutes = max(1, round(누적경과초/60)) — 누적 경과는 버킷 간 리셋하지 않는다.
+    //
+    // 한계(의도된 설계, 0.47.0 확인): 샘플이 버킷보다 굵으면(랩 단위 델타 등) 샘플 하나가
+    // 통째로 한 막대가 되므로 chooseTimeBucketSeconds의 MIN_BARS 보장이 성립하지 않는다
+    // — 예: SplitSample(120s) 3개(총 360s)는 60s 버킷을 골라도 막대 3개. 거리모드는 샘플
+    // 내부를 비례 분할하지만 시간모드는 레거시 iOS 정합을 위해 분할하지 않는다. 소비 앱
+    // (Runday)은 1초 간격 샘플을 넣으므로 실영향 없음.
     private fun aggregateByTime(
         data: BarChartData, paceUnit: Double, onValid: (Double, Double) -> Unit,
     ): List<RawBar> {

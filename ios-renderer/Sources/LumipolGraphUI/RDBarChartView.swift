@@ -175,7 +175,15 @@ public final class RDBarChartView: UIView {
             if style.barShowXAxisLabels, let xLabels = xAxisLabels, i < xLabels.count,
                LabelThinningKt.isLabelVisible(index: Int32(i), count: Int32(n), stride: Int32(xLabelStride)) {
                 let baseline = plot.maxY + CGFloat(ChartDefaults.shared.BAR_X_LABEL_GAP)  // 막대 바닥 축선 아래 여백
-                addLabel(text: xLabels[i], at: CGPoint(x: rect.midX, y: baseline), align: .topCenter)
+                // 마지막 라벨 우측 클램프(0.47.0) — 넓은 라벨(42.2 등)이 플롯 끝을 넘어 단위
+                // 라벨(km)과 겹치지 않게, 넘칠 때만 오른쪽 끝을 plot.maxX에 맞춰 왼쪽으로 민다.
+                let text = xLabels[i]
+                let labelWidth = ceil((text as NSString).size(withAttributes: labelAttrs).width)
+                if i == n - 1, rect.midX + labelWidth / 2 > plot.maxX {
+                    addLabel(text: text, at: CGPoint(x: plot.maxX, y: baseline), align: .topRight)
+                } else {
+                    addLabel(text: text, at: CGPoint(x: rect.midX, y: baseline), align: .topCenter)
+                }
             }
         }
 
@@ -328,7 +336,7 @@ public final class RDBarChartView: UIView {
         return UIFont(descriptor: descriptor, size: size)
     }
 
-    private enum LabelAlign { case left, center, right, topCenter, topLeft }
+    private enum LabelAlign { case left, center, right, topCenter, topLeft, topRight }
     private func addLabel(text: String, at point: CGPoint, align: LabelAlign, font: UIFont? = nil) {
         let tl = ChartLayerBuilder.textLayer(text, font: font ?? style.axisLabelFont, color: style.axisLabelColor)
         let size = tl.frame.size
@@ -339,6 +347,7 @@ public final class RDBarChartView: UIView {
         case .right: origin.x -= size.width; origin.y -= size.height / 2
         case .topCenter: origin.x -= size.width / 2
         case .topLeft: break
+        case .topRight: origin.x -= size.width
         }
         tl.frame = CGRect(origin: origin, size: size)
         contentLayer.addSublayer(tl)

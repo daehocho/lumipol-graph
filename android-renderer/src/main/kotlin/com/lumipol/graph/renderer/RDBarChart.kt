@@ -85,6 +85,19 @@ fun RDBarChart(
     val xLabelWidthPx = remember(xAxisLabels, scaledStyle, fontScale, measurer) {
         maxLabelWidthPx(measurer, xAxisLabels, scaledStyle, fontScale)
     }
+    // 마지막 x라벨 폭 — 우측 클램프(0.47.0) 판정용. stride처럼 그리기 밖에서 1회 측정.
+    val lastXLabelWidthPx = remember(xAxisLabels, scaledStyle, fontScale, measurer) {
+        xAxisLabels?.lastOrNull()?.let {
+            measureLabelWidthPx(
+                measurer = measurer,
+                text = it,
+                fontSizeSp = scaledStyle.axisLabelFontSize,
+                fontFamily = scaledStyle.axisLabelFontFamily,
+                fontWeight = scaledStyle.axisLabelFontWeight,
+                fontScale = fontScale,
+            )
+        } ?: 0.0
+    }
     // TalkBack 요약(UX Major-1): 캔버스는 불투명하므로 컨테이너에 막대 수·값 요약을 노출한다.
     val description = chartContentDescription
         ?: remember(layout, barLabels) { ChartA11y.barChart(layout.bars.size, barLabels.orEmpty()) }
@@ -149,6 +162,7 @@ fun RDBarChart(
             growth = growth,
             density = density,
             xLabelWidthPx = xLabelWidthPx,
+            lastXLabelWidthPx = lastXLabelWidthPx,
             xAxisUnitLabel = xAxisUnitLabel,
         )
         // layout 교체 직후 selectedIndex가 새(더 짧은) layout 범위를 벗어난 1프레임을 방지(리뷰 #1).
@@ -199,6 +213,7 @@ internal fun buildBarChartLayers(
     growth: Float = 1f,
     density: Float = 1f,
     xLabelWidthPx: Double = 0.0,
+    lastXLabelWidthPx: Double = 0.0,
     xAxisUnitLabel: String? = null,
 ): List<LineChartLayer> {
     if (layout.bars.isEmpty()) return emptyList()
@@ -287,13 +302,16 @@ internal fun buildBarChartLayers(
         val midX = x + barWidth / 2
         if (style.barShowXAxisLabels && isLabelVisible(i, n, xLabelStride)) {
             xAxisLabels?.getOrNull(i)?.let { label ->
+                // 마지막 라벨 우측 클램프(0.47.0) — 넓은 라벨(42.2 등)이 플롯 끝을 넘어 단위
+                // 라벨(km)과 겹치지 않게, 넘칠 때만 오른쪽 끝을 plot.maxX에 맞춰 왼쪽으로 민다.
+                val clampRight = i == n - 1 && midX + lastXLabelWidthPx / 2 > plot.maxX
                 layers.add(
                     TextLayer(
                         name = "barXLabel.$i",
                         text = label,
-                        anchorX = midX,
+                        anchorX = if (clampRight) plot.maxX else midX,
                         anchorY = plot.maxY + BAR_X_LABEL_GAP * density,
-                        hAlign = HAlign.CENTER,
+                        hAlign = if (clampRight) HAlign.RIGHT else HAlign.CENTER,
                         vAlign = VAlign.BELOW,
                         color = style.axisLabelColor,
                         fontSizeSp = style.axisLabelFontSize,

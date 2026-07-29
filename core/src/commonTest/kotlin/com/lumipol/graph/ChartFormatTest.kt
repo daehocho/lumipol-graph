@@ -84,6 +84,19 @@ class ChartFormatTest {
     }
 
     @Test
+    fun time_tick_hour_unifies_axis_notation() {
+        // 1시간 넘는 축의 전 라벨 통일 표기(0.47.0) — 시 무패딩, 분·초 패딩.
+        // 60:00(분)과 1:01:05(시)가 한 축에 섞이지 않게 전부 h:mm:ss로.
+        assertEquals("0:10:00", ChartFormat.timeTickHour(600.0))
+        assertEquals("1:00:00", ChartFormat.timeTickHour(3600.0))
+        assertEquals("1:01:05", ChartFormat.timeTickHour(3665.0))
+        assertEquals("0:00:29", ChartFormat.timeTickHour(29.9))
+        assertEquals("0:00:00", ChartFormat.timeTickHour(0.0))
+        assertEquals("0:00:00", ChartFormat.timeTickHour(Double.NaN))
+        assertEquals("0:00:00", ChartFormat.timeTickHour(Double.POSITIVE_INFINITY))
+    }
+
+    @Test
     fun segment_count_policy_is_distance_proportional() {
         assertEquals(10, ChartConfig.segmentCountFor(10.5, XMode.DISTANCE))
         assertEquals(0, ChartConfig.segmentCountFor(0.8, XMode.DISTANCE))

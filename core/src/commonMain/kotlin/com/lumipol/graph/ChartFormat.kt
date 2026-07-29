@@ -94,6 +94,19 @@ object ChartFormat {
     fun timeTick(minutes: Double): String =
         if (minutes.isNaN() || minutes.isInfinite() || minutes <= 0.1) "" else "${minutes.toInt()}:00"
 
+    /**
+     * 시간모드 x축 라벨(초) → 항상 `h:mm:ss`(`0:10:00`, `1:00:00`, `1:01:05`).
+     * 축의 마지막 막대 끝이 1시간을 넘으면(endSeconds > 3600) **전 라벨**을 이 표기로 통일한다
+     * — 온전 버킷 [timeTick](`60:00`)과 부분 버킷 [splitEndTime](`1:01:05`)이 한 축에서 두
+     * 표기 체계로 섞이는 문제의 해소(0.47.0 결정). 1시간 이하 축은 기존 표기를 그대로 쓴다.
+     * 트리거 판정(마지막 endSeconds > 3600)은 호출자(앱) 몫. 무효(≤0·NaN·Inf)는 `0:00:00`.
+     */
+    fun timeTickHour(seconds: Double): String {
+        if (seconds <= 0.0 || seconds.isNaN() || seconds.isInfinite()) return "0:00:00"
+        val total = seconds.toInt()
+        return "${total / 3600}:${pad2((total % 3600) / 60)}:${pad2(total % 60)}"
+    }
+
     /** 정수 축 tick — 절삭(양 앱 `value.toInt()` 동일). */
     fun intTick(value: Double): String =
         if (value.isNaN() || value.isInfinite()) "0" else "${value.toInt()}"

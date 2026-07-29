@@ -294,6 +294,9 @@ object CoreDump {
                     add("splitEndTime_${jnum(it)}" to jstr(ChartFormat.splitEndTime(it)))
                 }
                 listOf(0.1, 15.0).forEach { add("timeTick_${jnum(it)}" to jstr(ChartFormat.timeTick(it))) }
+                listOf(600.0, 3600.0, 3665.0, 0.0).forEach {
+                    add("timeTickHour_${jnum(it)}" to jstr(ChartFormat.timeTickHour(it)))
+                }
                 add("intTick_178.6" to jstr(ChartFormat.intTick(178.6)))
             }),
             section("heartRateHelpers", buildList {
