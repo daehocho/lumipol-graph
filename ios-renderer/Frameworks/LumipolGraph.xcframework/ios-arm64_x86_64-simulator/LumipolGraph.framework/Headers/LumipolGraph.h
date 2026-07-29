@@ -151,6 +151,7 @@ __attribute__((swift_name("BarChartEngine")))
 + (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
 + (instancetype)barChartEngine __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphBarChartEngine *shared __attribute__((swift_name("shared")));
+- (double)chooseDistanceBucketMetersTotalDistanceMeters:(double)totalDistanceMeters unitMeters:(double)unitMeters __attribute__((swift_name("chooseDistanceBucketMeters(totalDistanceMeters:unitMeters:)")));
 - (double)chooseTimeBucketSecondsRunningSeconds:(double)runningSeconds __attribute__((swift_name("chooseTimeBucketSeconds(runningSeconds:)")));
 - (LumipolGraphBarChartLayout *)layoutData:(LumipolGraphBarChartData *)data __attribute__((swift_name("layout(data:)")));
 @end
@@ -580,13 +581,15 @@ __attribute__((swift_name("BarColorRole")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("BarLayout")))
 @interface LumipolGraphBarLayout : LumipolGraphBase
-- (instancetype)initWithIndex:(int32_t)index value:(double)value heightFraction:(double)heightFraction colorRole:(LumipolGraphBarColorRole *)colorRole isPartial:(BOOL)isPartial endMinutes:(LumipolGraphInt * _Nullable)endMinutes __attribute__((swift_name("init(index:value:heightFraction:colorRole:isPartial:endMinutes:)"))) __attribute__((objc_designated_initializer));
-- (LumipolGraphBarLayout *)doCopyIndex:(int32_t)index value:(double)value heightFraction:(double)heightFraction colorRole:(LumipolGraphBarColorRole *)colorRole isPartial:(BOOL)isPartial endMinutes:(LumipolGraphInt * _Nullable)endMinutes __attribute__((swift_name("doCopy(index:value:heightFraction:colorRole:isPartial:endMinutes:)")));
+- (instancetype)initWithIndex:(int32_t)index value:(double)value heightFraction:(double)heightFraction colorRole:(LumipolGraphBarColorRole *)colorRole isPartial:(BOOL)isPartial endMinutes:(LumipolGraphInt * _Nullable)endMinutes endDistanceMeters:(LumipolGraphDouble * _Nullable)endDistanceMeters endSeconds:(LumipolGraphDouble * _Nullable)endSeconds __attribute__((swift_name("init(index:value:heightFraction:colorRole:isPartial:endMinutes:endDistanceMeters:endSeconds:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphBarLayout *)doCopyIndex:(int32_t)index value:(double)value heightFraction:(double)heightFraction colorRole:(LumipolGraphBarColorRole *)colorRole isPartial:(BOOL)isPartial endMinutes:(LumipolGraphInt * _Nullable)endMinutes endDistanceMeters:(LumipolGraphDouble * _Nullable)endDistanceMeters endSeconds:(LumipolGraphDouble * _Nullable)endSeconds __attribute__((swift_name("doCopy(index:value:heightFraction:colorRole:isPartial:endMinutes:endDistanceMeters:endSeconds:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) LumipolGraphBarColorRole *colorRole __attribute__((swift_name("colorRole")));
+@property (readonly) LumipolGraphDouble * _Nullable endDistanceMeters __attribute__((swift_name("endDistanceMeters")));
 @property (readonly) LumipolGraphInt * _Nullable endMinutes __attribute__((swift_name("endMinutes")));
+@property (readonly) LumipolGraphDouble * _Nullable endSeconds __attribute__((swift_name("endSeconds")));
 @property (readonly) double heightFraction __attribute__((swift_name("heightFraction")));
 @property (readonly) int32_t index __attribute__((swift_name("index")));
 @property (readonly) BOOL isPartial __attribute__((swift_name("isPartial")));

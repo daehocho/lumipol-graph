@@ -25,8 +25,9 @@ final class CoreSmokeTests: XCTestCase {
     }
 
     func testBarEngineTypesExposed() {
+        // 5km — 막대 5개라 버킷이 1km로 유지된다(0.41.0: 5막대 미만이면 코어가 잘게 쪼갠다)
         let data = BarChartData(
-            samples: [SplitSample(distanceMeters: 1000, timeSeconds: 300)],
+            samples: Array(repeating: SplitSample(distanceMeters: 1000, timeSeconds: 300), count: 5),
             splitDistanceMeters: 1000,
             targetPaceSecPerUnit: nil,
             toleranceSecPerUnit: 10,
@@ -36,9 +37,12 @@ final class CoreSmokeTests: XCTestCase {
             totalDistanceMeters: nil
         )
         let layout = BarChartEngine.shared.layout(data: data)
-        XCTAssertEqual(layout.bars.count, 1)
-        // 1km 정확한 샘플(0.3km 미만 부분 구간이 아님)이므로 isPartial == false
-        XCTAssertFalse(layout.bars[0].isPartial)
+        XCTAssertEqual(layout.bars.count, 5)
+        // 1km로 정확히 떨어지는 샘플이므로 부분 스플릿이 없다
+        XCTAssertFalse(layout.bars.contains { $0.isPartial })
+        // 0.41.0 계약 — 거리모드는 막대 끝 누적 거리를 싣는다(x축 라벨용)
+        XCTAssertEqual(layout.bars[0].endDistanceMeters?.doubleValue, 1000)
+        XCTAssertNil(layout.bars[0].endSeconds)
     }
 
     func testDonutEngineTypesExposed() {

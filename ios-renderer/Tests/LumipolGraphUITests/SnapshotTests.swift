@@ -77,7 +77,7 @@ final class SnapshotTests: XCTestCase {
             let value: Double = 300 + Double(i) * 5
             let heightFraction: Double = 0.3 + 0.07 * Double(i)
             bars.append(BarLayout(index: Int32(i), value: value, heightFraction: heightFraction,
-                                   colorRole: role(for: i), isPartial: false, endMinutes: nil))
+                                   colorRole: role(for: i), isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil))
         }
         let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: KotlinDouble(double: 0.5), colorAnchors: nil)
         view.render(layout, style: .default,
@@ -95,7 +95,7 @@ final class SnapshotTests: XCTestCase {
         let bars = (0..<8).map { i -> BarLayout in
             BarLayout(index: Int32(i), value: 300 + Double(i) * 12,
                       heightFraction: 0.25 + 0.08 * Double(i),
-                      colorRole: .onTarget, isPartial: false, endMinutes: nil)
+                      colorRole: .onTarget, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil)
         }
         let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: KotlinDouble(double: 0.5), colorAnchors: nil)
         view.render(layout)   // provider 미지정 → 기본 연속 팔레트

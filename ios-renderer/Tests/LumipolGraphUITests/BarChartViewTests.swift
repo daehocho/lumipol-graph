@@ -11,7 +11,7 @@ final class BarChartViewTests: XCTestCase {
                 heightFraction: 0.3 + 0.1 * Double(i),
                 colorRole: .onTarget,
                 isPartial: i == barCount - 1,
-                endMinutes: nil
+                endMinutes: nil, endDistanceMeters: nil, endSeconds: nil
             )
         }
         let ticks = [AxisTick(value: 300, position: 0.2), AxisTick(value: 360, position: 0.8)]
@@ -40,9 +40,9 @@ final class BarChartViewTests: XCTestCase {
     // 값이 다른 3막대(페이스 300/330/360) 레이아웃 — 연속 색상 검증용.
     private func pacedLayout() -> BarChartLayout {
         let bars = [
-            BarLayout(index: 0, value: 300, heightFraction: 0.3, colorRole: .faster, isPartial: false, endMinutes: nil),
-            BarLayout(index: 1, value: 330, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil),
-            BarLayout(index: 2, value: 360, heightFraction: 0.7, colorRole: .slower, isPartial: false, endMinutes: nil),
+            BarLayout(index: 0, value: 300, heightFraction: 0.3, colorRole: .faster, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
+            BarLayout(index: 1, value: 330, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
+            BarLayout(index: 2, value: 360, heightFraction: 0.7, colorRole: .slower, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
         ]
         return BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil, colorAnchors: nil)
     }
@@ -96,10 +96,10 @@ final class BarChartViewTests: XCTestCase {
     // 코어 테스트가 검증). 렌더러는 실려 온 앵커를 그대로 쓴다는 계약만 여기서 확인한다.
     func testAnchorsExcludePartialSplit() {
         let bars = [
-            BarLayout(index: 0, value: 300, heightFraction: 0.4, colorRole: .faster, isPartial: false, endMinutes: nil),
-            BarLayout(index: 1, value: 330, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil),
-            BarLayout(index: 2, value: 360, heightFraction: 0.6, colorRole: .slower, isPartial: false, endMinutes: nil),
-            BarLayout(index: 3, value: 100, heightFraction: 0.1, colorRole: .faster, isPartial: true, endMinutes: nil), // 극단 outlier
+            BarLayout(index: 0, value: 300, heightFraction: 0.4, colorRole: .faster, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
+            BarLayout(index: 1, value: 330, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
+            BarLayout(index: 2, value: 360, heightFraction: 0.6, colorRole: .slower, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
+            BarLayout(index: 3, value: 100, heightFraction: 0.1, colorRole: .faster, isPartial: true, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil), // 극단 outlier
         ]
         let layout = BarChartLayout(
             bars: bars, yTicks: [], referenceLinePosition: nil,
@@ -121,7 +121,7 @@ final class BarChartViewTests: XCTestCase {
 
     // 앵커 없는 레거시 layout(직접 생성)은 국소 폴백(min/max/산술평균)으로 크래시 없이 그린다.
     func testAnchorsFallBackWhenAllPartial() {
-        let bars = [BarLayout(index: 0, value: 250, heightFraction: 0.5, colorRole: .onTarget, isPartial: true, endMinutes: nil)]
+        let bars = [BarLayout(index: 0, value: 250, heightFraction: 0.5, colorRole: .onTarget, isPartial: true, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil)]
         let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil, colorAnchors: nil)
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
         var captured: [BarPaceColorInput] = []
@@ -135,8 +135,8 @@ final class BarChartViewTests: XCTestCase {
     // 앵커 없는 레거시 layout: 폴백 앵커(전체 min/max)가 범위를 보존한다 → 색 신호 보존.
     func testFallsBackToAllWhenFullSplitsLackRange() {
         let bars = [
-            BarLayout(index: 0, value: 300, heightFraction: 0.6, colorRole: .faster, isPartial: false, endMinutes: nil),
-            BarLayout(index: 1, value: 360, heightFraction: 0.3, colorRole: .slower, isPartial: true, endMinutes: nil),
+            BarLayout(index: 0, value: 300, heightFraction: 0.6, colorRole: .faster, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
+            BarLayout(index: 1, value: 360, heightFraction: 0.3, colorRole: .slower, isPartial: true, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
         ]
         let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil, colorAnchors: nil)
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
@@ -153,8 +153,8 @@ final class BarChartViewTests: XCTestCase {
     // 부분막대 흐림(opacity)은 색과 독립적으로 유지.
     func testPartialBarStillDimmedWithContinuousColor() {
         let bars = [
-            BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .faster, isPartial: false, endMinutes: nil),
-            BarLayout(index: 1, value: 360, heightFraction: 0.3, colorRole: .slower, isPartial: true, endMinutes: nil),
+            BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .faster, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
+            BarLayout(index: 1, value: 360, heightFraction: 0.3, colorRole: .slower, isPartial: true, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
         ]
         let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil, colorAnchors: nil)
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
@@ -191,7 +191,7 @@ final class BarChartViewTests: XCTestCase {
     func testYLabelFormatterIsApplied() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
         let layout = BarChartLayout(
-            bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil)],
+            bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil)],
             yTicks: [AxisTick(value: 300, position: 0.5)],
             referenceLinePosition: nil, colorAnchors: nil
         )
@@ -207,8 +207,8 @@ final class BarChartViewTests: XCTestCase {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
         let layout = BarChartLayout(
             bars: [
-                BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil),
-                BarLayout(index: 1, value: 310, heightFraction: 0.6, colorRole: .slower, isPartial: false, endMinutes: nil),
+                BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
+                BarLayout(index: 1, value: 310, heightFraction: 0.6, colorRole: .slower, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
             ],
             yTicks: [], referenceLinePosition: nil, colorAnchors: nil
         )
@@ -244,7 +244,7 @@ final class BarChartViewTests: XCTestCase {
     func testXAxisLabelsHiddenWhenFlagOff() {
         let view = RDBarChartView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
         let layout = BarChartLayout(
-            bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil)],
+            bars: [BarLayout(index: 0, value: 300, heightFraction: 0.5, colorRole: .onTarget, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil)],
             yTicks: [], referenceLinePosition: nil, colorAnchors: nil
         )
         var style = ChartStyle.default
@@ -346,8 +346,8 @@ final class BarChartViewTests: XCTestCase {
         var style = ChartStyle.default
         style.barShowYAxisLabels = false
         let bars = [
-            BarLayout(index: 0, value: 300, heightFraction: 0.15, colorRole: .faster, isPartial: false, endMinutes: nil),  // 짧음
-            BarLayout(index: 1, value: 330, heightFraction: 0.9, colorRole: .slower, isPartial: false, endMinutes: nil),
+            BarLayout(index: 0, value: 300, heightFraction: 0.15, colorRole: .faster, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),  // 짧음
+            BarLayout(index: 1, value: 330, heightFraction: 0.9, colorRole: .slower, isPartial: false, endMinutes: nil, endDistanceMeters: nil, endSeconds: nil),
         ]
         let layout = BarChartLayout(bars: bars, yTicks: [], referenceLinePosition: nil, colorAnchors: nil)
         view.render(layout, style: style, barLabels: ["4'50\"", "5'30\""], xAxisLabels: nil, yLabelFormatter: nil)
