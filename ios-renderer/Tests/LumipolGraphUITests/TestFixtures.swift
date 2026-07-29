@@ -79,6 +79,8 @@ enum TestFixtures {
             return String(format: "%d'%02d\"", minutes, seconds)
         }
         if axis == .ySecondary { return "\(Int(value))" }
+        // 고도 눈금(0.40.0) — 폴백(km)에 흘리면 단위가 틀린다. 앱 포매터도 이 축을 처리해야 한다.
+        if axis == .yOverlay { return "\(Int(value))m" }
         return String(format: "%gkm", value)
     }
 }

@@ -91,6 +91,35 @@ final class ChartLayerBuilderTests: XCTestCase {
         ])
     }
 
+    func testOverlayAxisLabelsAnchorToSilhouetteBand() {
+        // Y_OVERLAY 눈금(0.40.0): 오른쪽 배치, y = 바닥 − position × areaHeightFraction × 플롯높이(반전 무관).
+        let overlayLayout = LineChartLayout(
+            series: layout.series,
+            axisTicks: layout.axisTicks + [
+                AxisTicksLayout(axis: .yOverlay, ticks: [
+                    AxisTick(value: 10, position: 0), AxisTick(value: 20, position: 1),
+                ]),
+            ],
+            refBands: layout.refBands, markers: layout.markers,
+            stats: layout.stats, domains: layout.domains
+        )
+        let invertedPlot = PlotArea(
+            bounds: CGRect(x: 0, y: 0, width: 100, height: 100), insets: .zero, invertedAxes: [.primary]
+        )
+        let layers = ChartLayerBuilder.build(
+            layout: overlayLayout, data: data, style: .default, plotArea: invertedPlot,
+            formatter: { _, value in "\(value)" }
+        )
+        let container = layer(named: "axisLabels.yOverlay", in: layers)
+        let labels = (container?.sublayers ?? []).compactMap { $0 as? CATextLayer }
+        XCTAssertEqual(labels.count, 2)
+        // 오른쪽 바깥(maxX + AXIS_LABEL_GAP)
+        XCTAssertTrue(labels.allSatisfy { $0.frame.minX > 100 })
+        // position 0 → 라벨 중심 y=100(플롯 바닥), position 1 → 100 − areaHeightFraction × 100
+        XCTAssertEqual(labels[0].frame.midY, 100, accuracy: 0.5)
+        XCTAssertEqual(labels[1].frame.midY, 100 - ChartStyle.default.areaHeightFraction * 100, accuracy: 0.5)
+    }
+
     func testGridDrawsDashedLinesAtTicks() {
         let grid = layer(named: "grid", in: build()) as? CAShapeLayer
         XCTAssertEqual(grid?.lineDashPattern, ChartStyle.default.gridLineDashPattern)

@@ -117,8 +117,9 @@ public final class RDChartView: UIView {
     /// - Parameters:
     ///   - invertedAxes: 화면에서 뒤집을 Y축(예: 페이스 — 위=빠름). 코어 출력은 값-공간 그대로.
     ///   - labelFormatter: 축 tick 값 → 표시 문자열. 코어/렌더러는 단위를 모른다(앱 주입).
-    ///     주의: 오버레이 시리즈가 있으면 스크럽 시 `ChartAxis.yOverlay`(실값)로도 호출된다 —
-    ///     축 keyed 딕셔너리·강제 언래핑 포매터는 이 케이스를 반드시 처리할 것.
+    ///     주의: 오버레이 시리즈가 있으면 스크럽 시, 고도 눈금(0.40.0)이 나오면 축 라벨로도
+    ///     `ChartAxis.yOverlay`(실값) 호출이 발생한다 — 축 keyed 딕셔너리·강제 언래핑 포매터는
+    ///     이 케이스를 반드시 처리할 것.
     public func render(
         _ data: LineChartData,
         style: ChartStyle = .default,
@@ -351,10 +352,12 @@ public final class RDChartView: UIView {
     private func commitViewport() {
         guard let data else { return }
         if let state = zoomState, state.isZoomed {
+            // area를 함께 넘겨야 확대 상태에서도 고도 눈금(Y_OVERLAY)이 유지된다(0.40.0).
             chartLayout = LineChartEngine.shared.layout(
                 data: data,
                 xMin: state.window.lowerBound,
-                xMax: state.window.upperBound
+                xMax: state.window.upperBound,
+                backgroundArea: backgroundAreaPoints
             )
         } else {
             // 1x 복귀 시 상태 제거 (ensureZoomState 불변식 유지).

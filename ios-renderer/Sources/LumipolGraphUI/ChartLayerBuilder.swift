@@ -245,6 +245,15 @@ enum ChartLayerBuilder {
                     x: plotArea.rect.minX - size.width - CGFloat(ChartDefaults.shared.AXIS_LABEL_GAP),
                     y: y - size.height / 2
                 )
+            } else if ticksLayout.axis == .yOverlay {
+                // 고도 실루엣 눈금 — position은 밴드 내 fraction이라 축 매핑(plotArea.y) 대신
+                // 실루엣(AreaSilhouette)과 동일한 바닥 기준 자체 매핑을 쓴다(축 반전 무관).
+                let y = plotArea.rect.maxY
+                    - CGFloat(tick.position) * style.areaHeightFraction * plotArea.rect.height
+                text.frame.origin = CGPoint(
+                    x: plotArea.rect.maxX + CGFloat(ChartDefaults.shared.AXIS_LABEL_GAP),
+                    y: y - size.height / 2
+                )
             } else {
                 let y = plotArea.y(tick.position, axis: .secondary)
                 text.frame.origin = CGPoint(
@@ -260,6 +269,7 @@ enum ChartLayerBuilder {
     private static func name(of axis: ChartAxis) -> String {
         if axis == .x { return "x" }
         if axis == .yPrimary { return "yPrimary" }
+        if axis == .yOverlay { return "yOverlay" }
         return "ySecondary"
     }
 
