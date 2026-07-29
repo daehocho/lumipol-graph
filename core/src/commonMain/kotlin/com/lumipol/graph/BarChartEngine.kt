@@ -23,6 +23,27 @@ object BarChartEngine {
     private val BUCKET_MINUTE_CANDIDATES = listOf(1, 2, 5, 10)
     private const val MAX_BARS = 10
 
+    /** 막대 하한 — 짧은 런에서 막대 1~2개만 보이던 문제(0.41.0). 두 모드 공유. */
+    private const val MIN_BARS = 5
+
+    /** 거리모드 버킷 후보(페이스 단위의 분수). km 기준 1000·500·200·100·50m. */
+    private val DISTANCE_BUCKET_FRACTIONS = listOf(1.0, 0.5, 0.2, 0.1, 0.05)
+
+    /**
+     * 총거리로 스플릿 버킷 거리(m)를 고른다. 큰 후보부터 내려가며 막대가 [MIN_BARS] 이상이 되는
+     * 첫 후보를 쓰고, 끝까지 못 채우면 하한(unit/20)을 쓴다. 반환값은 **버킷일 뿐**이고
+     * 페이스 단위(sec/unit)는 [unitMeters]가 계속 맡는다.
+     */
+    fun chooseDistanceBucketMeters(totalDistanceMeters: Double, unitMeters: Double): Double {
+        require(unitMeters > 0) { "unitMeters must be > 0" }
+        if (!(totalDistanceMeters > 0.0) || totalDistanceMeters.isInfinite()) return unitMeters
+        for (f in DISTANCE_BUCKET_FRACTIONS) {
+            val bucket = unitMeters * f
+            if (ceil(totalDistanceMeters / bucket) >= MIN_BARS) return bucket
+        }
+        return unitMeters * DISTANCE_BUCKET_FRACTIONS.last()
+    }
+
     /** 총 러닝 시간(초)으로 시간 버킷 크기(초)를 고른다. iOS bucketMinutes 규칙과 동일. */
     fun chooseTimeBucketSeconds(runningSeconds: Double): Double {
         val totalMinutes = runningSeconds / 60.0

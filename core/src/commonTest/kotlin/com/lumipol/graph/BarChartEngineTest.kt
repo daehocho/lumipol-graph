@@ -187,6 +187,46 @@ class BarChartEngineTest {
         assertTrue(layout.bars[0].heightFraction in 0.0..1.0)
     }
 
+    // MARK: chooseDistanceBucketMeters
+
+    @Test
+    fun distance_bucket_stays_unit_when_five_or_more_bars() {
+        // 5.0km → 1km 5막대, 4.2km → 4 온전+부분 = 5막대. 둘 다 하향 없음.
+        assertEquals(1000.0, BarChartEngine.chooseDistanceBucketMeters(5000.0, 1000.0), 1e-9)
+        assertEquals(1000.0, BarChartEngine.chooseDistanceBucketMeters(4200.0, 1000.0), 1e-9)
+    }
+
+    @Test
+    fun distance_bucket_steps_down_until_five_bars() {
+        // 4.0km 정확: 부분 스플릿이 없어 4막대 → 500m(8막대)
+        assertEquals(500.0, BarChartEngine.chooseDistanceBucketMeters(4000.0, 1000.0), 1e-9)
+        // 3.2km: 1km→4, 500m→7 → 500m
+        assertEquals(500.0, BarChartEngine.chooseDistanceBucketMeters(3200.0, 1000.0), 1e-9)
+        // 0.64km: 1km→1, 500m→2, 200m→4, 100m→7 → 100m
+        assertEquals(100.0, BarChartEngine.chooseDistanceBucketMeters(640.0, 1000.0), 1e-9)
+    }
+
+    @Test
+    fun distance_bucket_floor_is_one_twentieth_unit() {
+        // 0.2km: 50m로도 4막대 → 더 못 내려가고 하한 유지
+        assertEquals(50.0, BarChartEngine.chooseDistanceBucketMeters(200.0, 1000.0), 1e-9)
+    }
+
+    @Test
+    fun distance_bucket_scales_with_mile_unit() {
+        // 1.5마일: 1마일→2, 1/2→3, 1/5→8 → 마일/5
+        assertEquals(1609.344 / 5.0, BarChartEngine.chooseDistanceBucketMeters(2414.016, 1609.344), 1e-9)
+        assertEquals(1609.344, BarChartEngine.chooseDistanceBucketMeters(1609.344 * 5, 1609.344), 1e-9)
+    }
+
+    @Test
+    fun distance_bucket_degenerate_total_returns_unit() {
+        // 무효 총거리는 하향할 근거가 없다 — 단위 그대로(막대도 안 그려진다)
+        assertEquals(1000.0, BarChartEngine.chooseDistanceBucketMeters(0.0, 1000.0), 1e-9)
+        assertEquals(1000.0, BarChartEngine.chooseDistanceBucketMeters(-5.0, 1000.0), 1e-9)
+        assertEquals(1000.0, BarChartEngine.chooseDistanceBucketMeters(Double.NaN, 1000.0), 1e-9)
+    }
+
     // MARK: chooseTimeBucketSeconds
 
     @Test
