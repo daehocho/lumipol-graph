@@ -723,6 +723,41 @@ AOS `animateEntrance = true`를 명시(각 1줄, 트랙 C 앱 커밋에 포함).
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### Y축 눈금 규칙 — 스케일 그룹 병합 + 고도 눈금 (0.40.0, 2026-07-29, **breaking(API)**)
+
+앱 화면에서 확인된 눈금 3건: (1) 심박수+케이던스 선택 시 좌우에 사실상 같은 눈금이 중복,
+(2) 페이스+고도처럼 한쪽 축이 비어도 고도 값을 읽을 수 없음, (3) 고도 단독은 Y 눈금 0개.
+둘 다 "어느 시리즈가 어느 축인가"라는 이산 정책이라 코어가 확정한다(렌더러 라벨 문자열 비교 같은
+비결정적 우회는 배제 — 경계 정책 §4-3).
+
+- **breaking: `SeriesSelection.slotAxes(slots, sharedScaleIds)` 신설, `slotAxis(index)` deprecated** —
+  슬롯 0은 PRIMARY, 이후는 SECONDARY이되 **슬롯 0과 같은 스케일 그룹이면 PRIMARY 공유**.
+  `PaceSeriesId.SHARED_SCALE_IDS = {HEART, CADENCE}`. 심박+케이던스만 선택하면 왼쪽 한 축에
+  합집합 도메인으로 병합된다(3지표 선택 시 SECONDARY 병합과 같은 규칙을 2지표에도 적용).
+  단일 지표·페이스 포함 조합의 축 배정은 종전과 동일.
+- **breaking: `SeriesSelection.invertedAxesFor(paceSlot, axes)` 신설, 구 1인자 오버로드 deprecated** —
+  반전 규칙(페이스가 앉은 축만)은 그대로, 입력만 `slotAxes` 결과 기반으로 바뀐다.
+- **feat: `ChartAxis.Y_OVERLAY`를 고도 눈금 채널로 승격** — `backgroundArea`가 2점 이상이고
+  **Y_SECONDARY가 비어 있을 때만** min/max 2눈금을 방출한다(평지 min==max면 겹침 방지로 1눈금).
+  고도는 종전대로 축 슬롯 없는 배경 실루엣이며, 눈금 `position`은 **실루엣 밴드 내 fraction**
+  (0=플롯 바닥, 1=`AREA_HEIGHT_FRACTION` 높이)이라 다른 축의 플롯 전체 0~1과 의미가 다르다.
+  분모 하한은 실루엣(`heightFractions` minSpan)과 같은 `AREA_MIN_VALUE_SPAN` — 라벨이 실루엣과
+  항상 정렬된다. 렌더러 2벌은 이 눈금을 오른쪽(비어 있는 축)에 배치하고, 수평 그리드는 만들지
+  않는다(하단 35% 전용 눈금이라).
+- **feat: `LineChartEngine.layout(data, xMin, xMax, backgroundArea)` 오버로드 신설** — 확대 상태에서도
+  고도 눈금이 유지된다. 고도 눈금은 줌과 무관하게 전체 정규화 기준(실루엣과 동일).
+
+**마이그레이션(앱)**:
+1. `slotAxis(i)` 호출을 `slotAxes(slots, PaceSeriesId.SHARED_SCALE_IDS)`로 교체하고, 시리즈 조립·
+   `invertedAxesFor`·심박존 `RefBand`의 축을 모두 그 결과에서 읽는다. 심박+케이던스 선택 시
+   케이던스가 SECONDARY → PRIMARY로 바뀌므로, 축을 개별 계산하던 코드가 남으면 두 선이 다른
+   도메인으로 그려진다.
+2. `labelFormatter`가 `ChartAxis.Y_OVERLAY`를 처리하는지 확인한다 — 종전에는 스크럽에서만 오던
+   축이 이제 **축 라벨로도** 온다. 축 keyed 딕셔너리·강제 언래핑·else 폴백(예: 거리 단위)로
+   흘리면 고도가 잘못된 단위로 표시된다.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은

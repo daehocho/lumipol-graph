@@ -384,6 +384,7 @@ __attribute__((swift_name("LineChartEngine")))
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data __attribute__((swift_name("layout(data:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data backgroundArea:(NSArray<LumipolGraphPoint *> * _Nullable)backgroundArea __attribute__((swift_name("layout(data:backgroundArea:)")));
 - (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("layout(data:xMin:xMax:)")));
+- (LumipolGraphLineChartLayout *)layoutData:(LumipolGraphLineChartData *)data xMin:(double)xMin xMax:(double)xMax backgroundArea:(NSArray<LumipolGraphPoint *> * _Nullable)backgroundArea __attribute__((swift_name("layout(data:xMin:xMax:backgroundArea:)")));
 - (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x __attribute__((swift_name("nearest(data:x:)"))) __attribute__((deprecated("스냅 소스 선택·창 필터·정규화 좌표를 렌더러가 재구성해야 한다 — 코어가 확정하는 nearestScrub로 대체(B2)")));
 - (NSArray<LumipolGraphNearestResult *> *)nearestData:(LumipolGraphLineChartData *)data x:(double)x xMin:(double)xMin xMax:(double)xMax __attribute__((swift_name("nearest(data:x:xMin:xMax:)"))) __attribute__((deprecated("스냅 소스 선택·창 필터·정규화 좌표를 렌더러가 재구성해야 한다 — 코어가 확정하는 nearestScrub로 대체(B2)")));
 - (LumipolGraphScrubResult * _Nullable)nearestScrubData:(LumipolGraphLineChartData *)data layout:(LumipolGraphLineChartLayout *)layout x:(double)x __attribute__((swift_name("nearestScrub(data:layout:x:)")));
@@ -428,6 +429,7 @@ __attribute__((swift_name("PaceSeriesId")))
 @property (readonly) int32_t HEART __attribute__((swift_name("HEART")));
 @property (readonly) NSArray<LumipolGraphInt *> *LINE_PRIORITY __attribute__((swift_name("LINE_PRIORITY")));
 @property (readonly) int32_t PACE __attribute__((swift_name("PACE")));
+@property (readonly) NSSet<LumipolGraphInt *> *SHARED_SCALE_IDS __attribute__((swift_name("SHARED_SCALE_IDS")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -438,9 +440,11 @@ __attribute__((swift_name("SeriesSelection")))
 + (instancetype)seriesSelection __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) LumipolGraphSeriesSelection *shared __attribute__((swift_name("shared")));
 - (NSArray<LumipolGraphInt *> *)assignSlotsPriority:(NSArray<LumipolGraphInt *> *)priority selected:(NSSet<LumipolGraphInt *> *)selected withData:(NSSet<LumipolGraphInt *> *)withData __attribute__((swift_name("assignSlots(priority:selected:withData:)")));
-- (NSSet<LumipolGraphAxis *> *)invertedAxesForPaceSlot:(int32_t)paceSlot __attribute__((swift_name("invertedAxesFor(paceSlot:)")));
+- (NSSet<LumipolGraphAxis *> *)invertedAxesForPaceSlot:(int32_t)paceSlot __attribute__((swift_name("invertedAxesFor(paceSlot:)"))) __attribute__((deprecated("slotAxis 기반 매핑 — slotAxes 결과를 받는 오버로드로 대체(0.40.0)")));
+- (NSSet<LumipolGraphAxis *> *)invertedAxesForPaceSlot:(int32_t)paceSlot axes:(NSArray<LumipolGraphAxis *> *)axes __attribute__((swift_name("invertedAxesFor(paceSlot:axes:)")));
 - (NSArray<LumipolGraphInt *> *)normalizedCurrent:(NSArray<LumipolGraphInt *> *)current available:(NSSet<LumipolGraphInt *> *)available priority:(NSArray<LumipolGraphInt *> *)priority __attribute__((swift_name("normalized(current:available:priority:)")));
-- (LumipolGraphAxis *)slotAxisIndex:(int32_t)index __attribute__((swift_name("slotAxis(index:)")));
+- (NSArray<LumipolGraphAxis *> *)slotAxesSlots:(NSArray<LumipolGraphInt *> *)slots sharedScaleIds:(NSSet<LumipolGraphInt *> *)sharedScaleIds __attribute__((swift_name("slotAxes(slots:sharedScaleIds:)")));
+- (LumipolGraphAxis *)slotAxisIndex:(int32_t)index __attribute__((swift_name("slotAxis(index:)"))) __attribute__((deprecated("슬롯 index만으로는 스케일 그룹 병합(심박+케이던스 한 축)을 표현할 수 없다 — slotAxes로 대체(0.40.0)")));
 - (NSArray<LumipolGraphInt *> *)toggledCurrent:(NSArray<LumipolGraphInt *> *)current toggling:(int32_t)toggling __attribute__((swift_name("toggled(current:toggling:)")));
 @end
 
