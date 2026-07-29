@@ -472,6 +472,8 @@ object CoreDump {
                 "colorRole" to jstr(it.colorRole.name),
                 "isPartial" to jbool(it.isPartial),
                 "endMinutes" to (it.endMinutes?.let(::jint) ?: "null"),
+                "endDistanceMeters" to (it.endDistanceMeters?.let(::jnum) ?: "null"),
+                "endSeconds" to (it.endSeconds?.let(::jnum) ?: "null"),
             )
         }),
         "yTickCount" to jint(l.yTicks.size),

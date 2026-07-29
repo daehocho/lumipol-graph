@@ -142,10 +142,31 @@ object HarnessFixtures {
             splitDistanceMeters = 1000.0,
             splitTimeSeconds = 300.0,
         ),
+        // 0.64km(10m/7.5s = 750s/km) — 100m 버킷 하향 관측(온전 6 + 부분 1)
+        "B09_short_run_subdivided" to BarChartData(
+            bars(64 to SplitSample(10.0, 7.5)),
+            splitDistanceMeters = 1000.0,
+        ),
+        // 0.2km — 하한(50m)으로도 5막대 미달(4막대)
+        "B10_below_min_bars_floor" to BarChartData(
+            bars(20 to SplitSample(10.0, 7.5)),
+            splitDistanceMeters = 1000.0,
+        ),
+        // 3분/30초 버킷 — endMinutes 중복(1,1,2,2,3,3) 대비 endSeconds 관측
+        "B11_sub_minute_time_bucket" to BarChartData(
+            bars(180 to SplitSample(3.3333333333333335, 1.0)),
+            splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 30.0,
+            totalDurationSeconds = 180.0,
+            totalDistanceMeters = 600.0,
+        ),
     )
 
-    /** chooseTimeBucketSeconds 입력(초) — 버킷 후보 경계 전후. */
-    val timeBucketCases: List<Double> = listOf(0.0, 59.0, 600.0, 601.0, 1200.0, 1201.0, 3000.0, 3001.0, 6000.0, 6001.0, 100000.0)
+    /** chooseTimeBucketSeconds 입력(초) — 버킷 후보 경계 전후 + 하향(30/15초) 경계. */
+    val timeBucketCases: List<Double> = listOf(
+        0.0, 59.0, 60.0, 120.0, 150.0, 180.0, 240.0, 299.0, 300.0,
+        600.0, 601.0, 1200.0, 1201.0, 3000.0, 3001.0, 6000.0, 6001.0, 100000.0,
+    )
 
     // ── 도넛 ─────────────────────────────────────────────────
     private val zones = DonutColorRole.entries
