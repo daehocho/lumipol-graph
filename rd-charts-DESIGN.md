@@ -695,6 +695,34 @@ AOS `animateEntrance = true`를 명시(각 1줄, 트랙 C 앱 커밋에 포함).
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### 코드리뷰 후속 — 정합성 수정·API 정리 (0.39.0, 2026-07-29, **breaking(API)**)
+
+경계 리팩토링 마감 코드리뷰(8e8b952 이후 범위) 확정 10건.
+
+- **fix: `TrackChartBuilder.zoneSamples`(D11)** — 누적 모드 판정을 "마지막 행 누적>0" →
+  "누적>0인 행 존재"로. iOS 원본의 마지막 행 검사는 정렬 전제에서만 "전부 비었는지"와 동치 —
+  코어는 정렬하지 않으므로 말미의 누적 결측 행이 기록 전체를 폴백(누적 전용 저장소에선 전부
+  dt=0 → 도넛 무데이터)으로 뒤집을 수 있었다.
+- **fix: `nearestScrub`** — 중복 시리즈 id에서 role/axis를 첫 우선 id 맵이 아닌 항목별로
+  해석(B10 per-item axis 그리기와 일치).
+- **fix: `ZoomWindow.setWindow`** — 역전·퇴화 구간(targetMax ≤ targetMin) 무시(pinch의 무효
+  배율 규칙과 동일) — windowMax < windowMin 모순 창 차단.
+- **breaking: `LineChartLayout`/`BarChartLayout` 편의 생성자 삭제** — 가짜 x 도메인(0..1)·
+  colorAnchors=null을 조용히 주입하던 경로 제거. 직접 생성(테스트 전용)은 전 인자 명시.
+- **breaking: `LightPalette`/`DarkPalette`의 `BAR_FASTER`/`BAR_ON_TARGET`/`BAR_SLOWER` 삭제** —
+  소비처 없는 데드 상수(B13에서 유일 소비처 barColors가 제거됨). 골든 재녹화 포함.
+- **fix(iOS)**: `accessibilityDescriptionOverride`를 render 이후 설정해도 didSet으로 즉시
+  반영(3뷰 계약 통일), 진입 이징을 named easeOut → 코어 `ENTRANCE_EASING_*` 계수(D5/A3),
+  도넛 폴백색 `ChartStyle.fallbackDataColor` 신설(코어 `FALLBACK_DATA_COLOR` — AOS와 동일 원본).
+- **fix(AOS)**: 인터랙션 비활성(onSelectSegment=null) 도넛은 programmatic 선택에 햅틱 훅을
+  걸지 않는다(탭 경로와 대칭).
+- **chore: boundary-lint 강화** — 정책 상수 검사의 트레일링 주석·숫자 포함 이름 우회 차단,
+  libm 금지 목록에 tan/asin/acos/atan 추가.
+
+**마이그레이션(앱)**: 없음 — 삭제된 생성자·상수를 쓰는 앱 코드 없음(양 앱 grep 확인, 2026-07-29).
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은
