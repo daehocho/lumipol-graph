@@ -161,7 +161,12 @@ public final class RDChartView: UIView {
     /// 전체 구간(1x) layout. 시리즈 없이 배경 area만 있으면 X 도메인이 area x범위여야 하는데,
     /// 그 규칙은 플랫폼 중립이라 코어 area-인식 오버로드가 책임진다(양 렌더러 공유).
     private func makeFullLayout(data: LineChartData) -> LineChartLayout {
-        LineChartEngine.shared.layout(data: data, backgroundArea: backgroundAreaPoints)
+        // areaMinValueSpan은 실루엣(AreaSilhouette)과 같은 스타일 값 — 고도 눈금이 실루엣과 정렬된다.
+        LineChartEngine.shared.layout(
+            data: data,
+            backgroundArea: backgroundAreaPoints,
+            areaMinValueSpan: style.areaMinValueSpan
+        )
     }
 
     /// ObjC 진입점 — 기본 스타일·반전 없음·기본 포매터.
@@ -357,7 +362,8 @@ public final class RDChartView: UIView {
                 data: data,
                 xMin: state.window.lowerBound,
                 xMax: state.window.upperBound,
-                backgroundArea: backgroundAreaPoints
+                backgroundArea: backgroundAreaPoints,
+                areaMinValueSpan: style.areaMinValueSpan
             )
         } else {
             // 1x 복귀 시 상태 제거 (ensureZoomState 불변식 유지).

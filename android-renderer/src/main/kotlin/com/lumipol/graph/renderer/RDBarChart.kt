@@ -50,9 +50,11 @@ import kotlin.math.roundToInt
  * @param barLabels 막대 값 라벨(표시 페이스 등). 정적 표시는 하지 않고 TalkBack 요약·롱프레스 말풍선
  *   값 소스로만 쓰인다. null이면 값 없음.
  * @param xAxisLabels 막대 아래 구간 라벨. null이면 생략.
+ * @param yLabelFormatter y틱 값 포매터. null이면 정수 반올림.
  * @param xAxisUnitLabel 그래프 오른쪽 하단 단위 라벨(km/mi 등). 기존 x축 라벨 줄은 밀리지 않고
  *   플롯 오른쪽 끝에 덧붙는다. null/빈 문자열이면 생략, x축 라벨 숨김이면 함께 숨김.
- * @param yLabelFormatter y틱 값 포매터. null이면 정수 반올림.
+ *   시그니처 위치는 yLabelFormatter **뒤** — iOS render와 순서 일치·기존 위치 인자 호출 보존
+ *   (0.44.0에서 앞에 끼워 넣었던 것을 0.46.0에서 교정).
  * @param animateEntrance baseline→값 높이 성장 애니. iOS는 정적이라 기본 off(UX 패리티).
  * @param onSelectedIndexChange 롱프레스 스크럽 선택 인덱스 변경 통지(해제 시 null). null이면 미통지.
  * @param chartContentDescription TalkBack 요약 문자열 주입(로컬라이즈는 앱 소유 — B12/D9).
@@ -65,8 +67,8 @@ fun RDBarChart(
     style: ChartStyle = ChartStyle.defaults(isSystemInDarkTheme()),
     barLabels: List<String>? = null,
     xAxisLabels: List<String>? = null,
-    xAxisUnitLabel: String? = null,
     yLabelFormatter: ((Double) -> String)? = null,
+    xAxisUnitLabel: String? = null,
     animateEntrance: Boolean = false,
     onSelectedIndexChange: ((Int?) -> Unit)? = null,
     chartContentDescription: String? = null,

@@ -70,6 +70,9 @@ final class SampleViewController: UIViewController {
             return String(format: "%d'%02d\"", minutes, seconds)
         }
         if axis == .ySecondary { return "\(Int(value))" }
+        // 고도 눈금(0.40.0) — SECONDARY가 비면 배경 area 차트에 yOverlay가 온다.
+        // 거리 폴백으로 흘리면 고도가 "150km"로 찍힌다.
+        if axis == .yOverlay { return "\(Int(value))m" }
         return String(format: "%gkm", value)
     }
 }

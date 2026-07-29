@@ -375,6 +375,17 @@ class BarChartEngineTest {
         assertEquals(30.0, BarChartEngine.chooseTimeBucketSeconds(240.0), 1e-9)
     }
 
+    @Test
+    fun bucket_selection_non_finite_duration_degrades_coarsely() {
+        // 오염된 총시간(워치 임포트 오류 등)이 15초 최소로 떨어지면 유한한 샘플이 수백 막대로
+        // 조각난다 — 0.41.0 이전 동작 유지: +Inf는 최대 캡(600s), NaN/-Inf는 최소 분 후보(60s).
+        assertEquals(600.0, BarChartEngine.chooseTimeBucketSeconds(Double.POSITIVE_INFINITY), 1e-9)
+        assertEquals(60.0, BarChartEngine.chooseTimeBucketSeconds(Double.NaN), 1e-9)
+        assertEquals(60.0, BarChartEngine.chooseTimeBucketSeconds(Double.NEGATIVE_INFINITY), 1e-9)
+        // 0초는 골든 고정(running_0 → 15) — 가드가 유한 0을 건드리면 안 된다.
+        assertEquals(15.0, BarChartEngine.chooseTimeBucketSeconds(0.0), 1e-9)
+    }
+
     // MARK: 시간모드 집계
 
     // 5'00"/km(=300s/km) 균일 러닝 N초를 1초 간격 샘플로.

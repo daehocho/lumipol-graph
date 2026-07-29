@@ -859,6 +859,36 @@ AOS `animateEntrance = true`를 명시(각 1줄, 트랙 C 앱 커밋에 포함).
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### 코드리뷰 후속 — Y_OVERLAY 게이트·minSpan 플럼·시그니처 교정 (0.46.0, 2026-07-29)
+
+63b426b 이후 릴리스(0.40.0~0.45.0) 일괄 코드리뷰에서 확정된 결함 수정.
+
+- **fix: Y_OVERLAY 게이트를 전체 데이터 기준으로** — 종전엔 줌 창 안 SECONDARY 값
+  유무로 판정해, 심박 공백 구간으로 줌하면 고도 눈금이 제스처 중 깜빡이며 등장했고
+  "SECONDARY 있는 차트엔 Y_OVERLAY가 안 온다"는 앱 포매터 가정이 깨졌다. 이제
+  차트에 SECONDARY 시리즈/밴드가 하나라도 있으면 창과 무관하게 미방출.
+- **feat: `LineChartEngine.layout(backgroundArea:)` 두 오버로드에 `areaMinValueSpan`
+  파라미터 추가**(기본 `ChartDefaults.AREA_MIN_VALUE_SPAN`) — 고도 눈금 위치의 분모
+  하한이 상수 하드코딩이라, 앱이 `ChartStyle.areaMinValueSpan`을 오버라이드하면 라벨이
+  실루엣 피크에서 이탈했다. 양 렌더러가 스타일 값을 그대로 전달한다.
+- **fix: `chooseTimeBucketSeconds` 비유한 입력 가드** — 0.41.0 `barCount()` 도입으로
+  NaN/±Inf가 0막대 취급 → 15초 최소로 떨어져 오염된 기록이 수백 막대로 조각났다.
+  이전 동작 복원: +Inf → 600s 캡, NaN/-Inf → 60s. 유한 0·음수는 15s 폴백 유지(골든 고정).
+- **fix: AOS `RDBarChart` `xAxisUnitLabel` 파라미터를 `yLabelFormatter` 뒤로 이동** —
+  0.44.0에서 앞에 끼워 넣어 위치 인자 호출·플랫폼 간 순서가 깨졌다. iOS `render`와
+  순서 일치.
+- **chore: 샘플 포매터 `Y_OVERLAY` 분기 추가**(양 플랫폼) — 거리 폴백(`%gkm`)으로
+  흘러 고도가 "150km"로 찍히던 패턴 교정. 앱이 복사하는 표준 예시.
+- **perf: `overlayAxisTicks` 1패스 min/max** — 제스처 커밋마다 리스트 할당 + 3패스
+  순회하던 것을 무할당 단일 순회로.
+
+**마이그레이션(앱)**:
+1. 라인차트 `labelFormatter`가 `Y_OVERLAY`(`.yOverlay`)를 반드시 처리하는지 확인 —
+   배경 area가 있고 SECONDARY가 빈 구성이면 축 라벨로 호출된다(샘플 포매터 참조).
+2. AOS에서 `RDBarChart`를 위치 인자로 호출했다면 `xAxisUnitLabel` 순서 확인(명명 인자 권장).
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은

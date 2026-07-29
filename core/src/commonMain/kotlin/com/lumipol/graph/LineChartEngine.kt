@@ -22,12 +22,20 @@ object LineChartEngine {
      * 코어가 책임진다). [backgroundArea]는 **x 오름차순** 전제. area가 퇴화(2점 미만·폭 0)면
      * 일반 규칙으로 폴백. area가 유효하고 SECONDARY 축이 비어 있으면 고도 눈금
      * ([ChartAxis.Y_OVERLAY])도 방출한다(0.40.0).
+     *
+     * [areaMinValueSpan]은 고도 눈금 위치의 분모 하한 — 렌더러가 실루엣에 쓰는
+     * `ChartStyle.areaMinValueSpan`과 **같은 값**을 넘겨야 라벨-실루엣 정렬 불변식이 유지된다
+     * (기본값만 믿으면 앱이 스타일을 오버라이드했을 때 라벨이 실루엣에서 떨어진다).
      */
-    fun layout(data: LineChartData, backgroundArea: List<Point>?): LineChartLayout {
+    fun layout(
+        data: LineChartData,
+        backgroundArea: List<Point>?,
+        areaMinValueSpan: Double = ChartDefaults.AREA_MIN_VALUE_SPAN,
+    ): LineChartLayout {
         if (data.series.isEmpty() && backgroundArea != null && backgroundArea.size >= 2) {
             val first = backgroundArea.first()
             val last = backgroundArea.last()
-            if (last.x > first.x) return layout(data, first.x, last.x, backgroundArea)
+            if (last.x > first.x) return layout(data, first.x, last.x, backgroundArea, areaMinValueSpan)
         }
         val maxTicks = data.config.maxTicks
         // X 도메인 (모든 시리즈 점의 x) — min은 nice 경계로 내리되 max는 데이터 끝에 맞춘다.
@@ -37,7 +45,7 @@ object LineChartEngine {
         val xMax = xs.maxOrNull() ?: xNice.niceMax
         val xDom = AxisDomain(xNice.niceMin, xMax)
         val xTicks = xNice.ticks.filter { it <= xMax + xNice.step * 1e-6 }
-        return layout(data, xDom, xTicks, windowed = false, backgroundArea)
+        return layout(data, xDom, xTicks, windowed = false, backgroundArea, areaMinValueSpan)
     }
 
     /** [xMin, xMax] 구간만 보이는 viewport layout — X 도메인은 구간 그대로,
@@ -48,13 +56,20 @@ object LineChartEngine {
         layout(data, xMin, xMax, backgroundArea = null)
 
     /** 줌 창 + 배경 area — 고도 눈금([ChartAxis.Y_OVERLAY])은 줌과 무관하게 전체 정규화 기준
-     *  (실루엣이 창과 무관하게 자체 min~max 정규화를 유지하는 것과 정합). */
-    fun layout(data: LineChartData, xMin: Double, xMax: Double, backgroundArea: List<Point>?): LineChartLayout {
-        if (!(xMax > xMin)) return layout(data, backgroundArea)
+     *  (실루엣이 창과 무관하게 자체 min~max 정규화를 유지하는 것과 정합).
+     *  [areaMinValueSpan]은 area-인식 전체 layout과 동일한 계약. */
+    fun layout(
+        data: LineChartData,
+        xMin: Double,
+        xMax: Double,
+        backgroundArea: List<Point>?,
+        areaMinValueSpan: Double = ChartDefaults.AREA_MIN_VALUE_SPAN,
+    ): LineChartLayout {
+        if (!(xMax > xMin)) return layout(data, backgroundArea, areaMinValueSpan)
         val xNice = niceScale(xMin, xMax, data.config.maxTicks)
         val eps = xNice.step * 1e-6
         val xTicks = xNice.ticks.filter { it >= xMin - eps && it <= xMax + eps }
-        return layout(data, AxisDomain(xMin, xMax), xTicks, windowed = true, backgroundArea)
+        return layout(data, AxisDomain(xMin, xMax), xTicks, windowed = true, backgroundArea, areaMinValueSpan)
     }
 
     private fun layout(
@@ -63,6 +78,7 @@ object LineChartEngine {
         xTicks: List<Double>,
         windowed: Boolean,
         backgroundArea: List<Point>?,
+        areaMinValueSpan: Double,
     ): LineChartLayout {
         // 시리즈별 가시 포인트 — windowed면 창 안 + 양쪽 이웃 1개(선이 화면 밖으로 이어지게)
         val visibleBySeries: Map<String, List<Point>> = data.series.associate { s ->
@@ -109,7 +125,14 @@ object LineChartEngine {
             yNice[Axis.SECONDARY]?.let { ns ->
                 add(AxisTicksLayout(ChartAxis.Y_SECONDARY, ns.ticks.map { AxisTick(it, yDom.getValue(Axis.SECONDARY).normalize(it)) }))
             }
-            overlayAxisTicks(backgroundArea, secondaryFree = yNice[Axis.SECONDARY] == null)?.let { add(it) }
+            // Y_OVERLAY 게이트는 **전체 데이터 기준**(창 기준이면 SECONDARY 공백 구간으로 줌할 때
+            // 고도 눈금이 제스처 중 깜빡이며 등장하고, "SECONDARY가 있는 차트엔 Y_OVERLAY가 오지
+            // 않는다"는 앱 포매터 가정이 깨진다). yValues(xWindow=null) 공집합 판정과 동일 의미의
+            // 구조 검사 — 제스처 커밋 경로라 리스트 생성 없이 단락 평가한다.
+            val secondaryFree = data.series.none {
+                it.axis == Axis.SECONDARY && it.role != SeriesRole.OVERLAY && it.points.isNotEmpty()
+            } && data.referenceBands.none { it.axis == Axis.SECONDARY }
+            overlayAxisTicks(backgroundArea, secondaryFree, areaMinValueSpan)?.let { add(it) }
         }
 
         // 밴드/마커 (마커는 windowed면 창 밖 제거)
@@ -145,17 +168,27 @@ object LineChartEngine {
     /**
      * 고도 실루엣 눈금(0.40.0) — 고도가 축 슬롯 없이도 값 범위를 읽을 수 있게, SECONDARY 축이
      * 비어 있을 때만 min/max 2눈금을 낸다(렌더러 관례상 오른쪽). position은 **밴드 내 fraction**
-     * (0=플롯 바닥, 1=밴드 상단 — 렌더러가 areaHeightFraction을 곱해 환산). 분모 하한은 실루엣
-     * (heightFractions minSpan)과 동일한 [ChartDefaults.AREA_MIN_VALUE_SPAN] — 위치가 실루엣과
-     * 항상 정렬된다. 평지(min==max)는 겹침 방지로 1눈금.
+     * (0=플롯 바닥, 1=밴드 상단 — 렌더러가 areaHeightFraction을 곱해 환산). 분모 하한
+     * [minValueSpan]은 실루엣(heightFractions minSpan)과 같은 값이어야 위치가 실루엣과 항상
+     * 정렬된다 — 렌더러가 `ChartStyle.areaMinValueSpan`을 그대로 넘긴다. 평지(min==max)는
+     * 겹침 방지로 1눈금.
      */
-    private fun overlayAxisTicks(backgroundArea: List<Point>?, secondaryFree: Boolean): AxisTicksLayout? {
+    private fun overlayAxisTicks(
+        backgroundArea: List<Point>?,
+        secondaryFree: Boolean,
+        minValueSpan: Double,
+    ): AxisTicksLayout? {
         if (!secondaryFree || backgroundArea == null || backgroundArea.size < 2) return null
-        val ys = backgroundArea.map { it.y }
-        val lo = ys.min()
-        val hi = ys.max()
+        // 제스처 커밋마다 불리는 경로 — 중간 리스트 없이 1패스 min/max.
+        var lo = backgroundArea[0].y
+        var hi = lo
+        for (p in backgroundArea) {
+            val y = p.y
+            if (y < lo) lo = y
+            if (y > hi) hi = y
+        }
         val ticks = if (hi > lo) {
-            listOf(AxisTick(lo, 0.0), AxisTick(hi, (hi - lo) / maxOf(hi - lo, ChartDefaults.AREA_MIN_VALUE_SPAN)))
+            listOf(AxisTick(lo, 0.0), AxisTick(hi, (hi - lo) / maxOf(hi - lo, minValueSpan)))
         } else {
             listOf(AxisTick(lo, 0.0))
         }

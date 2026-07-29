@@ -110,14 +110,19 @@ fun RDLineChart(
     // 코어 interpolatedY 이진탐색은 x 오름차순 전제 — 저장 시 정규화(실루엣 렌더는 순서 무관).
     val sortedArea = remember(backgroundArea) { backgroundArea?.sortedBy { it.x } }
     // 상호작용 홀더 — data/area가 바뀌면 새 인스턴스(줌·마커 리셋 = iOS render() 초기화).
-    val interaction = remember(data, sortedArea) { LineChartInteraction(data, sortedArea) }
+    val interaction = remember(data, sortedArea) {
+        LineChartInteraction(data, sortedArea, style.areaMinValueSpan)
+    }
 
-    // 최신 콜백·설정을 홀더에 주입(재구성 시 stale 람다 방지).
+    // 최신 콜백·설정을 홀더에 주입(재구성 시 stale 람다 방지). areaMinValueSpan은 스타일 교체
+    // (다크 전환)가 줌 상태를 리셋하지 않도록 remember 키 대신 여기서 갱신한다(관측 상태라
+    // layout 파생이 따라온다).
     SideEffect {
         interaction.onScrub = onScrub
         interaction.onScrubBackground = onScrubBackground
         interaction.onScrubEnd = onScrubEnd
         interaction.maxZoomScale = maxZoomScale.toDouble()
+        interaction.areaMinValueSpan = style.areaMinValueSpan
     }
     // formatter는 pointerInput 키 밖이라 stale 위험(Arch m2). 최신 람다를 State로 잡아 제스처가 항상
     // 현재 formatter로 스크럽 값을 포맷하게 한다(콜백은 위 SideEffect로 이미 최신).

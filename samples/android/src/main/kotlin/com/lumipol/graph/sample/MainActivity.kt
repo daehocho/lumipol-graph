@@ -204,6 +204,9 @@ private object SampleData {
     fun format(axis: ChartAxis, value: Double): String = when (axis) {
         ChartAxis.Y_PRIMARY -> paceLabel(value)
         ChartAxis.Y_SECONDARY -> value.toInt().toString()
+        // 고도 눈금(0.40.0) — SECONDARY가 비면 배경 area 차트에 Y_OVERLAY가 온다.
+        // else(거리) 분기로 흘리면 고도가 "150km"로 찍힌다.
+        ChartAxis.Y_OVERLAY -> "${value.toInt()}m"
         else -> "%gkm".format(value)
     }
 

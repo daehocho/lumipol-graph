@@ -59,6 +59,13 @@ object BarChartEngine {
      * 2) 그 결과가 [MIN_BARS] 미만일 때만 30초·15초로 내려간다 — 5분 이상 런의 선택은 불변(0.41.0).
      */
     fun chooseTimeBucketSeconds(runningSeconds: Double): Double {
+        // 비유한 총시간 가드 — barCount()가 NaN/±Inf를 0막대로 취급하면 15초 최소로 떨어져
+        // 오염된 기록이 수백 막대로 조각난다(0.41.0 회귀). 이전 동작 유지: +Inf는 최대 캡,
+        // NaN/-Inf는 최소 분 후보. 0·음수 유한값은 barCount=0 경로의 15초 폴백(골든 running_0 고정).
+        if (!runningSeconds.isFinite()) {
+            val minutes = if (runningSeconds > 0) BUCKET_MINUTE_CANDIDATES.last() else BUCKET_MINUTE_CANDIDATES.first()
+            return minutes * 60.0
+        }
         val totalMinutes = runningSeconds / 60.0
         var chosen = BUCKET_MINUTE_CANDIDATES.last() * 60.0
         for (n in BUCKET_MINUTE_CANDIDATES) {
@@ -91,8 +98,9 @@ object BarChartEngine {
         if (raw.isEmpty()) return BarChartLayout(emptyList(), emptyList(), null, null)
 
         // 색 기준(ref): 명시 목표 → 런 총합 평균 → 필터 샘플 합 평균.
+        val runRef = runTotalsRef(data, paceUnit)
         val ref = data.targetPaceSecPerUnit
-            ?: runTotalsRef(data, paceUnit)
+            ?: runRef
             ?: (totalTime / (totalDist / paceUnit))
         val tol = data.toleranceSecPerUnit
 
@@ -112,7 +120,7 @@ object BarChartEngine {
             )
         }
         val yTicks = ns.ticks.map { AxisTick(it, 1.0 - dom.normalize(it)) }
-        return BarChartLayout(bars, yTicks, 1.0 - dom.normalize(ref), colorAnchors(raw, runTotalsRef(data, paceUnit)))
+        return BarChartLayout(bars, yTicks, 1.0 - dom.normalize(ref), colorAnchors(raw, runRef))
     }
 
     /**

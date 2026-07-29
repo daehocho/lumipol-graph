@@ -24,6 +24,9 @@ import com.lumipol.graph.query.SCRUB_WINDOW_EPSILON
  *
  * @param data 불변 차트 데이터(remember 키). 시리즈 유무로 area 단독 폴백을 결정한다.
  * @param sortedArea 배경 area를 **x 오름차순 정렬**한 것(보간 이진탐색 전제). null이면 배경 없음.
+ * @param areaMinValueSpan 고도 눈금 분모 하한 — 실루엣과 같은 `ChartStyle.areaMinValueSpan`을
+ *   layout 호출마다 코어에 전달해야 라벨-실루엣 정렬이 유지된다. 스타일 교체(다크 전환)로
+ *   interaction을 재생성하지 않도록 관측 상태로 주입한다(줌 상태 보존).
  *
  * ### 콜백 짝맞춤 불변식(iOS `hadMarker` 가드)
  * - [scrubTo]는 마커 생성에 성공했을 때만 [onScrub]/[onScrubBackground]를 발화한다. 실패하면
@@ -36,7 +39,11 @@ import com.lumipol.graph.query.SCRUB_WINDOW_EPSILON
 internal class LineChartInteraction(
     val data: LineChartData,
     val sortedArea: List<Point>?,
+    areaMinValueSpan: Double = ChartDefaults.AREA_MIN_VALUE_SPAN,
 ) {
+    /** 고도 눈금 분모 하한 — layout 파생(derivedStateOf)이 추적하도록 관측 상태. */
+    var areaMinValueSpan by mutableStateOf(areaMinValueSpan)
+
     /** 현재 줌 창(null = 전체 구간, ensureZoom 불변식). 산술은 코어 [ZoomWindow](B3), 상태 보유만 렌더러. */
     var zoom by mutableStateOf<ZoomWindow?>(null)
         private set
@@ -73,7 +80,9 @@ internal class LineChartInteraction(
         val z = zoom
         if (z != null && z.isZoomed) {
             // area를 함께 넘겨야 확대 상태에서도 고도 눈금(Y_OVERLAY)이 유지된다(0.40.0).
-            if (z.windowMax > z.windowMin) return LineChartEngine.layout(data, z.windowMin, z.windowMax, sortedArea)
+            if (z.windowMax > z.windowMin) {
+                return LineChartEngine.layout(data, z.windowMin, z.windowMax, sortedArea, areaMinValueSpan)
+            }
         }
         return makeFullLayout()
     }
@@ -82,7 +91,7 @@ internal class LineChartInteraction(
      * 전체 구간(1x) layout. 시리즈 없이 배경 area만 있으면 X 도메인이 area x범위여야 하는데,
      * 그 규칙은 플랫폼 중립이라 코어 area-인식 오버로드가 책임진다(양 렌더러 공유).
      */
-    private fun makeFullLayout(): LineChartLayout = LineChartEngine.layout(data, sortedArea)
+    private fun makeFullLayout(): LineChartLayout = LineChartEngine.layout(data, sortedArea, areaMinValueSpan)
 
     // -------------------------------------------------------------------------------------
     // 스크럽 (iOS showTouchMarker / hideTouchMarker)

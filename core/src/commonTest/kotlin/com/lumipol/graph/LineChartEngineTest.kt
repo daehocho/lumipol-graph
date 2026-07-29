@@ -268,4 +268,30 @@ class LineChartEngineTest {
         val windowed = overlayTicks(LineChartEngine.layout(d, 1.0, 3.0, overlayArea))
         assertEquals(full, windowed)
     }
+
+    @Test
+    fun overlay_ticks_suppressed_in_secondary_gap_window() {
+        // 심박에 중간 공백(2..5 구간 무점) — 그 구간으로 줌해도 눈금 미방출. 게이트가 창 기준이면
+        // 제스처 중 고도 눈금이 깜빡이며 등장하고 "SECONDARY 있는 차트엔 Y_OVERLAY가 안 온다"는
+        // 앱 포매터 가정이 깨진다(전체 데이터 기준 게이트 회귀 테스트).
+        val d = LineChartData(series = listOf(
+            Series("pace", listOf(Point(0.0, 5.0), Point(6.0, 6.0))),
+            Series("hr", listOf(Point(0.0, 120.0), Point(1.5, 130.0), Point(5.5, 160.0), Point(6.0, 155.0)), axis = Axis.SECONDARY),
+        ))
+        assertNull(overlayTicks(LineChartEngine.layout(d, 2.0, 5.0, overlayArea)))
+    }
+
+    @Test
+    fun overlay_ticks_honor_area_min_value_span_override() {
+        // 앱이 스타일로 분모 하한을 끄면(0.0) 실루엣이 전체 밴드를 쓰므로 눈금도 따라간다 —
+        // 상수 하드코딩이면 max 라벨이 실루엣 피크 아래로 떨어진다.
+        val nearFlat = listOf(Point(0.0, 10.0), Point(6.0, 10.2))
+        val ticks = overlayTicks(LineChartEngine.layout(LineChartData(emptyList()), nearFlat, areaMinValueSpan = 0.0))
+        assertNotNull(ticks)
+        assertEquals(1.0, ticks[1].position, 1e-9)
+        // 줌 창 오버로드도 동일 계약
+        val windowed = overlayTicks(LineChartEngine.layout(LineChartData(emptyList()), 1.0, 3.0, nearFlat, areaMinValueSpan = 0.0))
+        assertNotNull(windowed)
+        assertEquals(1.0, windowed[1].position, 1e-9)
+    }
 }
