@@ -312,6 +312,7 @@ __attribute__((swift_name("ChartFormat")))
 - (NSString *)paceSeconds:(double)seconds __attribute__((swift_name("pace(seconds:)")));
 - (NSString *)paceInvalid __attribute__((swift_name("paceInvalid()")));
 - (NSString *)percentFraction:(double)fraction __attribute__((swift_name("percent(fraction:)")));
+- (NSString *)splitEndDistanceValue:(double)value __attribute__((swift_name("splitEndDistance(value:)")));
 - (NSString *)timeTickMinutes:(double)minutes __attribute__((swift_name("timeTick(minutes:)")));
 @property (readonly) double PACE_MAX_SECONDS __attribute__((swift_name("PACE_MAX_SECONDS")));
 @property (readonly) double PACE_MIN_SECONDS __attribute__((swift_name("PACE_MIN_SECONDS")));

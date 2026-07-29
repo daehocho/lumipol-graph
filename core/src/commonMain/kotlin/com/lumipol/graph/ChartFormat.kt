@@ -61,6 +61,21 @@ object ChartFormat {
         return if (negative) "-$body" else body
     }
 
+    /**
+     * 스플릿 막대 끝 누적 거리 라벨 → 소수 2자리 반올림 후 [distanceTick] 표기 규칙
+     * (정수는 소수점 없이, 트레일링 0 제거). [distanceTick]은 nice tick 값 전제라 부분
+     * 스플릿의 임의 값(0.83844 등)이 6자리로 새어 나온다 — 막대 끝 라벨은 이 함수를 쓴다.
+     */
+    fun splitEndDistance(value: Double): String {
+        if (value.isNaN() || value.isInfinite()) return distanceTick(value)
+        val negative = value < 0
+        val scaled = floor(abs(value) * 100 + 0.5).toLong()
+        val intPart = scaled / 100
+        val fracPart = (scaled % 100).toString().padStart(2, '0').trimEnd('0')
+        val body = if (fracPart.isEmpty()) intPart.toString() else "$intPart.$fracPart"
+        return if (negative) "-$body" else body
+    }
+
     /** 시간 축 tick(분) → `N:00`. 0.1 이하는 빈 문자열(원점 라벨 생략 — 양 앱 동일). */
     fun timeTick(minutes: Double): String =
         if (minutes.isNaN() || minutes.isInfinite() || minutes <= 0.1) "" else "${minutes.toInt()}:00"

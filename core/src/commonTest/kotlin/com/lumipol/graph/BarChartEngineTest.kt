@@ -216,6 +216,45 @@ class BarChartEngineTest {
     }
 
     @Test
+    fun distance_mode_last_partial_end_snaps_to_total_distance() {
+        // 워치 총거리(totalDistanceMeters)가 유효 델타 합보다 크면 — 무효 델타 필터로 거리가
+        // 증발한 기록 — 마지막 부분 스플릿 끝을 총거리로 스냅해 요약 수치와 라벨을 맞춘다.
+        val samples = List(64) { SplitSample(10.0, 7.5) } // 유효 합 640m
+        val layout = BarChartEngine.layout(BarChartData(
+            samples, splitDistanceMeters = 1000.0,
+            totalDurationSeconds = 480.0, totalDistanceMeters = 690.0,
+        ))
+        val ends = layout.bars.map { it.endDistanceMeters!! }
+        val expected = listOf(100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 690.0)
+        assertEquals(expected.size, ends.size)
+        for (i in expected.indices) assertEquals(expected[i], ends[i], 1e-6)
+        // 스냅은 라벨 값만 — 페이스는 유효 구간 기준 그대로.
+        layout.bars.forEach { assertEquals(750.0, it.value, 1e-6) }
+    }
+
+    @Test
+    fun distance_mode_last_partial_end_keeps_covered_when_total_smaller() {
+        // 총거리가 유효 합보다 작으면(역방향 불일치) 스냅하지 않는다 — 차트 내 정합 우선.
+        val samples = List(64) { SplitSample(10.0, 7.5) }
+        val ends = BarChartEngine.layout(BarChartData(
+            samples, splitDistanceMeters = 1000.0,
+            totalDurationSeconds = 480.0, totalDistanceMeters = 600.0,
+        )).bars.map { it.endDistanceMeters!! }
+        assertEquals(640.0, ends.last(), 1e-6)
+    }
+
+    @Test
+    fun distance_mode_full_last_bar_never_snaps() {
+        // 마지막 막대가 온전 스플릿이면(부분 없음) 버킷 경계가 곧 라벨 — 총거리로 덮지 않는다.
+        val samples = List(60) { SplitSample(10.0, 7.5) } // 정확히 600m = 100m 버킷 6개
+        val ends = BarChartEngine.layout(BarChartData(
+            samples, splitDistanceMeters = 1000.0,
+            totalDurationSeconds = 450.0, totalDistanceMeters = 690.0,
+        )).bars.map { it.endDistanceMeters!! }
+        assertEquals(600.0, ends.last(), 1e-6)
+    }
+
+    @Test
     fun time_mode_end_distance_null() {
         val data = BarChartData(
             evenTimeSamples(720, 300.0), splitDistanceMeters = 1000.0,

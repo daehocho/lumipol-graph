@@ -51,6 +51,19 @@ class ChartFormatTest {
     }
 
     @Test
+    fun split_end_distance_rounds_to_two_decimals() {
+        // 부분 스플릿 끝은 임의 값(0.83844 등) — distanceTick(6자리)이 아닌 2자리 반올림.
+        assertEquals("0.84", ChartFormat.splitEndDistance(0.83844))
+        assertEquals("0.89", ChartFormat.splitEndDistance(0.89))
+        assertEquals("0.2", ChartFormat.splitEndDistance(0.2))
+        assertEquals("0.9", ChartFormat.splitEndDistance(0.895))
+        assertEquals("1", ChartFormat.splitEndDistance(1.0))
+        assertEquals("42.2", ChartFormat.splitEndDistance(42.195))
+        assertEquals("nan", ChartFormat.splitEndDistance(Double.NaN))
+        assertEquals("inf", ChartFormat.splitEndDistance(Double.POSITIVE_INFINITY))
+    }
+
+    @Test
     fun time_and_int_ticks() {
         assertEquals("", ChartFormat.timeTick(0.05))
         assertEquals("", ChartFormat.timeTick(0.1))

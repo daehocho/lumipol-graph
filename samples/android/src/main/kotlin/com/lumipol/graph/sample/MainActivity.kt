@@ -131,7 +131,7 @@ private fun BarScreen() {
             // 인덱스를 km로 읽으면 0.64km 런이 7km처럼 보인다.
             xAxisLabels = layout.bars.map { bar ->
                 bar.endDistanceMeters
-                    ?.let { "${ChartFormat.distanceTick(it / SampleData.barData.splitDistanceMeters)}km" }
+                    ?.let { "${ChartFormat.splitEndDistance(it / SampleData.barData.splitDistanceMeters)}km" }
                     ?: "${bar.index + 1}"
             },
             yLabelFormatter = { secondsPerKm -> SampleData.paceLabel(secondsPerKm / 60.0) },

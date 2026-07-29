@@ -287,6 +287,9 @@ object CoreDump {
                 listOf(0.0, 307.9, 3665.0).forEach { add("duration_${jnum(it)}" to jstr(ChartFormat.duration(it))) }
                 listOf(0.316, 1.0).forEach { add("percent_${jnum(it)}" to jstr(ChartFormat.percent(it))) }
                 listOf(5.0, 2.5, 0.5, 12.25, -1.5).forEach { add("distanceTick_${jnum(it)}" to jstr(ChartFormat.distanceTick(it))) }
+                listOf(0.83844, 0.89, 1.0, 42.195).forEach {
+                    add("splitEndDistance_${jnum(it)}" to jstr(ChartFormat.splitEndDistance(it)))
+                }
                 listOf(0.1, 15.0).forEach { add("timeTick_${jnum(it)}" to jstr(ChartFormat.timeTick(it))) }
                 add("intTick_178.6" to jstr(ChartFormat.intTick(178.6)))
             }),

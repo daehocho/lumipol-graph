@@ -165,9 +165,13 @@ object BarChartEngine {
         }
         if (accDist > 0.0 && accTime > 0.0) {
             covered += accDist
+            // 마지막 부분 스플릿 끝은 기록 총거리로 스냅(총거리 > 유효 합일 때만) — 무효 델타
+            // 필터로 증발한 거리 때문에 요약 수치(예: 워치 0.89km)와 라벨(0.838…)이 갈리던 문제.
+            // 페이스 값은 유효 구간 기준 그대로다.
+            val total = data.totalDistanceMeters
             raw.add(RawBar(
                 accTime / (accDist / paceUnit), isPartial = true, endMinutes = null,
-                endDistanceMeters = covered,
+                endDistanceMeters = if (total != null && total > covered) total else covered,
             ))
         }
         return raw

@@ -160,6 +160,13 @@ object HarnessFixtures {
             totalDurationSeconds = 180.0,
             totalDistanceMeters = 600.0,
         ),
+        // 거리모드 + 총거리(690m) > 유효 합(640m) — 마지막 부분 스플릿 끝 스냅 관측(0.42.0)
+        "B12_distance_mode_total_snap" to BarChartData(
+            bars(64 to SplitSample(10.0, 7.5)),
+            splitDistanceMeters = 1000.0,
+            totalDurationSeconds = 480.0,
+            totalDistanceMeters = 690.0,
+        ),
     )
 
     /** chooseTimeBucketSeconds 입력(초) — 버킷 후보 경계 전후 + 하향(30/15초) 경계. */

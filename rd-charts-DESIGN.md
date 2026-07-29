@@ -788,6 +788,27 @@ AOS `animateEntrance = true`를 명시(각 1줄, 트랙 C 앱 커밋에 포함).
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### 스플릿 막대 끝 라벨 정합 — 총거리 스냅 + 2자리 포맷 (0.42.0, 2026-07-29)
+
+애플워치 0.89km 기록의 거리모드 마지막 막대가 `0.83844`로 표시됐다. 두 겹의 원인:
+무효 델타(거리·시간 ≤ 0) 필터로 유효 합(838.44m)이 워치 총거리(890m)보다 작아지고,
+그 임의 값이 nice tick 전제의 `distanceTick`(6자리)으로 그대로 새어 나왔다.
+
+- **동작 변경: 마지막 부분 스플릿의 `endDistanceMeters`를 `totalDistanceMeters`로 스냅** —
+  `totalDistanceMeters`가 유효 합보다 클 때만. 요약 수치와 라벨이 일치한다. 페이스 값·온전
+  스플릿 라벨은 그대로다(총거리가 유효 합 이하이거나 없으면 종전 출력과 비트 단위 동일).
+- **feat: `ChartFormat.splitEndDistance(value)` 신설** — 소수 2자리 반올림 후 `distanceTick`
+  표기 규칙(정수는 소수점 없이, 트레일링 0 제거). 막대 끝 거리 라벨은 이 함수를 쓴다.
+
+**마이그레이션(앱)**:
+1. 거리모드 x축 라벨의 `ChartFormat.distanceTick` → `ChartFormat.splitEndDistance`
+   (0.41.0 마이그레이션 2항의 교체) — 스냅된 총거리가 892.3m 같은 값이어도 `0.89`로 표기된다.
+2. 시간모드 분 단위 버킷 라벨을 `endMinutes` 정수(`2`)에서 `ChartFormat.timeTick(endMinutes)`
+   (`2:00`)로 바꾼다 — 라인차트 x축과 표기 통일(0.41.0 마이그레이션 3항의 교체).
+   sub-minute 버킷의 `ChartFormat.duration(endSeconds)`(`00:30`)은 그대로다.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은
