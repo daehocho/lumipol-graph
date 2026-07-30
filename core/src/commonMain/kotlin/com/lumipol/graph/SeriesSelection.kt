@@ -87,6 +87,26 @@ object SeriesSelection {
     }
 
     /**
+     * 전체 선택(0.50.0 — 종합 칩): 현재 순서 보존 + 빠진 가용 지표를 [priority] 순으로 뒤에
+     * 추가(뒤=최신 관용구). 이미 전체 선택이면 [current]를 그대로 반환 — 앱의
+     * `next != selection` no-op 가드가 그대로 작동한다. current에 available 밖 id(저장된
+     * 의도)가 있어도 유지한다([toggled]와 동일 — 정리는 [normalized] 소관).
+     *
+     * @param priority 추가 순서 — 보통 [PaceSeriesId.DISPLAY_PRIORITY](고도 포함).
+     */
+    fun selectAll(current: List<Int>, available: Set<Int>, priority: List<Int>): List<Int> {
+        if (available.isEmpty() || isAllSelected(current, available)) return current
+        return current + priority.filter { it in available && it !in current }
+    }
+
+    /**
+     * 종합 칩 활성 판정(0.50.0) — 파생 상태(별도 저장 없음). available 밖 id는 무시하고,
+     * available이 비면 false(켤 것이 없는 상태를 "전체 선택"으로 오인하지 않는다).
+     */
+    fun isAllSelected(current: List<Int>, available: Set<Int>): Boolean =
+        available.isNotEmpty() && current.containsAll(available)
+
+    /**
      * 화면에서 뒤집을 Y축 집합(C5) — [slotAxis] 기반 구 매핑.
      */
     @Deprecated(

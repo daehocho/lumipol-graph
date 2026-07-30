@@ -4,6 +4,9 @@ import com.lumipol.graph.model.Axis
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class SeriesSelectionTest {
     // 앱 매핑 규약: pace=0, heartRate=1, cadence=2, altitude=3.
@@ -138,5 +141,57 @@ class SeriesSelectionTest {
         assertEquals(setOf(Axis.PRIMARY), SeriesSelection.invertedAxesFor(0, axes))
         assertEquals(setOf(Axis.SECONDARY), SeriesSelection.invertedAxesFor(1, axes))
         assertFailsWith<IllegalArgumentException> { SeriesSelection.invertedAxesFor(3, axes) }
+    }
+
+    // MARK: selectAll / isAllSelected (0.50.0 — 종합 칩)
+
+    @Test fun select_all_appends_missing_in_priority_order() {
+        val next = SeriesSelection.selectAll(
+            current = listOf(1), available = setOf(0, 1, 2, 3), priority = priority)
+        assertEquals(listOf(1, 0, 2, 3), next)  // 현재 순서 보존 + 빠진 것만 priority 순으로 뒤에
+    }
+
+    @Test fun select_all_limits_to_available() {
+        val next = SeriesSelection.selectAll(
+            current = listOf(0), available = setOf(0, 3), priority = priority)
+        assertEquals(listOf(0, 3), next)  // 미가용(1, 2)은 추가하지 않는다
+    }
+
+    @Test fun select_all_returns_same_instance_when_already_all() {
+        val current = listOf(2, 0, 1, 3)
+        assertSame(
+            current,
+            SeriesSelection.selectAll(
+                current = current, available = setOf(0, 1, 2, 3), priority = priority),
+        )
+    }
+
+    @Test fun select_all_keeps_out_of_available_ids() {
+        // 저장된 의도(current)에 이 기록에서 미가용인 id(1)가 있어도 버리지 않는다 —
+        // 정리는 normalized 소관(toggled와 같은 분업).
+        val next = SeriesSelection.selectAll(
+            current = listOf(1, 0), available = setOf(0, 3), priority = priority)
+        assertEquals(listOf(1, 0, 3), next)
+    }
+
+    @Test fun select_all_with_empty_available_returns_current() {
+        val current = listOf(0)
+        assertSame(
+            current,
+            SeriesSelection.selectAll(current = current, available = emptySet(), priority = priority),
+        )
+    }
+
+    @Test fun is_all_selected_requires_every_available_id() {
+        assertTrue(SeriesSelection.isAllSelected(listOf(3, 1, 0, 2), setOf(0, 1, 2, 3)))
+        assertFalse(SeriesSelection.isAllSelected(listOf(0, 1), setOf(0, 1, 2)))
+    }
+
+    @Test fun is_all_selected_ignores_out_of_available_ids() {
+        assertTrue(SeriesSelection.isAllSelected(listOf(1, 0, 3), setOf(0, 3)))
+    }
+
+    @Test fun is_all_selected_false_when_nothing_available() {
+        assertFalse(SeriesSelection.isAllSelected(listOf(0), emptySet()))
     }
 }
