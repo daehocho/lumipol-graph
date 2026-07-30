@@ -452,7 +452,9 @@ __attribute__((swift_name("SeriesSelection")))
 - (NSArray<LumipolGraphInt *> *)assignSlotsPriority:(NSArray<LumipolGraphInt *> *)priority selected:(NSSet<LumipolGraphInt *> *)selected withData:(NSSet<LumipolGraphInt *> *)withData __attribute__((swift_name("assignSlots(priority:selected:withData:)")));
 - (NSSet<LumipolGraphAxis *> *)invertedAxesForPaceSlot:(int32_t)paceSlot __attribute__((swift_name("invertedAxesFor(paceSlot:)"))) __attribute__((deprecated("slotAxis 기반 매핑 — slotAxes 결과를 받는 오버로드로 대체(0.40.0)")));
 - (NSSet<LumipolGraphAxis *> *)invertedAxesForPaceSlot:(int32_t)paceSlot axes:(NSArray<LumipolGraphAxis *> *)axes __attribute__((swift_name("invertedAxesFor(paceSlot:axes:)")));
+- (BOOL)isAllSelectedCurrent:(NSArray<LumipolGraphInt *> *)current available:(NSSet<LumipolGraphInt *> *)available __attribute__((swift_name("isAllSelected(current:available:)")));
 - (NSArray<LumipolGraphInt *> *)normalizedCurrent:(NSArray<LumipolGraphInt *> *)current available:(NSSet<LumipolGraphInt *> *)available priority:(NSArray<LumipolGraphInt *> *)priority __attribute__((swift_name("normalized(current:available:priority:)")));
+- (NSArray<LumipolGraphInt *> *)selectAllCurrent:(NSArray<LumipolGraphInt *> *)current available:(NSSet<LumipolGraphInt *> *)available priority:(NSArray<LumipolGraphInt *> *)priority __attribute__((swift_name("selectAll(current:available:priority:)")));
 - (NSArray<LumipolGraphAxis *> *)slotAxesSlots:(NSArray<LumipolGraphInt *> *)slots sharedScaleIds:(NSSet<LumipolGraphInt *> *)sharedScaleIds __attribute__((swift_name("slotAxes(slots:sharedScaleIds:)")));
 - (LumipolGraphAxis *)slotAxisIndex:(int32_t)index __attribute__((swift_name("slotAxis(index:)"))) __attribute__((deprecated("슬롯 index만으로는 스케일 그룹 병합(심박+케이던스 한 축)을 표현할 수 없다 — slotAxes로 대체(0.40.0)")));
 - (NSArray<LumipolGraphInt *> *)toggledCurrent:(NSArray<LumipolGraphInt *> *)current toggling:(int32_t)toggling __attribute__((swift_name("toggled(current:toggling:)")));

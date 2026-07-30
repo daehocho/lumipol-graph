@@ -985,6 +985,27 @@ timeTickHour` 분기를 sub-minute 분기보다 앞에 추가(Runday_IOS/AOS 반
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### 종합 칩 — 전체 선택 규칙 코어 회수 (0.50.0, 2026-07-30)
+
+분석 탭 통합 차트 칩 행 맨 앞에 "종합" 칩(파생 상태 — 별도 저장 없음)을 붙이기 위한
+코어 규칙 추가. 판정식을 앱 2벌로 두면 어긋난다(슬롯 2+ 반전 누락 전례) — 규칙은 코어
+단일 소스.
+
+- **feat: `SeriesSelection.selectAll(current, available, priority)`** — 현재 순서 보존 +
+  빠진 가용 지표를 priority(보통 `DISPLAY_PRIORITY`, 고도 포함) 순으로 뒤에 추가.
+  이미 전체 선택이면 `current`를 **그대로**(동일 인스턴스) 반환 — 앱의 `next != selection`
+  no-op 가드가 재탭을 그대로 흡수한다. available 밖 id(저장된 의도)는 유지(`toggled`와
+  동일 분업 — 정리는 `normalized` 소관).
+- **feat: `SeriesSelection.isAllSelected(current, available)`** — 종합 칩 활성 판정.
+  available ⊆ current(밖 id는 무시), available이 비면 false.
+- 앱 관용구: 가용 지표 1개 이하면 칩 자체를 숨긴다(항상 활성인 죽은 칩 방지) — 노출
+  게이트는 앱 소유(칩 UI가 앱 소유이므로).
+- 테스트: priority 순 추가·가용 제한·재탭 동일 인스턴스·의도 보존·빈 available 등 8케이스.
+
+**마이그레이션(앱)**: 없음 — 공개 API 추가만. breaking 아님.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은
