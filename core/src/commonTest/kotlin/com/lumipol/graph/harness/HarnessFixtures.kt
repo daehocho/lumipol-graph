@@ -199,11 +199,21 @@ object HarnessFixtures {
         // 1시간 초과 축의 "중간 라벨 공칭 분(초 00), 마지막 실측" 규칙(0.52.0)이 실제로 갈라지는
         // 입력. B14·B15는 1초 샘플이라 끝이 정초에 떨어져 이 규칙을 못 덮는다.
         "B16_time_mode_over_hour_drift" to BarChartData(
-            bars(530 to SplitSample(1000.0 / 300.0, 7.0)),
+            bars(530 to SplitSample(7.0 * 1000.0 / 300.0, 7.0)),
             splitDistanceMeters = 1000.0,
             splitTimeSeconds = 600.0,
             totalDurationSeconds = 3710.0,
             totalDistanceMeters = 3710.0 * (1000.0 / 300.0),
+        ),
+        // 드리프트가 30초를 넘는 장거리 런(7초 샘플 × 600초 버킷 = 버킷당 2초, 15번째 버킷에서
+        // 30초) — `endMinutes`를 실측 반올림으로 만들면 15번째 라벨이 2:20:00 다음 2:31:00으로
+        // 뛰고, 마지막 실측 라벨보다 커져 축이 역전된다. 공칭 경계 유도(0.53.0)를 고정하는 케이스.
+        "B17_time_mode_drift_over_half_minute" to BarChartData(
+            bars(1293 to SplitSample(7.0 * 1000.0 / 300.0, 7.0)),
+            splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 600.0,
+            totalDurationSeconds = 9051.0,
+            totalDistanceMeters = 9051.0 * (1000.0 / 300.0),
         ),
     )
 

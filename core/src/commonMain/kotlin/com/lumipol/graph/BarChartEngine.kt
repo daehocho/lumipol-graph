@@ -200,7 +200,8 @@ object BarChartEngine {
     }
 
     // 시간 버킷 집계. 버킷 경계에서 오버플로를 나누지 않고(현행 iOS와 동일) 통째 flush.
-    // endMinutes = max(1, round(누적경과초/60)) — 누적 경과는 버킷 간 리셋하지 않는다.
+    // endMinutes: 온전 버킷은 공칭 경계 max(1, round(버킷수*버킷초/60)), 마지막 부분 버킷만
+    // 실측 max(1, round(누적경과초/60)). 누적 경과(endSeconds)는 버킷 간 리셋하지 않는다.
     //
     // 한계(의도된 설계, 0.47.0 확인): 샘플이 버킷보다 굵으면(랩 단위 델타 등) 샘플 하나가
     // 통째로 한 막대가 되므로 chooseTimeBucketSeconds의 MIN_BARS 보장이 성립하지 않는다
@@ -215,15 +216,22 @@ object BarChartEngine {
         var accDist = 0.0
         var accTime = 0.0
         var elapsed = 0.0
+        var fullBuckets = 0
         fun endMin() = maxOf(1, (elapsed / 60.0).roundToInt())
         for (s in data.samples) {
             val d = s.distanceMeters; val t = s.timeSeconds
             if (d <= 0.0 || t <= 0.0 || d.isNaN() || t.isNaN() || d.isInfinite() || t.isInfinite()) continue
             accDist += d; accTime += t; elapsed += t; onValid(d, t)
             if (accTime >= bucket) {
+                fullBuckets++
                 raw.add(RawBar(
                     accTime / (accDist / paceUnit), isPartial = false,
-                    endMinutes = endMin(), endSeconds = elapsed,
+                    // 온전 버킷의 공칭 끝은 **버킷 경계**(0.53.0). 실측 경과 반올림으로 만들면
+                    // 샘플이 버킷 경계와 안 맞을 때 쌓인 드리프트가 30초를 넘는 순간 라벨이
+                    // 10k+1분으로 튀고(2:20:00 → 2:31:00), 실측을 유지하는 마지막 라벨보다
+                    // 커져 축이 역전된다(2:31:00, 2:30:51).
+                    endMinutes = maxOf(1, (fullBuckets * bucket / 60.0).roundToInt()),
+                    endSeconds = elapsed,
                 ))
                 accDist = 0.0; accTime = 0.0
             }

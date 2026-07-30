@@ -444,6 +444,29 @@ class BarChartEngineTest {
     }
 
     @Test
+    fun time_mode_full_bucket_end_minutes_are_nominal_not_measured() {
+        // 샘플이 버킷 경계와 안 맞으면(7초 샘플 × 600초 버킷) 온전 버킷 끝이 버킷당 2초씩
+        // 드리프트한다. 공칭이 실측 반올림이면 드리프트 30초를 넘는 15번째 버킷에서
+        // 150 → 151분으로 튀어 라벨이 2:20:00 다음 2:31:00이 되고, 실측을 유지하는 마지막
+        // 라벨(2:30:51)보다 커져 축이 역전된다. 온전 버킷은 버킷 경계로 유도한다.
+        val data = BarChartData(
+            List(1293) { SplitSample(7.0 * 1000.0 / 300.0, 7.0) }, splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 600.0,
+            totalDurationSeconds = 9051.0, totalDistanceMeters = 9051.0 * (1000.0 / 300.0),
+        )
+        val bars = BarChartEngine.layout(data).bars
+        val full = bars.filter { !it.isPartial }
+        assertEquals((1..15).map { it * 10 }, full.map { it.endMinutes })
+        // 실측 끝은 드리프트를 그대로 들고 있다 — 공칭은 라벨용, endSeconds는 실측 원천.
+        assertEquals(9030.0, full.last().endSeconds)
+        // 라벨 축은 균등하고 단조 증가한다(마지막만 실측).
+        assertEquals(
+            listOf("2:10:00", "2:20:00", "2:30:00", "2:30:51"),
+            ChartFormat.splitXAxisLabels(BarChartEngine.layout(data), 1000.0).takeLast(4),
+        )
+    }
+
+    @Test
     fun distance_mode_end_minutes_null() {
         val data = BarChartData(evenSamples(3, 300.0), splitDistanceMeters = 1000.0)
         assertTrue(BarChartEngine.layout(data).bars.all { it.endMinutes == null })
