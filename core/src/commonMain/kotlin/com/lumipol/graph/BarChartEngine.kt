@@ -200,8 +200,8 @@ object BarChartEngine {
     }
 
     // 시간 버킷 집계. 버킷 경계에서 오버플로를 나누지 않고(현행 iOS와 동일) 통째 flush.
-    // endMinutes: 온전 버킷은 공칭 경계 max(1, round(버킷수*버킷초/60)), 마지막 부분 버킷만
-    // 실측 max(1, round(누적경과초/60)). 누적 경과(endSeconds)는 버킷 간 리셋하지 않는다.
+    // endMinutes = max(1, 실측 경과초 / 60 절삭) — 온전·부분 버킷 동일.
+    // 누적 경과(endSeconds)는 버킷 간 리셋하지 않는다.
     //
     // 한계(의도된 설계, 0.47.0 확인): 샘플이 버킷보다 굵으면(랩 단위 델타 등) 샘플 하나가
     // 통째로 한 막대가 되므로 chooseTimeBucketSeconds의 MIN_BARS 보장이 성립하지 않는다
@@ -216,22 +216,21 @@ object BarChartEngine {
         var accDist = 0.0
         var accTime = 0.0
         var elapsed = 0.0
-        var fullBuckets = 0
-        fun endMin() = maxOf(1, (elapsed / 60.0).roundToInt())
+        // 반올림이 아니라 **절삭**(0.54.0). 반올림은 오차가 위로 열려 있어 실측을 유지하는 마지막
+        // 라벨을 넘고(2:31:00 vs 2:30:51) 축이 역전된다. 절삭은 항상 실측 이하라 그 역전이
+        // 불가능하다. 버킷 경계(버킷수*버킷초)로 유도하면 안 된다 — flush 조건이 `accTime >= bucket`
+        // 이고 샘플을 분할하지 않으므로(아래 "한계") 샘플이 굵으면 오버슈트가 무한히 누적된다
+        // (300초 샘플 × 120초 버킷: 실제 5/10/15분인데 2/4/6분).
+        // 초 단위 누적 부동소수 오차로 정초 경계가 한 분 내려앉지 않게 초로 먼저 반올림한다.
+        fun endMin() = maxOf(1, elapsed.roundToInt() / 60)
         for (s in data.samples) {
             val d = s.distanceMeters; val t = s.timeSeconds
             if (d <= 0.0 || t <= 0.0 || d.isNaN() || t.isNaN() || d.isInfinite() || t.isInfinite()) continue
             accDist += d; accTime += t; elapsed += t; onValid(d, t)
             if (accTime >= bucket) {
-                fullBuckets++
                 raw.add(RawBar(
                     accTime / (accDist / paceUnit), isPartial = false,
-                    // 온전 버킷의 공칭 끝은 **버킷 경계**(0.53.0). 실측 경과 반올림으로 만들면
-                    // 샘플이 버킷 경계와 안 맞을 때 쌓인 드리프트가 30초를 넘는 순간 라벨이
-                    // 10k+1분으로 튀고(2:20:00 → 2:31:00), 실측을 유지하는 마지막 라벨보다
-                    // 커져 축이 역전된다(2:31:00, 2:30:51).
-                    endMinutes = maxOf(1, (fullBuckets * bucket / 60.0).roundToInt()),
-                    endSeconds = elapsed,
+                    endMinutes = endMin(), endSeconds = elapsed,
                 ))
                 accDist = 0.0; accTime = 0.0
             }

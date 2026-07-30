@@ -265,7 +265,8 @@ class BarChartEngineTest {
         ))
         val ends = layout.bars.map { it.endSeconds!! }
         assertEquals(listOf(120.0, 240.0, 360.0, 480.0, 600.0, 833.0), ends)
-        assertEquals(14, layout.bars.last().endMinutes) // round(833/60) — 스냅값 기준
+        // 833/60 절삭 — 스냅값 기준. 부분 버킷 라벨은 실측 초(13:53)를 쓰므로 표시에는 안 쓰인다.
+        assertEquals(13, layout.bars.last().endMinutes)
         assertTrue(layout.bars.last().isPartial)
     }
 
@@ -444,11 +445,11 @@ class BarChartEngineTest {
     }
 
     @Test
-    fun time_mode_full_bucket_end_minutes_are_nominal_not_measured() {
-        // 샘플이 버킷 경계와 안 맞으면(7초 샘플 × 600초 버킷) 온전 버킷 끝이 버킷당 2초씩
-        // 드리프트한다. 공칭이 실측 반올림이면 드리프트 30초를 넘는 15번째 버킷에서
-        // 150 → 151분으로 튀어 라벨이 2:20:00 다음 2:31:00이 되고, 실측을 유지하는 마지막
-        // 라벨(2:30:51)보다 커져 축이 역전된다. 온전 버킷은 버킷 경계로 유도한다.
+    fun time_mode_end_minutes_never_exceed_measured_elapsed() {
+        // 샘플이 버킷 경계와 안 맞으면(7초 샘플 × 600초 버킷) 버킷당 2초씩 드리프트한다.
+        // 반올림이면 드리프트 30초를 넘는 15번째 버킷에서 150 → 151분으로 튀어 라벨이
+        // 2:20:00 다음 2:31:00이 되고, 실측을 유지하는 마지막 라벨(2:30:51)보다 커져 축이
+        // 역전된다. 절삭은 항상 실측 이하라 그 역전이 구조적으로 불가능하다.
         val data = BarChartData(
             List(1293) { SplitSample(7.0 * 1000.0 / 300.0, 7.0) }, splitDistanceMeters = 1000.0,
             splitTimeSeconds = 600.0,
@@ -457,13 +458,44 @@ class BarChartEngineTest {
         val bars = BarChartEngine.layout(data).bars
         val full = bars.filter { !it.isPartial }
         assertEquals((1..15).map { it * 10 }, full.map { it.endMinutes })
-        // 실측 끝은 드리프트를 그대로 들고 있다 — 공칭은 라벨용, endSeconds는 실측 원천.
+        // 실측 끝은 드리프트를 그대로 들고 있다 — endMinutes는 라벨용, endSeconds는 실측 원천.
         assertEquals(9030.0, full.last().endSeconds)
-        // 라벨 축은 균등하고 단조 증가한다(마지막만 실측).
+        // 모든 막대에서 endMinutes*60 <= endSeconds — 마지막 실측 라벨과의 역전 불가.
+        assertTrue(bars.all { it.endMinutes!! * 60.0 <= it.endSeconds!! })
         assertEquals(
             listOf("2:10:00", "2:20:00", "2:30:00", "2:30:51"),
             ChartFormat.splitXAxisLabels(BarChartEngine.layout(data), 1000.0).takeLast(4),
         )
+    }
+
+    @Test
+    fun time_mode_coarse_samples_end_minutes_track_measured_elapsed() {
+        // 샘플이 버킷보다 굵으면(랩 단위 임포트 — 300초 샘플 × 120초 버킷) 샘플 하나가 통째로
+        // 한 막대가 되므로 k번째 막대는 k*버킷이 아니라 k*샘플에서 끝난다. 공칭 경계
+        // (버킷수*버킷초)로 유도하면 2/4/6분으로 찍혀 실제 끝(5/10/15분)과 무한히 벌어진다.
+        val data = BarChartData(
+            List(3) { SplitSample(300.0 * (1000.0 / 300.0), 300.0) }, splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 120.0,
+            totalDurationSeconds = 900.0, totalDistanceMeters = 3000.0,
+        )
+        val bars = BarChartEngine.layout(data).bars
+        assertEquals(listOf(300.0, 600.0, 900.0), bars.map { it.endSeconds })
+        assertEquals(listOf(5, 10, 15), bars.map { it.endMinutes })
+    }
+
+    @Test
+    fun time_mode_coarse_samples_labels_do_not_repeat() {
+        // 70초 샘플 × 30초 버킷 — 첫 끝이 60초 이상이라 sub-minute 우회를 타지 못하고 endMinutes가
+        // 라벨이 된다. 공칭 경계면 1,1,2분으로 중복 라벨이 나온다.
+        val data = BarChartData(
+            List(3) { SplitSample(70.0 * (1000.0 / 300.0), 70.0) }, splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 30.0,
+            totalDurationSeconds = 210.0, totalDistanceMeters = 700.0,
+        )
+        val bars = BarChartEngine.layout(data).bars
+        assertEquals(listOf(1, 2, 3), bars.map { it.endMinutes })
+        val labels = ChartFormat.splitXAxisLabels(BarChartEngine.layout(data), 1000.0)
+        assertEquals(labels.distinct(), labels)
     }
 
     @Test
@@ -499,7 +531,8 @@ class BarChartEngineTest {
         )
         val bars = BarChartEngine.layout(data).bars
         assertEquals(listOf(30.0, 60.0, 90.0, 120.0, 150.0, 180.0), bars.map { it.endSeconds!! })
-        assertEquals(listOf(1, 1, 2, 2, 3, 3), bars.map { it.endMinutes })
+        // 분 절삭은 30초 버킷을 뭉갠다 — 그래서 sub-minute 축은 endMinutes를 무시하고 실측을 쓴다.
+        assertEquals(listOf(1, 1, 1, 2, 2, 3), bars.map { it.endMinutes })
     }
 
     @Test

@@ -207,13 +207,24 @@ object HarnessFixtures {
         ),
         // 드리프트가 30초를 넘는 장거리 런(7초 샘플 × 600초 버킷 = 버킷당 2초, 15번째 버킷에서
         // 30초) — `endMinutes`를 실측 반올림으로 만들면 15번째 라벨이 2:20:00 다음 2:31:00으로
-        // 뛰고, 마지막 실측 라벨보다 커져 축이 역전된다. 공칭 경계 유도(0.53.0)를 고정하는 케이스.
+        // 뛰고, 마지막 실측 라벨보다 커져 축이 역전된다. 분 절삭(0.54.0)을 고정하는 케이스.
         "B17_time_mode_drift_over_half_minute" to BarChartData(
             bars(1293 to SplitSample(7.0 * 1000.0 / 300.0, 7.0)),
             splitDistanceMeters = 1000.0,
             splitTimeSeconds = 600.0,
             totalDurationSeconds = 9051.0,
             totalDistanceMeters = 9051.0 * (1000.0 / 300.0),
+        ),
+        // 샘플이 버킷보다 굵은 입력(랩 단위 임포트 — 300초 샘플 × 120초 버킷). 샘플을 분할하지
+        // 않으므로 막대 끝은 5/10/15분이고, `endMinutes`를 버킷 경계(버킷수*버킷초)로 유도하면
+        // 2/4/6분으로 찍혀 실제와 무한히 벌어진다(0.53.0 회귀). B14~B17은 전부 샘플이 버킷보다
+        // 촘촘해 이 경로를 못 덮는다.
+        "B18_time_mode_coarse_samples" to BarChartData(
+            bars(3 to SplitSample(300.0 * (1000.0 / 300.0), 300.0)),
+            splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 120.0,
+            totalDurationSeconds = 900.0,
+            totalDistanceMeters = 3000.0,
         ),
     )
 

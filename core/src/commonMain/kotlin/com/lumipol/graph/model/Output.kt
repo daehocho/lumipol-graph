@@ -107,7 +107,10 @@ data class BarLayout(
     val heightFraction: Double,
     val colorRole: BarColorRole,
     val isPartial: Boolean,
-    val endMinutes: Int? = null, // 시간모드 버킷 끝 표시용 정수 분(반올림·최소1). 거리모드 null
+    // 시간모드 버킷 끝 표시용 정수 분 — 경과초/60 **절삭**·최소1(0.54.0, 반올림 아님).
+    // 항상 endMinutes*60 <= endSeconds라 실측 라벨과 역전되지 않는다. 초까지 필요하면
+    // endSeconds를 쓸 것(부분 버킷·sub-minute 축 라벨은 코어도 endSeconds를 쓴다). 거리모드 null
+    val endMinutes: Int? = null,
     val endDistanceMeters: Double? = null, // 거리모드 버킷 끝 누적 거리(m, 부분은 총거리). 시간모드 null
     val endSeconds: Double? = null, // 시간모드 버킷 끝 누적 초(반올림 없음). 거리모드 null
 )
