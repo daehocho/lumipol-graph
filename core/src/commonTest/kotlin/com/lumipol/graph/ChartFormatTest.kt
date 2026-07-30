@@ -118,6 +118,43 @@ class ChartFormatTest {
     }
 
     @Test
+    fun split_x_axis_labels_hour_axis_zeroes_intermediate_seconds() {
+        // 온전 버킷 끝(유효 델타 합)은 몇 초씩 드리프트한다(30:01, 50:02) — 중간 라벨은
+        // 공칭 분(endMinutes)으로 초를 00 고정, 마지막 라벨만 실측(운동이 실제 끝난 시각).
+        val hour = barLayoutOf(
+            timeBar(0, 601.0, 10), timeBar(1, 1801.0, 30), timeBar(2, 3002.0, 50),
+            timeBar(3, 3710.0, 62, partial = true),
+        )
+        assertEquals(
+            listOf("0:10:00", "0:30:00", "0:50:00", "1:01:50"),
+            ChartFormat.splitXAxisLabels(hour, 1000.0),
+        )
+    }
+
+    @Test
+    fun split_x_axis_labels_hour_axis_last_bar_keeps_measured_seconds() {
+        // 마지막 막대는 잔여 0 분할(온전 버킷)이어도 실측 그대로 — "마지막 값은 기록대로" 확정.
+        val exact = barLayoutOf(timeBar(0, 1799.0, 30), timeBar(1, 3598.0, 60))
+        assertEquals(
+            listOf("0:30:00", "0:59:58"),
+            ChartFormat.splitXAxisLabels(exact, 1000.0, crossesHour = true),
+        )
+    }
+
+    @Test
+    fun split_x_axis_labels_hour_axis_falls_back_to_measured_without_end_minutes() {
+        // endMinutes 없는 레거시 레이아웃 — 공칭을 만들 수 없으니 실측 유지(무회귀).
+        val legacy = barLayoutOf(
+            BarLayout(0, 300.0, 0.5, BarColorRole.ON_TARGET, false, endMinutes = null, endSeconds = 1801.0),
+            BarLayout(1, 300.0, 0.5, BarColorRole.ON_TARGET, true, endMinutes = null, endSeconds = 3700.0),
+        )
+        assertEquals(
+            listOf("0:30:01", "1:01:40"),
+            ChartFormat.splitXAxisLabels(legacy, 1000.0),
+        )
+    }
+
+    @Test
     fun split_x_axis_labels_accepts_injected_crosses_hour_trigger() {
         // 0.49.0: 축 끝(유효 델타 합)이 1시간 이하라도 총 운동 시간이 넘으면 h:mm:ss로 통일한다 —
         // 부분 버킷이 없는 분할에서는 총 시간 스냅이 걸리지 않아 축 끝만으로는 판정할 수 없고,

@@ -131,7 +131,8 @@ object ChartFormat {
      * 레거시 layout은 `index+1` 폴백). [unitMeters]는 거리모드 표시 단위(km=1000/mi=1609.344).
      *
      * 시간모드 표기(우선순위 순):
-     * 1. 축이 1시간을 넘으면(마지막 endSeconds > 3600) 전 라벨 [timeTickHour] — `0:10:00 … 1:01:05`.
+     * 1. 축이 1시간을 넘으면(마지막 endSeconds > 3600) 전 라벨 [timeTickHour] — 중간은 공칭 분
+     *    (`0:30:00`, 초 00 고정), 마지막만 실측(`1:01:05`) (0.52.0).
      * 2. sub-minute 버킷(첫 endSeconds < 60)은 [duration] — endMinutes가 1,1,2,2로 뭉개진다.
      * 3. 부분 버킷은 [splitEndTime](`9:21`), 온전 버킷은 [timeTick]의 endMinutes(`9:00`).
      * 거리모드는 [splitEndDistance]\(endDistanceMeters/unitMeters).
@@ -162,11 +163,19 @@ object ChartFormat {
         val bars = layout.bars
         val subMinuteBucket = (bars.firstOrNull()?.endSeconds ?: 60.0) < 60.0
         val hourAxis = crossesHour || (bars.lastOrNull()?.endSeconds ?: 0.0) > 3600.0
-        return bars.map { bar ->
+        return bars.mapIndexed { i, bar ->
             val seconds = bar.endSeconds
             when {
                 seconds != null -> when {
-                    hourAxis -> timeTickHour(seconds)
+                    hourAxis -> {
+                        // 온전 버킷 끝은 유효 델타 합이라 몇 초씩 드리프트한다(0:30:01) — 중간
+                        // 라벨은 공칭 분으로 초를 00 고정하고, 마지막 라벨만 실측(운동이 실제
+                        // 끝난 시각 — 잔여 0 분할이어도)을 유지한다. endMinutes 없는 레거시와
+                        // sub-minute 축(공칭 분이 중복 라벨로 뭉개짐)은 실측 그대로.
+                        val nominal = bar.endMinutes
+                        if (i == bars.lastIndex || subMinuteBucket || nominal == null) timeTickHour(seconds)
+                        else timeTickHour(nominal * 60.0)
+                    }
                     subMinuteBucket -> duration(seconds)
                     bar.isPartial -> splitEndTime(seconds)
                     else -> timeTick((bar.endMinutes ?: (bar.index + 1)).toDouble())

@@ -195,6 +195,16 @@ object HarnessFixtures {
             totalDurationSeconds = 3700.0,
             totalDistanceMeters = 12000.0,
         ),
+        // 7초 샘플이라 버킷 경계(600s)와 어긋나 온전 버킷 끝이 드리프트한다(602, 1204, …) —
+        // 1시간 초과 축의 "중간 라벨 공칭 분(초 00), 마지막 실측" 규칙(0.52.0)이 실제로 갈라지는
+        // 입력. B14·B15는 1초 샘플이라 끝이 정초에 떨어져 이 규칙을 못 덮는다.
+        "B16_time_mode_over_hour_drift" to BarChartData(
+            bars(530 to SplitSample(1000.0 / 300.0, 7.0)),
+            splitDistanceMeters = 1000.0,
+            splitTimeSeconds = 600.0,
+            totalDurationSeconds = 3710.0,
+            totalDistanceMeters = 3710.0 * (1000.0 / 300.0),
+        ),
     )
 
     /** chooseTimeBucketSeconds 입력(초) — 버킷 후보 경계 전후 + 하향(30/15초) 경계. */
