@@ -1,5 +1,6 @@
 public final class com/lumipol/graph/BarChartEngine {
 	public static final field INSTANCE Lcom/lumipol/graph/BarChartEngine;
+	public final fun chooseDistanceBucketMeters (DD)D
 	public final fun chooseTimeBucketSeconds (D)D
 	public final fun layout (Lcom/lumipol/graph/model/BarChartData;)Lcom/lumipol/graph/model/BarChartLayout;
 }
@@ -29,6 +30,7 @@ public final class com/lumipol/graph/ChartDefaults {
 	public static final field BAR_SELECTION_LINE_ALPHA D
 	public static final field BAR_WIDTH_RATIO D
 	public static final field BAR_X_LABEL_GAP D
+	public static final field BAR_X_UNIT_FONT_DELTA D
 	public static final field CALLOUT_CORNER_RADIUS D
 	public static final field CALLOUT_PAD_H D
 	public static final field CALLOUT_PAD_V D
@@ -137,7 +139,13 @@ public final class com/lumipol/graph/ChartFormat {
 	public final fun pace (D)Ljava/lang/String;
 	public final fun paceInvalid ()Ljava/lang/String;
 	public final fun percent (D)Ljava/lang/String;
+	public final fun splitEndDistance (D)Ljava/lang/String;
+	public final fun splitEndTime (D)Ljava/lang/String;
+	public final fun splitXAxisLabels (Lcom/lumipol/graph/model/BarChartLayout;D)Ljava/util/List;
+	public final fun splitXAxisLabels (Lcom/lumipol/graph/model/BarChartLayout;DZ)Ljava/util/List;
 	public final fun timeTick (D)Ljava/lang/String;
+	public final fun timeTick (DZ)Ljava/lang/String;
+	public final fun timeTickHour (D)Ljava/lang/String;
 }
 
 public final class com/lumipol/graph/DonutEngine {
@@ -170,7 +178,10 @@ public final class com/lumipol/graph/LineChartEngine {
 	public final fun interpolatedY (Ljava/util/List;D)Ljava/lang/Double;
 	public final fun layout (Lcom/lumipol/graph/model/LineChartData;)Lcom/lumipol/graph/model/LineChartLayout;
 	public final fun layout (Lcom/lumipol/graph/model/LineChartData;DD)Lcom/lumipol/graph/model/LineChartLayout;
+	public final fun layout (Lcom/lumipol/graph/model/LineChartData;DDLjava/util/List;)Lcom/lumipol/graph/model/LineChartLayout;
+	public final fun layout (Lcom/lumipol/graph/model/LineChartData;DDLjava/util/List;D)Lcom/lumipol/graph/model/LineChartLayout;
 	public final fun layout (Lcom/lumipol/graph/model/LineChartData;Ljava/util/List;)Lcom/lumipol/graph/model/LineChartLayout;
+	public final fun layout (Lcom/lumipol/graph/model/LineChartData;Ljava/util/List;D)Lcom/lumipol/graph/model/LineChartLayout;
 	public final fun nearest (Lcom/lumipol/graph/model/LineChartData;D)Ljava/util/List;
 	public final fun nearest (Lcom/lumipol/graph/model/LineChartData;DDD)Ljava/util/List;
 	public final fun nearestScrub (Lcom/lumipol/graph/model/LineChartData;Lcom/lumipol/graph/model/LineChartLayout;D)Lcom/lumipol/graph/model/ScrubResult;
@@ -201,13 +212,18 @@ public final class com/lumipol/graph/PaceSeriesId {
 	public static final field PACE I
 	public final fun getDISPLAY_PRIORITY ()Ljava/util/List;
 	public final fun getLINE_PRIORITY ()Ljava/util/List;
+	public final fun getSHARED_SCALE_IDS ()Ljava/util/Set;
 }
 
 public final class com/lumipol/graph/SeriesSelection {
 	public static final field INSTANCE Lcom/lumipol/graph/SeriesSelection;
 	public final fun assignSlots (Ljava/util/List;Ljava/util/Set;Ljava/util/Set;)Ljava/util/List;
 	public final fun invertedAxesFor (I)Ljava/util/Set;
+	public final fun invertedAxesFor (ILjava/util/List;)Ljava/util/Set;
+	public final fun isAllSelected (Ljava/util/List;Ljava/util/Set;)Z
 	public final fun normalized (Ljava/util/List;Ljava/util/Set;Ljava/util/List;)Ljava/util/List;
+	public final fun selectAll (Ljava/util/List;Ljava/util/Set;Ljava/util/List;)Ljava/util/List;
+	public final fun slotAxes (Ljava/util/List;Ljava/util/Set;)Ljava/util/List;
 	public final fun slotAxis (I)Lcom/lumipol/graph/model/Axis;
 	public final fun toggled (Ljava/util/List;I)Ljava/util/List;
 }
@@ -347,19 +363,23 @@ public final class com/lumipol/graph/model/BarColorRole : java/lang/Enum {
 }
 
 public final class com/lumipol/graph/model/BarLayout {
-	public fun <init> (IDDLcom/lumipol/graph/model/BarColorRole;ZLjava/lang/Integer;)V
-	public synthetic fun <init> (IDDLcom/lumipol/graph/model/BarColorRole;ZLjava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (IDDLcom/lumipol/graph/model/BarColorRole;ZLjava/lang/Integer;Ljava/lang/Double;Ljava/lang/Double;)V
+	public synthetic fun <init> (IDDLcom/lumipol/graph/model/BarColorRole;ZLjava/lang/Integer;Ljava/lang/Double;Ljava/lang/Double;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
 	public final fun component2 ()D
 	public final fun component3 ()D
 	public final fun component4 ()Lcom/lumipol/graph/model/BarColorRole;
 	public final fun component5 ()Z
 	public final fun component6 ()Ljava/lang/Integer;
-	public final fun copy (IDDLcom/lumipol/graph/model/BarColorRole;ZLjava/lang/Integer;)Lcom/lumipol/graph/model/BarLayout;
-	public static synthetic fun copy$default (Lcom/lumipol/graph/model/BarLayout;IDDLcom/lumipol/graph/model/BarColorRole;ZLjava/lang/Integer;ILjava/lang/Object;)Lcom/lumipol/graph/model/BarLayout;
+	public final fun component7 ()Ljava/lang/Double;
+	public final fun component8 ()Ljava/lang/Double;
+	public final fun copy (IDDLcom/lumipol/graph/model/BarColorRole;ZLjava/lang/Integer;Ljava/lang/Double;Ljava/lang/Double;)Lcom/lumipol/graph/model/BarLayout;
+	public static synthetic fun copy$default (Lcom/lumipol/graph/model/BarLayout;IDDLcom/lumipol/graph/model/BarColorRole;ZLjava/lang/Integer;Ljava/lang/Double;Ljava/lang/Double;ILjava/lang/Object;)Lcom/lumipol/graph/model/BarLayout;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getColorRole ()Lcom/lumipol/graph/model/BarColorRole;
+	public final fun getEndDistanceMeters ()Ljava/lang/Double;
 	public final fun getEndMinutes ()Ljava/lang/Integer;
+	public final fun getEndSeconds ()Ljava/lang/Double;
 	public final fun getHeightFraction ()D
 	public final fun getIndex ()I
 	public final fun getValue ()D
@@ -966,6 +986,7 @@ public final class com/lumipol/graph/query/HeightFractionsKt {
 public final class com/lumipol/graph/query/LabelThinningKt {
 	public static final fun isLabelVisible (III)Z
 	public static final fun labelStride (IDDD)I
+	public static final fun labelStride (IDDDD)I
 	public static synthetic fun labelStride$default (IDDDILjava/lang/Object;)I
 }
 

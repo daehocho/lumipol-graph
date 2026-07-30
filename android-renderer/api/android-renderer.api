@@ -183,7 +183,7 @@ public final class com/lumipol/graph/renderer/LineChartZoomController {
 }
 
 public final class com/lumipol/graph/renderer/RDBarChartKt {
-	public static final fun RDBarChart (Lcom/lumipol/graph/model/BarChartLayout;Landroidx/compose/ui/Modifier;Lcom/lumipol/graph/renderer/ChartStyle;Ljava/util/List;Ljava/util/List;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function1;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)V
+	public static final fun RDBarChart (Lcom/lumipol/graph/model/BarChartLayout;Landroidx/compose/ui/Modifier;Lcom/lumipol/graph/renderer/ChartStyle;Ljava/util/List;Ljava/util/List;Lkotlin/jvm/functions/Function1;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)V
 }
 
 public final class com/lumipol/graph/renderer/RDHeartRateZoneChartKt {

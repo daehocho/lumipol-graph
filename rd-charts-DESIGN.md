@@ -1006,6 +1006,31 @@ timeTickHour` 분기를 sub-minute 분기보다 앞에 추가(Runday_IOS/AOS 반
 
 **xcframework 재빌드 필요** — 포함됨.
 
+### 코드리뷰 후속 — selectAll 계약 하드닝·가드레일 복구 (0.51.0, 2026-07-30)
+
+0.50.0 리뷰 확정 사항. 동작 변경은 오용 경로 하나뿐이고 정상 호출부(양 앱 모두
+`DISPLAY_PRIORITY` 전달)에는 무영향이다.
+
+- **fix: `selectAll`이 `priority`에 없는 가용 id를 누락하던 문제** — 결과가 `available`을
+  전부 포함하지 않으면 `isAllSelected`와 갈려 "종합" 칩이 **영구 비활성 + 재탭 무반응**
+  (죽은 칩)이 된다. 앱이 `LINE_PRIORITY`(고도 없음)를 넘기면 바로 그 경로다
+  (`LINE_PRIORITY` KDoc이 `normalized`에 대해 이미 경고하는 것과 같은 계열의 오용).
+  이제 `priority`는 추가 **순서**만 정하고, 거기 없는 가용 id는 뒤에 id 오름차순으로 붙는다
+  — "결과는 항상 available을 전부 포함"이 계약이다.
+- **chore(가드레일): `apiDump` 갱신** — 0.38.0 이후 갱신이 없어 `apiCheck`가 실패 상태로
+  방치돼 있었다(50-guardrails §4의 PR 체크리스트 항목). 이번에 밀린 표면을 한 번에 복구:
+  `chooseDistanceBucketMeters`, `BAR_X_UNIT_FONT_DELTA`, `splitXAxisLabels`/`splitEndTime`/
+  `splitEndDistance`/`timeTick(D,Z)`/`timeTickHour`, `LineChartEngine.layout` 3·4인자 오버로드,
+  `PaceSeriesId.SHARED_SCALE_IDS`, `slotAxes`/`invertedAxesFor(I,List)`, `BarLayout`
+  `endSeconds`/`endDistanceMeters`, `labelStride` 5인자. 이후 릴리스는 `apiCheck`를 실제 게이트로 쓴다.
+- **chore(골든): `CoreDump`에 `selectAll`/`isAllSelected` 9케이스 추가** — 0.50.0이 신규 코어
+  API를 골든(JVM↔iOS 패리티) 밖에 두어, Native만 갈라져도 `golden-check.sh`가 통과했다.
+  `toggled`/`normalized`와 대칭을 회복.
+
+**마이그레이션(앱)**: 없음. 양 앱은 이미 `DISPLAY_PRIORITY`를 넘기므로 결과가 동일하다.
+
+**xcframework 재빌드 필요** — 포함됨.
+
 ## 8. 1차 파일럿 — 라인차트 수직 슬라이스 (A+C)
 
 > 완료된 파일럿의 당시 범위 기록이다. 아래 "기준선/목표선"은 0.17.0에서, "ghost 선"은

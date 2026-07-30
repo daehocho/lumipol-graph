@@ -384,6 +384,29 @@ object CoreDump {
                         PaceSeriesId.SHARED_SCALE_IDS,
                     ).map { jstr(it.name) },
                 ))
+                // 종합 칩(0.51.0) — priority 순 추가·의도 보존·priority 미포함 가용 id 커버.
+                listOf(
+                    Triple("selectAll_partial", listOf(1), setOf(0, 1, 2, 3)),
+                    Triple("selectAll_already_all", listOf(2, 0, 1, 3), setOf(0, 1, 2, 3)),
+                    Triple("selectAll_keeps_hidden_intent", listOf(1), setOf(0, 3)),
+                    Triple("selectAll_empty_available", listOf(0), emptySet()),
+                ).forEach { (name, cur, avail) ->
+                    add(name to jarr(
+                        SeriesSelection.selectAll(cur, avail, PaceSeriesId.DISPLAY_PRIORITY).map { jint(it) },
+                    ))
+                }
+                add("selectAll_line_priority_covers_altitude" to jarr(
+                    SeriesSelection.selectAll(listOf(0), setOf(0, 1, 2, 3), PaceSeriesId.LINE_PRIORITY)
+                        .map { jint(it) },
+                ))
+                listOf(
+                    Triple("isAllSelected_all", listOf(3, 1, 0, 2), setOf(0, 1, 2, 3)),
+                    Triple("isAllSelected_partial", listOf(0, 1), setOf(0, 1, 2)),
+                    Triple("isAllSelected_ignores_hidden", listOf(1, 0, 3), setOf(0, 3)),
+                    Triple("isAllSelected_empty_available", listOf(0), emptySet()),
+                ).forEach { (name, cur, avail) ->
+                    add(name to jbool(SeriesSelection.isAllSelected(cur, avail)))
+                }
             }),
         )
         return sections.joinToString(",\n", "{\n", "\n}\n")

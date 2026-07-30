@@ -92,11 +92,18 @@ object SeriesSelection {
      * `next != selection` no-op 가드가 그대로 작동한다. current에 available 밖 id(저장된
      * 의도)가 있어도 유지한다([toggled]와 동일 — 정리는 [normalized] 소관).
      *
+     * 결과는 **항상 [available]을 전부 포함**한다 — [priority]는 추가 **순서**만 정하고, 거기
+     * 없는 가용 id는 뒤에 id 순으로 붙는다. 이 불변식이 없으면 [isAllSelected]와 결과가 갈려
+     * ("종합" 칩이 영구 비활성 + 재탭 무반응) 죽은 칩이 된다 — 앱이 [PaceSeriesId.LINE_PRIORITY]
+     * (고도 없음)를 넘기는 오용이 그 경로다([PaceSeriesId.LINE_PRIORITY] KDoc의 `normalized`
+     * 경고와 같은 계열).
+     *
      * @param priority 추가 순서 — 보통 [PaceSeriesId.DISPLAY_PRIORITY](고도 포함).
      */
     fun selectAll(current: List<Int>, available: Set<Int>, priority: List<Int>): List<Int> {
         if (available.isEmpty() || isAllSelected(current, available)) return current
-        return current + priority.filter { it in available && it !in current }
+        val order = (priority + available.sorted()).distinct()
+        return current + order.filter { it in available && it !in current }
     }
 
     /**

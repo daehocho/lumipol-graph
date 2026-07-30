@@ -182,6 +182,22 @@ class SeriesSelectionTest {
         )
     }
 
+    @Test fun select_all_covers_available_ids_missing_from_priority() {
+        // 앱이 라인 우선순위(고도 없음)를 넘겨도 결과는 available 전부를 포함해야 한다 —
+        // 아니면 isAllSelected와 갈려 종합 칩이 영구 비활성 + 재탭 무반응(죽은 칩)이 된다.
+        val next = SeriesSelection.selectAll(
+            current = listOf(0), available = setOf(0, 1, 2, 3), priority = PaceSeriesId.LINE_PRIORITY)
+        assertEquals(listOf(0, 1, 2, 3), next)
+        assertTrue(SeriesSelection.isAllSelected(next, setOf(0, 1, 2, 3)))
+    }
+
+    @Test fun select_all_appends_unknown_available_ids_in_id_order() {
+        // priority에 없는 미래 id(9, 7)도 결정적 순서(id 오름차순)로 붙는다.
+        val next = SeriesSelection.selectAll(
+            current = listOf(1), available = setOf(1, 9, 7), priority = priority)
+        assertEquals(listOf(1, 7, 9), next)
+    }
+
     @Test fun is_all_selected_requires_every_available_id() {
         assertTrue(SeriesSelection.isAllSelected(listOf(3, 1, 0, 2), setOf(0, 1, 2, 3)))
         assertFalse(SeriesSelection.isAllSelected(listOf(0, 1), setOf(0, 1, 2)))

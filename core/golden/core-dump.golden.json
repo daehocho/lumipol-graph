@@ -427,6 +427,15 @@
     "slots_pace_cad_only": [0,2],
     "slotAxis_0_to_3": ["PRIMARY","SECONDARY","SECONDARY","SECONDARY"],
     "slotAxes_hr_cad": ["PRIMARY","PRIMARY"],
-    "slotAxes_pace_hr_cad": ["PRIMARY","SECONDARY","SECONDARY"]
+    "slotAxes_pace_hr_cad": ["PRIMARY","SECONDARY","SECONDARY"],
+    "selectAll_partial": [1,0,2,3],
+    "selectAll_already_all": [2,0,1,3],
+    "selectAll_keeps_hidden_intent": [1,0,3],
+    "selectAll_empty_available": [0],
+    "selectAll_line_priority_covers_altitude": [0,1,2,3],
+    "isAllSelected_all": true,
+    "isAllSelected_partial": false,
+    "isAllSelected_ignores_hidden": true,
+    "isAllSelected_empty_available": false
   }
 }
