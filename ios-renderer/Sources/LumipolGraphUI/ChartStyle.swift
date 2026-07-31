@@ -101,6 +101,11 @@ public struct ChartStyle {
         bottom: CGFloat(ChartDefaults.shared.PLOT_INSET_BOTTOM), right: CGFloat(ChartDefaults.shared.PLOT_INSET_RIGHT)
     )
 
+    // 종합분석 라인차트 햅틱(1.1.0) — 탭 단발 + 스크럽 tick + 확대 롱프레스 진입 3종 총괄 스위치.
+    // "selection"을 이름에 넣지 않은 이유: 롱프레스 진입 햅틱은 선택 사건이 아니다.
+    // tick 격자·최소 간격은 코어 정책 상수(ChartDefaults.SCRUB_HAPTIC_*) — 양 플랫폼 감각이 갈리지 않게 주입 대상이 아니다.
+    public var lineHapticsEnabled: Bool = true
+
     // 터치 마커 (말풍선 스타일은 bubble 레이어 제거와 함께 삭제됨 — 값 표시는 스크럽 델리게이트가 담당)
     public var touchLineColor: UIColor = .label
     public var touchDotRadius: CGFloat = CGFloat(ChartDefaults.shared.TOUCH_DOT_RADIUS)

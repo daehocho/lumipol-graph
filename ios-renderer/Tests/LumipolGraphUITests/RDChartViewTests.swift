@@ -326,6 +326,24 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertFalse(view.scrub(at: CGPoint(x: 195, y: 150)))
     }
 
+    func testScrubStillReportsValuesWhenHapticsDisabled() {
+        // 햅틱 off는 진동만 끈다 — 마커·스크럽 콜백은 그대로다.
+        // style은 private(set)이므로 render(_:style:)로 주입한다.
+        var style = ChartStyle.default
+        style.lineHapticsEnabled = false
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(
+            TestFixtures.fullChart, style: style,
+            invertedAxes: [.primary], labelFormatter: TestFixtures.format
+        )
+        view.layoutIfNeeded()
+        let spy = SpyScrubDelegate()
+        view.scrubDelegate = spy
+        XCTAssertTrue(view.scrub(at: CGPoint(x: 195, y: 150)))
+        XCTAssertFalse(spy.scrubbed.isEmpty)
+    }
+
     // MARK: - Background area
 
     func testBackgroundAreaDrawnBottomMostUnderContent() {

@@ -63,6 +63,12 @@ public final class RDChartView: UIView {
     private let markerTapRecognizer = UITapGestureRecognizer()
     private let longPressRecognizer = UILongPressGestureRecognizer()
 
+    // 햅틱 — 발화 판정은 코어 ScrubHapticGate(픽셀 격자 + 시간 상한), 진동 발생만 뷰 소관.
+    // 제너레이터를 필드로 보유하는 것은 막대차트 selectionFeedback과 동일 관례.
+    private let scrubFeedback = UISelectionFeedbackGenerator()
+    private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
+    private var hapticGate = ScrubHapticGate(anchorPx: nil, lastFireMs: nil)
+
     public override init(frame: CGRect) {
         super.init(frame: frame)
         installGestures()
@@ -323,9 +329,13 @@ public final class RDChartView: UIView {
     }
 
     /// 스크럽 종료: 마커 제거 + (표시 중이었으면) 종료 통지.
+    /// 햅틱 게이트도 함께 초기화한다 — 팬 종료·핀치·확대 팬 진입·줌 변경이 모두 이 경로를 지나므로,
+    /// 앵커 픽셀이 다른 창(다른 도메인)의 좌표로 남아 첫 tick 간격이 어긋나는 일이 없다.
+    /// `removeTouchMarkerLayer()`에는 넣지 않는다 — 스크럽 프레임마다 호출돼 격자가 무력화된다.
     @objc public func hideTouchMarker() {
         let hadMarker = touchMarkerLayer != nil
         removeTouchMarkerLayer()
+        hapticGate = ScrubHapticGate(anchorPx: nil, lastFireMs: nil)
         if hadMarker { scrubDelegate?.chartViewDidEndScrub(self) }
     }
 
@@ -513,13 +523,19 @@ public final class RDChartView: UIView {
             return
         }
         if pinchRecognizer.state == .began || pinchRecognizer.state == .changed { return }
+        if let pan = recognizer as? UIPanGestureRecognizer, pan.state == .began,
+           style.lineHapticsEnabled {
+            scrubFeedback.prepare()
+        }
         // 손을 떼면(팬 종료) 마커 제거 + 값 원복. 탭(markerTap)은 종료 분기에 안 걸려 기존대로 표시 유지.
         if recognizer is UIPanGestureRecognizer,
            recognizer.state == .ended || recognizer.state == .cancelled || recognizer.state == .failed {
             hideTouchMarker()
             return
         }
-        scrub(at: recognizer.location(in: self))
+        // 탭(markerTap)은 단발 impact, 팬은 격자 tick. 팬 .began은 게이트 앵커가 nil이라
+        // 코어 규칙에 따라 무발화로 앵커만 잡힌다(별도 분기 불필요).
+        scrubFromUser(at: recognizer.location(in: self), isTap: recognizer === markerTapRecognizer)
     }
 
     /// 확대 상태에서 0.5초 롱프레스 후 드래그 = 스크럽(값 조회). 진입 시 햅틱, 스크럽 중 팬 잠금.
@@ -528,13 +544,17 @@ public final class RDChartView: UIView {
         switch recognizer.state {
         case .began:
             isScrubbing = true
+            hapticGate = ScrubHapticGate(anchorPx: nil, lastFireMs: nil)
             // 햅틱은 "확대 상태 값 조회 진입" 신호 — 100%(비확대)에선 기존 드래그 스크럽과 동일해 울리지 않는다.
-            if zoomState?.isZoomed == true {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            if style.lineHapticsEnabled {
+                scrubFeedback.prepare()
+                if zoomState?.isZoomed == true {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                }
             }
-            scrub(at: recognizer.location(in: self))
+            scrubFromUser(at: recognizer.location(in: self), isTap: false)
         case .changed:
-            scrub(at: recognizer.location(in: self))
+            scrubFromUser(at: recognizer.location(in: self), isTap: false)
         case .ended, .cancelled, .failed:
             isScrubbing = false
             hideTouchMarker()
@@ -557,6 +577,32 @@ public final class RDChartView: UIView {
         guard let plotArea = currentPlotArea, let xDomain = xDomain() else { return false }
         let rawX = xDomain.denormalize(t: plotArea.normalizedX(at: location.x))
         return showTouchMarker(atX: rawX, notifyingDelegate: true)
+    }
+
+    /// 사용자 입력 스크럽 공통 경로 — 마커가 실제로 표시된 경우에만 햅틱을 낸다.
+    /// 프로그래매틱 `showTouchMarker(atX:)`와 레이아웃 패스의 마커 복원은 이 경로를 타지 않아 무음이다.
+    /// - Parameter isTap: 탭(단발 impact)과 드래그 tick(격자 게이트)을 가른다. 탭은 명시적 입력이라
+    ///   스냅 위치가 그대로여도 매번 응답한다 — 연속형 라인차트에선 "탭했으면 반응"이 예측 가능하다
+    ///   (도넛의 "선택이 바뀔 때만" 규칙과 의도적으로 다르다).
+    private func scrubFromUser(at location: CGPoint, isTap: Bool) {
+        guard scrub(at: location), style.lineHapticsEnabled else { return }
+        if isTap {
+            tapFeedback.impactOccurred()
+        } else {
+            fireScrubTickIfNeeded(atPx: location.x)
+        }
+    }
+
+    /// 스크럽 tick — 발화 여부는 코어 게이트가 판정하고, 뷰는 상태 보유와 진동만 한다.
+    private func fireScrubTickIfNeeded(atPx px: CGFloat) {
+        let step = hapticGate.step(
+            px: Double(px),
+            nowMs: Int64(CACurrentMediaTime() * 1000),
+            spacingPx: ChartDefaults.shared.SCRUB_HAPTIC_SPACING_DP,
+            minIntervalMs: ChartDefaults.shared.SCRUB_HAPTIC_MIN_INTERVAL_MS
+        )
+        hapticGate = step.gate
+        if step.fire { scrubFeedback.selectionChanged() }
     }
 
     static func defaultFormatter(_ axis: ChartAxis, _ value: Double) -> String {
