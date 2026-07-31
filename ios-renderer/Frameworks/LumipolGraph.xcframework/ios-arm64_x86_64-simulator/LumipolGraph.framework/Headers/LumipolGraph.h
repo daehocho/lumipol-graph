@@ -6,7 +6,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSValue.h>
 
-@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphChartA11y, LumipolGraphDonutChartLayout, LumipolGraphChartDefaults, LumipolGraphChartDefaultsDarkPalette, LumipolGraphChartDefaultsLightPalette, LumipolGraphChartFormat, LumipolGraphDonutEngine, LumipolGraphDonutChartData, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphGender, LumipolGraphKotlinArray<T>, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceColormap, LumipolGraphBarColorAnchors, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphTrackChartBuilder, LumipolGraphRawTrackSample, LumipolGraphRunTotals, LumipolGraphBuildOptions, LumipolGraphSplitSample, LumipolGraphZoomWindow, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphDistanceUnit, LumipolGraphXMode, LumipolGraphChartConfigCompanion, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDistanceUnitCompanion, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphRawTrackSampleCompanion, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
+@class LumipolGraphBarChartEngine, LumipolGraphBarChartLayout, LumipolGraphBarChartData, LumipolGraphChartA11y, LumipolGraphDonutChartLayout, LumipolGraphChartDefaults, LumipolGraphChartDefaultsDarkPalette, LumipolGraphChartDefaultsLightPalette, LumipolGraphChartFormat, LumipolGraphDonutEngine, LumipolGraphDonutChartData, LumipolGraphKotlinEnumCompanion, LumipolGraphKotlinEnum<E>, LumipolGraphGender, LumipolGraphKotlinArray<T>, LumipolGraphHeartRateZoneEngine, LumipolGraphHeartRateZoneSample, LumipolGraphZoneBpmRange, LumipolGraphLineChartEngine, LumipolGraphPoint, LumipolGraphLineChartLayout, LumipolGraphLineChartData, LumipolGraphNearestResult, LumipolGraphScrubResult, LumipolGraphPaceColormap, LumipolGraphBarColorAnchors, LumipolGraphPaceSeriesEngine, LumipolGraphPaceSeriesResult, LumipolGraphPaceSeriesInput, LumipolGraphPaceSeriesId, LumipolGraphSeriesSelection, LumipolGraphAxis, LumipolGraphTrackChartBuilder, LumipolGraphRawTrackSample, LumipolGraphRunTotals, LumipolGraphBuildOptions, LumipolGraphSplitSample, LumipolGraphScrubHapticGate, LumipolGraphScrubHapticGateStep, LumipolGraphZoomWindow, LumipolGraphAxisTick, LumipolGraphChartAxis, LumipolGraphAxisTicksLayout, LumipolGraphBarLayout, LumipolGraphBarColorRole, LumipolGraphDistanceUnit, LumipolGraphXMode, LumipolGraphChartConfigCompanion, LumipolGraphChartConfig, LumipolGraphAxisDomain, LumipolGraphChartDomains, LumipolGraphDistanceUnitCompanion, LumipolGraphDonutSegment, LumipolGraphDonutSegmentLayout, LumipolGraphDonutColorRole, LumipolGraphSeries, LumipolGraphRefBand, LumipolGraphMarker, LumipolGraphSeriesLayout, LumipolGraphRefBandLayout, LumipolGraphMarkerLayout, LumipolGraphStats, LumipolGraphNormalizedPoint, LumipolGraphPaceSamplePoint, LumipolGraphRawTrackSampleCompanion, LumipolGraphSeriesRole, LumipolGraphScrubPoint, LumipolGraphSegmentStat, LumipolGraphSeriesStat, LumipolGraphNiceScale;
 
 @protocol LumipolGraphKotlinComparable, LumipolGraphKotlinIterator;
 
@@ -233,6 +233,8 @@ __attribute__((swift_name("ChartDefaults")))
 @property (readonly) double REF_BAND_ALPHA __attribute__((swift_name("REF_BAND_ALPHA")));
 @property (readonly) double REF_DASH_OFF __attribute__((swift_name("REF_DASH_OFF")));
 @property (readonly) double REF_DASH_ON __attribute__((swift_name("REF_DASH_ON")));
+@property (readonly) int64_t SCRUB_HAPTIC_MIN_INTERVAL_MS __attribute__((swift_name("SCRUB_HAPTIC_MIN_INTERVAL_MS")));
+@property (readonly) double SCRUB_HAPTIC_SPACING_DP __attribute__((swift_name("SCRUB_HAPTIC_SPACING_DP")));
 @property (readonly) double SECONDARY_LABEL_ALPHA __attribute__((swift_name("SECONDARY_LABEL_ALPHA")));
 @property (readonly) double TOUCH_DOT_RADIUS __attribute__((swift_name("TOUCH_DOT_RADIUS")));
 @property (readonly) double TOUCH_LINE_WIDTH __attribute__((swift_name("TOUCH_LINE_WIDTH")));
@@ -470,6 +472,31 @@ __attribute__((swift_name("TrackChartBuilder")))
 - (LumipolGraphPaceSeriesInput *)paceInputSamples:(NSArray<LumipolGraphRawTrackSample *> *)samples totals:(LumipolGraphRunTotals *)totals options:(LumipolGraphBuildOptions *)options __attribute__((swift_name("paceInput(samples:totals:options:)")));
 - (NSArray<LumipolGraphSplitSample *> *)splitSamplesSamples:(NSArray<LumipolGraphRawTrackSample *> *)samples __attribute__((swift_name("splitSamples(samples:)")));
 - (NSArray<LumipolGraphHeartRateZoneSample *> *)zoneSamplesSamples:(NSArray<LumipolGraphRawTrackSample *> *)samples __attribute__((swift_name("zoneSamples(samples:)")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ScrubHapticGate")))
+@interface LumipolGraphScrubHapticGate : LumipolGraphBase
+- (instancetype)initWithAnchorPx:(LumipolGraphDouble * _Nullable)anchorPx lastFireMs:(LumipolGraphLong * _Nullable)lastFireMs __attribute__((swift_name("init(anchorPx:lastFireMs:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphScrubHapticGate *)doCopyAnchorPx:(LumipolGraphDouble * _Nullable)anchorPx lastFireMs:(LumipolGraphLong * _Nullable)lastFireMs __attribute__((swift_name("doCopy(anchorPx:lastFireMs:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (LumipolGraphScrubHapticGateStep *)stepPx:(double)px nowMs:(int64_t)nowMs spacingPx:(double)spacingPx minIntervalMs:(int64_t)minIntervalMs __attribute__((swift_name("step(px:nowMs:spacingPx:minIntervalMs:)")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) LumipolGraphDouble * _Nullable anchorPx __attribute__((swift_name("anchorPx")));
+@property (readonly) LumipolGraphLong * _Nullable lastFireMs __attribute__((swift_name("lastFireMs")));
+@end
+
+__attribute__((objc_subclassing_restricted))
+__attribute__((swift_name("ScrubHapticGate.Step")))
+@interface LumipolGraphScrubHapticGateStep : LumipolGraphBase
+- (instancetype)initWithGate:(LumipolGraphScrubHapticGate *)gate fire:(BOOL)fire __attribute__((swift_name("init(gate:fire:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphScrubHapticGateStep *)doCopyGate:(LumipolGraphScrubHapticGate *)gate fire:(BOOL)fire __attribute__((swift_name("doCopy(gate:fire:)")));
+- (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
+- (NSUInteger)hash __attribute__((swift_name("hash()")));
+- (NSString *)description __attribute__((swift_name("description()")));
+@property (readonly) BOOL fire __attribute__((swift_name("fire")));
+@property (readonly) LumipolGraphScrubHapticGate *gate __attribute__((swift_name("gate")));
 @end
 
 __attribute__((objc_subclassing_restricted))
