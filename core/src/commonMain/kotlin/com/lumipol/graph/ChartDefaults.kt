@@ -72,6 +72,12 @@ object ChartDefaults {
     // ── 상호작용 ────────────────────────────────────────────
     const val MAX_ZOOM_SCALE: Double = 10.0
 
+    /** 스크럽 tick 햅틱 격자 — 손가락이 이 거리(iOS pt / AOS dp)를 넘어 이동할 때마다 1회. */
+    const val SCRUB_HAPTIC_SPACING_DP: Double = 12.0
+
+    /** 스크럽 tick 최소 간격 — 빠른 플릭에서 진동이 연속음으로 뭉개지는 것을 막는 상한(≈28Hz). */
+    const val SCRUB_HAPTIC_MIN_INTERVAL_MS: Long = 35
+
     // ── 등장 애니메이션 (구동은 플랫폼, 파라미터만 코어) ─────
     /** D5 결정(44 문서): 이징은 easeOut 통일 — CSS/CA `easeOut` cubic-bezier 계수. */
     const val ENTRANCE_EASING_X1: Double = 0.0
