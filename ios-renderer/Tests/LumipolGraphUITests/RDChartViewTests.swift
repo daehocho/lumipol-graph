@@ -298,6 +298,34 @@ final class RDChartViewTests: XCTestCase {
         XCTAssertFalse(spy.scrubbed.isEmpty, "확대 창에서도 스크럽 값이 전달돼야 함")
     }
 
+    // MARK: - scrub 반환값 (햅틱 발화 조건의 근거)
+
+    func testScrubReturnsTrueWhenMarkerShown() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        XCTAssertTrue(view.scrub(at: CGPoint(x: 195, y: 150)))
+    }
+
+    func testScrubReturnsFalseWithoutData() {
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.layoutIfNeeded()
+        XCTAssertFalse(view.scrub(at: CGPoint(x: 195, y: 150)), "데이터·플롯이 없으면 마커 미표시")
+    }
+
+    func testScrubReturnsFalseWhenNoSnapPointInZoomWindow() {
+        // 포인트 간격 0.5의 갭(1.6...1.9)으로 줌 — 창 안에 스냅할 점이 없어 마커가 서지 않는다.
+        let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+        view.isAnimationEnabled = false
+        view.isZoomEnabled = true
+        view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
+        view.layoutIfNeeded()
+        view.zoom(toXRange: 1.6 ... 1.9)
+        view.layoutIfNeeded()
+        XCTAssertFalse(view.scrub(at: CGPoint(x: 195, y: 150)))
+    }
+
     // MARK: - Background area
 
     func testBackgroundAreaDrawnBottomMostUnderContent() {

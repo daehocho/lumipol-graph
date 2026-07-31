@@ -264,7 +264,9 @@ public final class RDChartView: UIView {
 
     /// 마커 표시 공통 경로. `notifyingDelegate: false`는 레이아웃 패스의 마커 복원 전용 —
     /// 사용자 입력이 없으므로 스크럽 콜백(햅틱/애널리틱스 부작용)을 재발화하지 않는다.
-    private func showTouchMarker(atX rawX: Double, notifyingDelegate: Bool) {
+    /// - Returns: 마커가 실제로 표시되면 true — 사용자 입력 경로의 햅틱 발화 조건이다.
+    @discardableResult
+    private func showTouchMarker(atX rawX: Double, notifyingDelegate: Bool) -> Bool {
         var rawX = rawX
         if let state = zoomState, state.isZoomed {
             // 창 끝 스크럽은 도메인 역산 반올림으로 상/하한을 수 ulp 벗어날 수 있다 —
@@ -272,10 +274,10 @@ public final class RDChartView: UIView {
             // (엄격 비교 시 끝 스크럽이 침묵 드롭되고 이전 마커가 얼어붙음).
             let epsilon = (state.window.upperBound - state.window.lowerBound) * ScrubKt.SCRUB_WINDOW_EPSILON
             guard rawX >= state.window.lowerBound - epsilon,
-                  rawX <= state.window.upperBound + epsilon else { return }
+                  rawX <= state.window.upperBound + epsilon else { return false }
             rawX = min(max(rawX, state.window.lowerBound), state.window.upperBound)
         }
-        guard let data, let chartLayout, let plotArea = currentPlotArea else { return }
+        guard let data, let chartLayout, let plotArea = currentPlotArea else { return false }
         let hadMarker = touchMarkerLayer != nil
         removeTouchMarkerLayer()
         let context = TouchMarker.Context(
@@ -296,12 +298,12 @@ public final class RDChartView: UIView {
             // 표시 중이던 마커가 사라질 때만 종료 통지 — 마커가 없었으면
             // didScrubTo 없는 endScrub(짝 깨진 콜백)를 만들지 않는다 (hideTouchMarker와 동일 계약).
             if notifyingDelegate, hadMarker { scrubDelegate?.chartViewDidEndScrub(self) }
-            return
+            return false
         }
         layer.addSublayer(result.layer)
         touchMarkerLayer = result.layer
         activeMarkerRawX = rawX
-        guard notifyingDelegate else { return }
+        guard notifyingDelegate else { return true }
         scrubDelegate?.chartView(self, didScrubTo: result.valuesBySeriesId)
         // 배경 area 보간은 코어 질의(interpolatedY) — 양 플랫폼 렌더러가 동일 로직 공유 (0.9.0 이관).
         if let backgroundAreaPoints,
@@ -310,6 +312,7 @@ public final class RDChartView: UIView {
         {
             scrubDelegate?.chartView(self, didScrubToBackgroundValue: value.doubleValue)
         }
+        return true
     }
 
     /// 마커 레이어만 제거(델리게이트 통지 없음) — 내부 재빌드·재렌더용.
@@ -548,10 +551,12 @@ public final class RDChartView: UIView {
     }
 
     /// 손가락 뷰 좌표 → 현재(창) 도메인 x로 환산해 스크럽 마커 표시. 롱프레스·비확대 스크럽 공용.
-    func scrub(at location: CGPoint) {
-        guard let plotArea = currentPlotArea, let xDomain = xDomain() else { return }
+    /// - Returns: 마커가 실제로 표시되면 true.
+    @discardableResult
+    func scrub(at location: CGPoint) -> Bool {
+        guard let plotArea = currentPlotArea, let xDomain = xDomain() else { return false }
         let rawX = xDomain.denormalize(t: plotArea.normalizedX(at: location.x))
-        showTouchMarker(atX: rawX)
+        return showTouchMarker(atX: rawX, notifyingDelegate: true)
     }
 
     static func defaultFormatter(_ axis: ChartAxis, _ value: Double) -> String {
