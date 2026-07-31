@@ -67,7 +67,7 @@ public final class RDChartView: UIView {
     // 제너레이터를 필드로 보유하는 것은 막대차트 selectionFeedback과 동일 관례.
     private let scrubFeedback = UISelectionFeedbackGenerator()
     private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
-    private var hapticGate = ScrubHapticGate(anchorPx: nil, lastFireMs: nil)
+    private var hapticGate = ScrubHapticGate(anchorPx: nil, lastFireMs: nil, lastSnappedX: nil)
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -270,9 +270,11 @@ public final class RDChartView: UIView {
 
     /// 마커 표시 공통 경로. `notifyingDelegate: false`는 레이아웃 패스의 마커 복원 전용 —
     /// 사용자 입력이 없으므로 스크럽 콜백(햅틱/애널리틱스 부작용)을 재발화하지 않는다.
-    /// - Returns: 마커가 실제로 표시되면 true — 사용자 입력 경로의 햅틱 발화 조건이다.
+    /// - Returns: 마커가 실제로 선 **스냅 도메인 x**(미표시면 nil) — 사용자 입력 경로의 햅틱
+    ///   발화 조건이다. "표시됐는가"뿐 아니라 "조회 지점이 움직였는가"까지 게이트가 봐야 하므로
+    ///   Bool이 아니라 위치를 돌려준다.
     @discardableResult
-    private func showTouchMarker(atX rawX: Double, notifyingDelegate: Bool) -> Bool {
+    private func showTouchMarker(atX rawX: Double, notifyingDelegate: Bool) -> Double? {
         var rawX = rawX
         if let state = zoomState, state.isZoomed {
             // 창 끝 스크럽은 도메인 역산 반올림으로 상/하한을 수 ulp 벗어날 수 있다 —
@@ -280,10 +282,10 @@ public final class RDChartView: UIView {
             // (엄격 비교 시 끝 스크럽이 침묵 드롭되고 이전 마커가 얼어붙음).
             let epsilon = (state.window.upperBound - state.window.lowerBound) * ScrubKt.SCRUB_WINDOW_EPSILON
             guard rawX >= state.window.lowerBound - epsilon,
-                  rawX <= state.window.upperBound + epsilon else { return false }
+                  rawX <= state.window.upperBound + epsilon else { return nil }
             rawX = min(max(rawX, state.window.lowerBound), state.window.upperBound)
         }
-        guard let data, let chartLayout, let plotArea = currentPlotArea else { return false }
+        guard let data, let chartLayout, let plotArea = currentPlotArea else { return nil }
         let hadMarker = touchMarkerLayer != nil
         removeTouchMarkerLayer()
         let context = TouchMarker.Context(
@@ -304,12 +306,12 @@ public final class RDChartView: UIView {
             // 표시 중이던 마커가 사라질 때만 종료 통지 — 마커가 없었으면
             // didScrubTo 없는 endScrub(짝 깨진 콜백)를 만들지 않는다 (hideTouchMarker와 동일 계약).
             if notifyingDelegate, hadMarker { scrubDelegate?.chartViewDidEndScrub(self) }
-            return false
+            return nil
         }
         layer.addSublayer(result.layer)
         touchMarkerLayer = result.layer
         activeMarkerRawX = rawX
-        guard notifyingDelegate else { return true }
+        guard notifyingDelegate else { return result.snappedX }
         scrubDelegate?.chartView(self, didScrubTo: result.valuesBySeriesId)
         // 배경 area 보간은 코어 질의(interpolatedY) — 양 플랫폼 렌더러가 동일 로직 공유 (0.9.0 이관).
         if let backgroundAreaPoints,
@@ -318,7 +320,7 @@ public final class RDChartView: UIView {
         {
             scrubDelegate?.chartView(self, didScrubToBackgroundValue: value.doubleValue)
         }
-        return true
+        return result.snappedX
     }
 
     /// 마커 레이어만 제거(델리게이트 통지 없음) — 내부 재빌드·재렌더용.
@@ -335,7 +337,7 @@ public final class RDChartView: UIView {
     @objc public func hideTouchMarker() {
         let hadMarker = touchMarkerLayer != nil
         removeTouchMarkerLayer()
-        hapticGate = ScrubHapticGate(anchorPx: nil, lastFireMs: nil)
+        hapticGate = ScrubHapticGate(anchorPx: nil, lastFireMs: nil, lastSnappedX: nil)
         if hadMarker { scrubDelegate?.chartViewDidEndScrub(self) }
     }
 
@@ -544,7 +546,7 @@ public final class RDChartView: UIView {
         switch recognizer.state {
         case .began:
             isScrubbing = true
-            hapticGate = ScrubHapticGate(anchorPx: nil, lastFireMs: nil)
+            hapticGate = ScrubHapticGate(anchorPx: nil, lastFireMs: nil, lastSnappedX: nil)
             // 햅틱은 "확대 상태 값 조회 진입" 신호 — 100%(비확대)에선 기존 드래그 스크럽과 동일해 울리지 않는다.
             if style.lineHapticsEnabled {
                 scrubFeedback.prepare()
@@ -571,10 +573,10 @@ public final class RDChartView: UIView {
     }
 
     /// 손가락 뷰 좌표 → 현재(창) 도메인 x로 환산해 스크럽 마커 표시. 롱프레스·비확대 스크럽 공용.
-    /// - Returns: 마커가 실제로 표시되면 true.
+    /// - Returns: 마커가 선 스냅 도메인 x(미표시면 nil).
     @discardableResult
-    func scrub(at location: CGPoint) -> Bool {
-        guard let plotArea = currentPlotArea, let xDomain = xDomain() else { return false }
+    func scrub(at location: CGPoint) -> Double? {
+        guard let plotArea = currentPlotArea, let xDomain = xDomain() else { return nil }
         let rawX = xDomain.denormalize(t: plotArea.normalizedX(at: location.x))
         return showTouchMarker(atX: rawX, notifyingDelegate: true)
     }
@@ -585,18 +587,21 @@ public final class RDChartView: UIView {
     ///   스냅 위치가 그대로여도 매번 응답한다 — 연속형 라인차트에선 "탭했으면 반응"이 예측 가능하다
     ///   (도넛의 "선택이 바뀔 때만" 규칙과 의도적으로 다르다).
     private func scrubFromUser(at location: CGPoint, isTap: Bool) {
-        guard scrub(at: location), style.lineHapticsEnabled else { return }
+        guard let snappedX = scrub(at: location), style.lineHapticsEnabled else { return }
         if isTap {
             tapFeedback.impactOccurred()
         } else {
-            fireScrubTickIfNeeded(atPx: location.x)
+            fireScrubTickIfNeeded(atPx: location.x, snappedX: snappedX)
         }
     }
 
     /// 스크럽 tick — 발화 여부는 코어 게이트가 판정하고, 뷰는 상태 보유와 진동만 한다.
-    private func fireScrubTickIfNeeded(atPx px: CGFloat) {
+    /// 조회 지점(`snappedX`)이 그대로면 게이트가 무발화로 판정한다 — 그래프 끝을 넘겨 계속
+    /// 미는 동안 마커는 마지막 샘플에 얼어붙으므로(플롯 밖 nx는 0~1로 클램프) 진동도 멈춘다.
+    private func fireScrubTickIfNeeded(atPx px: CGFloat, snappedX: Double) {
         let step = hapticGate.step(
             px: Double(px),
+            snappedX: snappedX,
             nowMs: Int64(CACurrentMediaTime() * 1000),
             spacingPx: ChartDefaults.shared.SCRUB_HAPTIC_SPACING_DP,
             minIntervalMs: ChartDefaults.shared.SCRUB_HAPTIC_MIN_INTERVAL_MS

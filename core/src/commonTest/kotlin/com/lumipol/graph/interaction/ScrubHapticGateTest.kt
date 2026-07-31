@@ -14,8 +14,9 @@ class ScrubHapticGateTest {
     private val spacing = 12.0
     private val interval = 35L
 
-    private fun ScrubHapticGate.stepAt(px: Double, nowMs: Long) =
-        step(px, nowMs, spacing, interval)
+    /** 스냅 지점을 픽셀과 함께 움직이는 기본 헬퍼 — 스냅 정지 케이스는 snappedX를 명시한다. */
+    private fun ScrubHapticGate.stepAt(px: Double, nowMs: Long, snappedX: Double = px) =
+        step(px, snappedX, nowMs, spacing, interval)
 
     @Test
     fun firstFrameAnchorsWithoutFiring() {
@@ -64,6 +65,34 @@ class ScrubHapticGateTest {
         assertTrue(next.fire, "시간이 차면 추가 이동 없이 발화")
         assertEquals(124.0, next.gate.anchorPx)
         assertEquals(1035L, next.gate.lastFireMs)
+    }
+
+    @Test
+    fun frozenSnapDoesNotFireHoweverFarTheFingerMoves() {
+        // 그래프 끝(마지막 샘플) 이후 계속 옆으로 미는 상황 — 플롯 밖은 nx가 0~1로 클램프돼
+        // 마커는 마지막 샘플에 얼어붙는다. 조회 지점이 안 움직이면 진동도 없어야 한다.
+        val fired = ScrubHapticGate().stepAt(100.0, 1000L).gate.stepAt(112.0, 1000L, snappedX = 112.0)
+        assertTrue(fired.fire)
+
+        var gate = fired.gate
+        for (i in 1..20) {
+            // 손가락은 계속 오른쪽(+40pt/프레임), 스냅은 112.0에 고정.
+            val step = gate.stepAt(112.0 + i * 40.0, 1000L + i * 50L, snappedX = 112.0)
+            assertFalse(step.fire, "스냅 정지 중에는 발화 없음(프레임 $i)")
+            gate = step.gate
+        }
+        // 스냅이 다시 움직이면 즉시 발화(앵커·시각이 정지 구간에 오염되지 않았다).
+        val resumed = gate.stepAt(920.0, 3000L, snappedX = 200.0)
+        assertTrue(resumed.fire)
+        assertEquals(200.0, resumed.gate.lastSnappedX)
+    }
+
+    @Test
+    fun firstFrameRecordsSnapSoStayingOnSameSampleIsSilent() {
+        val anchored = ScrubHapticGate().stepAt(100.0, 1000L, snappedX = 50.0).gate
+        assertEquals(50.0, anchored.lastSnappedX, "첫 프레임은 스냅 지점을 기록한다")
+        val step = anchored.stepAt(140.0, 1100L, snappedX = 50.0)
+        assertFalse(step.fire, "같은 샘플 위를 지나는 동안은 무발화")
     }
 
     @Test

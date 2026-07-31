@@ -6,6 +6,7 @@ import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.Point
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
@@ -47,8 +48,9 @@ class LineChartInteractionTest {
     }
 
     /** iOS `showTouchMarker(atX:)` = notify=true. */
+    /** 마커 표시 성공 여부 — scrubTo는 스냅 x(미표시 null)를 돌려주므로 존재 여부로 환산한다. */
     private fun show(h: LineChartInteraction, rawX: Double): Boolean =
-        h.scrubTo(rawX, ctx(h), notify = true)
+        h.scrubTo(rawX, ctx(h), notify = true) != null
 
     private fun xTicks(h: LineChartInteraction): List<Double> =
         h.layoutForCurrentWindow().axisTicks.first { it.axis == ChartAxis.X }.ticks.map { it.value }
@@ -72,7 +74,7 @@ class LineChartInteractionTest {
         assertEquals(1, spy.scrubbed.size)
         assertEquals(1, spy.backgroundValues.size)
         // relayout 복원 경로(notify=false) — 콜백 재발화 금지, 마커 유지.
-        assertTrue(h.scrubTo(2.4, ctx(h), notify = false))
+        assertNotNull(h.scrubTo(2.4, ctx(h), notify = false))
         assertEquals(1, spy.scrubbed.size, "레이아웃 패스는 didScrubTo 재발화 안 함")
         assertEquals(1, spy.backgroundValues.size, "레이아웃 패스는 배경 값 콜백 재발화 안 함")
         assertEquals(2.4, h.activeMarkerRawX, "마커는 복원")

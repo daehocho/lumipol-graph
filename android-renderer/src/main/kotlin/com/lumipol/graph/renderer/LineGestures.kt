@@ -78,10 +78,13 @@ internal suspend fun PointerInputScope.lineChartGestures(
     fun scrub(px: Float, nowMs: Long) {
         val rawX = rawXAt(px) ?: return
         val ctx = contextFor() ?: return
-        if (!interaction.scrubTo(rawX, ctx, notify = true)) return
+        val snappedX = interaction.scrubTo(rawX, ctx, notify = true) ?: return
         if (!hapticsEnabled) return
-        // 발화 판정은 코어 게이트(픽셀 격자 + 시간 상한) — 샘플 밀도·줌 배율과 무관한 일정 감각.
-        val step = gate.step(px.toDouble(), nowMs, spacingPx, ChartDefaults.SCRUB_HAPTIC_MIN_INTERVAL_MS)
+        // 발화 판정은 코어 게이트(픽셀 격자 + 시간 상한 + 조회 지점 이동) — 그래프 끝을 넘겨 계속
+        // 밀면 스냅이 마지막 샘플에 얼어붙으므로(플롯 밖 nx는 0~1 클램프) 진동도 멈춘다.
+        val step = gate.step(
+            px.toDouble(), snappedX, nowMs, spacingPx, ChartDefaults.SCRUB_HAPTIC_MIN_INTERVAL_MS,
+        )
         gate = step.gate
         if (step.fire) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
@@ -90,7 +93,7 @@ internal suspend fun PointerInputScope.lineChartGestures(
     fun scrubTap(px: Float) {
         val rawX = rawXAt(px) ?: return
         val ctx = contextFor() ?: return
-        if (interaction.scrubTo(rawX, ctx, notify = true) && hapticsEnabled) {
+        if (interaction.scrubTo(rawX, ctx, notify = true) != null && hapticsEnabled) {
             haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
     }

@@ -22,6 +22,8 @@ data class ScrubHapticGate(
     val anchorPx: Double? = null,
     /** 마지막 발화 시각(ms). null이면 이 제스처에서 아직 발화하지 않았다(첫 tick은 시간 조건 면제). */
     val lastFireMs: Long? = null,
+    /** 마지막으로 진동을 낸 조회 지점(스냅된 도메인 x). 같은 지점에 머무는 동안은 무발화. */
+    val lastSnappedX: Double? = null,
 ) {
     /** 전이 결과 — 갱신된 게이트와 이번 프레임 발화 여부. */
     data class Step(val gate: ScrubHapticGate, val fire: Boolean)
@@ -30,15 +32,20 @@ data class ScrubHapticGate(
      * 스크럽 프레임 판정.
      *
      * @param px 손가락의 플랫폼 픽셀 x(iOS pt / AOS density 배율 캔버스 px).
+     * @param snappedX 이 프레임의 조회 지점(마커가 실제로 선 스냅 도메인 x). 손가락이 움직여도
+     *   이 값이 그대로면 발화하지 않는다 — 그래프 끝을 넘겨 계속 밀 때(플롯 밖 nx는 0~1로
+     *   클램프되어 마지막 샘플에 얼어붙는다)와 성긴 샘플 구간의 헛진동을 막는 조건이다.
      * @param nowMs 플랫폼이 주입하는 단조 시각 — 코어에 시계를 두지 않아 테스트가 결정론적이다.
      * @param spacingPx tick 격자([com.lumipol.graph.ChartDefaults.SCRUB_HAPTIC_SPACING_DP] 환산값).
      * @param minIntervalMs 발화 최소 간격([com.lumipol.graph.ChartDefaults.SCRUB_HAPTIC_MIN_INTERVAL_MS]).
      */
-    fun step(px: Double, nowMs: Long, spacingPx: Double, minIntervalMs: Long): Step {
-        val anchor = anchorPx ?: return Step(ScrubHapticGate(px, lastFireMs), false)
+    fun step(px: Double, snappedX: Double, nowMs: Long, spacingPx: Double, minIntervalMs: Long): Step {
+        val anchor = anchorPx
+            ?: return Step(ScrubHapticGate(px, lastFireMs, snappedX), false)
+        if (snappedX == lastSnappedX) return Step(this, false)
         if (abs(px - anchor) < spacingPx) return Step(this, false)
         val last = lastFireMs
         if (last != null && nowMs - last < minIntervalMs) return Step(this, false)
-        return Step(ScrubHapticGate(px, nowMs), true)
+        return Step(ScrubHapticGate(px, nowMs, snappedX), true)
     }
 }

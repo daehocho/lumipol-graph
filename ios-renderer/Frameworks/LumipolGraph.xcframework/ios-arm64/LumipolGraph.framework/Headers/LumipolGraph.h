@@ -477,14 +477,15 @@ __attribute__((swift_name("TrackChartBuilder")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("ScrubHapticGate")))
 @interface LumipolGraphScrubHapticGate : LumipolGraphBase
-- (instancetype)initWithAnchorPx:(LumipolGraphDouble * _Nullable)anchorPx lastFireMs:(LumipolGraphLong * _Nullable)lastFireMs __attribute__((swift_name("init(anchorPx:lastFireMs:)"))) __attribute__((objc_designated_initializer));
-- (LumipolGraphScrubHapticGate *)doCopyAnchorPx:(LumipolGraphDouble * _Nullable)anchorPx lastFireMs:(LumipolGraphLong * _Nullable)lastFireMs __attribute__((swift_name("doCopy(anchorPx:lastFireMs:)")));
+- (instancetype)initWithAnchorPx:(LumipolGraphDouble * _Nullable)anchorPx lastFireMs:(LumipolGraphLong * _Nullable)lastFireMs lastSnappedX:(LumipolGraphDouble * _Nullable)lastSnappedX __attribute__((swift_name("init(anchorPx:lastFireMs:lastSnappedX:)"))) __attribute__((objc_designated_initializer));
+- (LumipolGraphScrubHapticGate *)doCopyAnchorPx:(LumipolGraphDouble * _Nullable)anchorPx lastFireMs:(LumipolGraphLong * _Nullable)lastFireMs lastSnappedX:(LumipolGraphDouble * _Nullable)lastSnappedX __attribute__((swift_name("doCopy(anchorPx:lastFireMs:lastSnappedX:)")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
-- (LumipolGraphScrubHapticGateStep *)stepPx:(double)px nowMs:(int64_t)nowMs spacingPx:(double)spacingPx minIntervalMs:(int64_t)minIntervalMs __attribute__((swift_name("step(px:nowMs:spacingPx:minIntervalMs:)")));
+- (LumipolGraphScrubHapticGateStep *)stepPx:(double)px snappedX:(double)snappedX nowMs:(int64_t)nowMs spacingPx:(double)spacingPx minIntervalMs:(int64_t)minIntervalMs __attribute__((swift_name("step(px:snappedX:nowMs:spacingPx:minIntervalMs:)")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) LumipolGraphDouble * _Nullable anchorPx __attribute__((swift_name("anchorPx")));
 @property (readonly) LumipolGraphLong * _Nullable lastFireMs __attribute__((swift_name("lastFireMs")));
+@property (readonly) LumipolGraphDouble * _Nullable lastSnappedX __attribute__((swift_name("lastSnappedX")));
 @end
 
 __attribute__((objc_subclassing_restricted))

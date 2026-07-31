@@ -104,14 +104,16 @@ internal class LineChartInteraction(
      * 동일하게 [ZoomWindow] 폭 × epsilon 이내는 창 안으로 클램프한다(엄격 비교 시 끝 스크럽 침묵 드롭).
      *
      * @param context 현재 layout·plot·style·formatter를 담은 마커 컨텍스트(그리기와 동일 좌표계).
-     * @return 마커가 표시되면 true.
+     * @return 마커가 선 **스냅 도메인 x**(미표시면 null). "표시됐는가"뿐 아니라 "조회 지점이
+     *   움직였는가"까지 햅틱 게이트가 봐야 하므로 Boolean이 아니라 위치를 돌려준다(iOS
+     *   `showTouchMarker(atX:notifyingDelegate:) -> Double?`와 동일 계약).
      */
-    fun scrubTo(rawX: Double, context: TouchMarkerContext, notify: Boolean): Boolean {
+    fun scrubTo(rawX: Double, context: TouchMarkerContext, notify: Boolean): Double? {
         var x = rawX
         val z = zoom
         if (z != null && z.isZoomed) {
             val epsilon = (z.windowMax - z.windowMin) * SCRUB_WINDOW_EPSILON
-            if (x < z.windowMin - epsilon || x > z.windowMax + epsilon) return false
+            if (x < z.windowMin - epsilon || x > z.windowMax + epsilon) return null
             x = x.coerceIn(z.windowMin, z.windowMax)
         }
 
@@ -130,7 +132,7 @@ internal class LineChartInteraction(
                 activeMarkerRawX = null
                 onScrubEnd?.invoke()
             }
-            return false
+            return null
         }
 
         activeMarkerRawX = x
@@ -143,7 +145,7 @@ internal class LineChartInteraction(
                 }
             }
         }
-        return true
+        return result.snappedX
     }
 
     /** 스크럽 종료: 마커가 표시 중이었으면 [onScrubEnd]를 1회 발화하고 [activeMarkerRawX]를 해제. */

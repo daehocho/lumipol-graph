@@ -305,13 +305,13 @@ final class RDChartViewTests: XCTestCase {
         view.isAnimationEnabled = false
         view.render(TestFixtures.fullChart, invertedAxes: [.primary], labelFormatter: TestFixtures.format)
         view.layoutIfNeeded()
-        XCTAssertTrue(view.scrub(at: CGPoint(x: 195, y: 150)))
+        XCTAssertNotNil(view.scrub(at: CGPoint(x: 195, y: 150)))
     }
 
     func testScrubReturnsFalseWithoutData() {
         let view = RDChartView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
         view.layoutIfNeeded()
-        XCTAssertFalse(view.scrub(at: CGPoint(x: 195, y: 150)), "데이터·플롯이 없으면 마커 미표시")
+        XCTAssertNil(view.scrub(at: CGPoint(x: 195, y: 150)), "데이터·플롯이 없으면 마커 미표시")
     }
 
     func testScrubReturnsFalseWhenNoSnapPointInZoomWindow() {
@@ -323,7 +323,7 @@ final class RDChartViewTests: XCTestCase {
         view.layoutIfNeeded()
         view.zoom(toXRange: 1.6 ... 1.9)
         view.layoutIfNeeded()
-        XCTAssertFalse(view.scrub(at: CGPoint(x: 195, y: 150)))
+        XCTAssertNil(view.scrub(at: CGPoint(x: 195, y: 150)))
     }
 
     func testScrubStillReportsValuesWhenHapticsDisabled() {
@@ -340,7 +340,7 @@ final class RDChartViewTests: XCTestCase {
         view.layoutIfNeeded()
         let spy = SpyScrubDelegate()
         view.scrubDelegate = spy
-        XCTAssertTrue(view.scrub(at: CGPoint(x: 195, y: 150)))
+        XCTAssertNotNil(view.scrub(at: CGPoint(x: 195, y: 150)))
         XCTAssertFalse(spy.scrubbed.isEmpty)
     }
 
