@@ -220,6 +220,7 @@ fun RDLineChart(
                     isZoomEnabled = isZoomEnabled,
                     formatter = { axis, value -> currentFormatter(axis, value) },
                     haptics = haptics,
+                    spacingPx = ChartDefaults.SCRUB_HAPTIC_SPACING_DP * density,
                     layoutProvider = { interaction.layoutForCurrentWindow() },
                     plotProvider = { buildPlot(size.width.toDouble(), size.height.toDouble()) },
                 )

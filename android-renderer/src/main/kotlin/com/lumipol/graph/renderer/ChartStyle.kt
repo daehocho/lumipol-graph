@@ -118,6 +118,10 @@ data class ChartStyle(
     val donutAutoDeselectDelaySeconds: Float = ChartDefaults.DONUT_AUTO_DESELECT_SECONDS.toFloat(),      // 0 이하면 자동 해제 없음
     val donutSelectionHapticsEnabled: Boolean = true,
 
+    // 종합분석 라인차트 햅틱(1.1.0) — 탭 단발 + 스크럽 tick + 확대 롱프레스 진입 3종 총괄(iOS lineHapticsEnabled).
+    // tick 격자·최소 간격은 코어 정책 상수(ChartDefaults.SCRUB_HAPTIC_*) — 주입 대상이 아니다.
+    val lineHapticsEnabled: Boolean = true,
+
     // 축 라벨 (iOS `axisLabelFont: UIFont` → 크기·패밀리·웨이트로 분해 보관, TextStyle 조립은 draw 경계.
     // 모든 라벨 TextLayer(축/마커/기준선/바)가 공유한다 — iOS도 전부 axisLabelFont 단일 폰트.)
     val axisLabelFontSize: Float = ChartDefaults.AXIS_LABEL_FONT_SIZE.toFloat(),

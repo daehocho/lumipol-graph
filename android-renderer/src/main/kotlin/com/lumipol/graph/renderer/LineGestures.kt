@@ -22,6 +22,8 @@ import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationExceptio
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.positionChanged
+import com.lumipol.graph.ChartDefaults
+import com.lumipol.graph.interaction.ScrubHapticGate
 import com.lumipol.graph.model.ChartAxis
 import com.lumipol.graph.model.LineChartData
 import com.lumipol.graph.model.LineChartLayout
@@ -34,7 +36,11 @@ internal fun isHorizontalDominant(dx: Float, dy: Float): Boolean = abs(dx) > abs
  * 라인차트 제스처 루프. [PointerInputScope]에서 실행한다. layout/plot은 매 프레임 바뀔 수 있으므로
  * 최신값을 [layoutProvider]/[plotProvider]로 지연 조회한다(스크럽 좌표계를 그리기와 일치시킴).
  *
- * @param haptics 확대 상태 롱프레스 스크럽 진입 햅틱(iOS medium impact ≈ Android LongPress).
+ * @param haptics 탭 단발·스크럽 tick·확대 롱프레스 진입 햅틱
+ *   (iOS light impact/selectionChanged/medium impact 대응 — Compose엔 light 대응 타입이 없어
+ *   탭·tick 모두 TextHandleMove다. 도넛 탭도 같은 타입이라 기존 비대칭을 넓히지 않는다).
+ * @param spacingPx 스크럽 tick 격자(px) — `ChartDefaults.SCRUB_HAPTIC_SPACING_DP * density`.
+ *   캔버스는 px 좌표계이므로 dp 상수를 density로 환산해 받는다.
  */
 internal suspend fun PointerInputScope.lineChartGestures(
     interaction: LineChartInteraction,
@@ -43,6 +49,7 @@ internal suspend fun PointerInputScope.lineChartGestures(
     isZoomEnabled: Boolean,
     formatter: (ChartAxis, Double) -> String,
     haptics: HapticFeedback,
+    spacingPx: Double,
     layoutProvider: () -> LineChartLayout,
     plotProvider: () -> PlotArea?,
 ) {
@@ -64,14 +71,33 @@ internal suspend fun PointerInputScope.lineChartGestures(
         return xDomain.denormalize(plot.normalizedX(px.toDouble()))
     }
 
-    fun scrub(px: Float) {
+    val hapticsEnabled = style.lineHapticsEnabled
+    // 제스처 로컬 상태 — awaitEachGesture는 제스처를 순차 처리하므로 함수 스코프 var로 안전하다.
+    var gate = ScrubHapticGate()
+
+    fun scrub(px: Float, nowMs: Long) {
         val rawX = rawXAt(px) ?: return
         val ctx = contextFor() ?: return
-        interaction.scrubTo(rawX, ctx, notify = true)
+        if (!interaction.scrubTo(rawX, ctx, notify = true)) return
+        if (!hapticsEnabled) return
+        // 발화 판정은 코어 게이트(픽셀 격자 + 시간 상한) — 샘플 밀도·줌 배율과 무관한 일정 감각.
+        val step = gate.step(px.toDouble(), nowMs, spacingPx, ChartDefaults.SCRUB_HAPTIC_MIN_INTERVAL_MS)
+        gate = step.gate
+        if (step.fire) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    }
+
+    /** 탭은 명시적 입력이라 스냅 위치가 그대로여도 매번 응답한다(iOS light impact 대응). */
+    fun scrubTap(px: Float) {
+        val rawX = rawXAt(px) ?: return
+        val ctx = contextFor() ?: return
+        if (interaction.scrubTo(rawX, ctx, notify = true) && hapticsEnabled) {
+            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
     }
 
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false)
+        gate = ScrubHapticGate()
         val zoomedAtStart = interaction.zoom?.isZoomed == true
 
         // 1단계: 롱프레스 타임아웃 안에서 두 번째 포인터(핀치)·슬롭 초과 드래그·업(탭)을 감지.
@@ -107,10 +133,13 @@ internal suspend fun PointerInputScope.lineChartGestures(
 
             longPress -> {
                 // 확대 상태에서만 "값 조회 진입" 햅틱(비확대 드래그 스크럽은 무햅틱 — iOS 동일).
-                if (zoomedAtStart) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                if (zoomedAtStart && hapticsEnabled) {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
                 val escalated = scrubLoop(
                     interaction, down.id, ::scrub,
-                    downPx = down.position.x, escalateToPinch = isZoomEnabled,
+                    downPx = down.position.x, downMs = down.uptimeMillis,
+                    escalateToPinch = isZoomEnabled,
                 )
                 if (escalated) {
                     pinchLoop(interaction, isZoomEnabled) { px ->
@@ -132,7 +161,8 @@ internal suspend fun PointerInputScope.lineChartGestures(
                     } else {
                         val escalated = scrubLoop(
                             interaction, down.id, ::scrub,
-                            downPx = down.position.x, escalateToPinch = isZoomEnabled,
+                            downPx = down.position.x, downMs = down.uptimeMillis,
+                            escalateToPinch = isZoomEnabled,
                         )
                         if (escalated) {
                             pinchLoop(interaction, isZoomEnabled) { px ->
@@ -148,7 +178,7 @@ internal suspend fun PointerInputScope.lineChartGestures(
                 if (isZoomEnabled && awaitSecondTap(doubleTapTimeoutMs)) {
                     interaction.resetZoom()
                 } else {
-                    scrub(down.position.x)
+                    scrubTap(down.position.x)
                 }
             }
         }
@@ -166,15 +196,16 @@ internal suspend fun PointerInputScope.lineChartGestures(
 private suspend fun AwaitPointerEventScope.scrubLoop(
     interaction: LineChartInteraction,
     downId: PointerId,
-    scrub: (Float) -> Unit,
+    scrub: (Float, Long) -> Unit,
     downPx: Float,
+    downMs: Long,
     escalateToPinch: Boolean = false,
 ): Boolean {
     // endScrub는 finally에서 — 스크럽 도중 데이터 갱신으로 pointerInput이 재시작(코루틴 취소)돼도
     // onScrub/onScrubEnd 짝 불변식이 지켜져야 한다(dangling onScrub 방지). endScrub는 마커가
     // 표시 중일 때만 발화하므로 정상 종료·핀치 승격 경로에서 중복 통지는 없다.
     try {
-        scrub(downPx)
+        scrub(downPx, downMs)
         while (true) {
             val event = awaitPointerEvent()
             if (escalateToPinch && event.changes.count { it.pressed } >= 2) return true
@@ -182,7 +213,8 @@ private suspend fun AwaitPointerEventScope.scrubLoop(
             // 스크럽에 진입한 시점(가로 우세 드래그·롱프레스)은 이미 차트 의도이므로, 이후 이동은 consume해
             // 부모 스크롤로 새지 않게 한다. 세로 우세 드래그는 애초에 이 루프에 진입하지 않아 부모가 스크롤한다.
             change?.let { if (it.positionChanged()) it.consume() }
-            if (change != null && change.pressed) scrub(change.position.x)
+            // 시각은 포인터 이벤트가 주는 단조 값 — 별도 시계 주입 없이 게이트 판정이 결정론적이다.
+            if (change != null && change.pressed) scrub(change.position.x, change.uptimeMillis)
             if (event.changes.none { it.pressed }) break
         }
     } finally {
