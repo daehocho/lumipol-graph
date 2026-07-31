@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.daehocho.lumipol-graph"
-version = "1.1.0"
+version = "1.1.1"
 
 android {
     namespace = "com.lumipol.graph.renderer"

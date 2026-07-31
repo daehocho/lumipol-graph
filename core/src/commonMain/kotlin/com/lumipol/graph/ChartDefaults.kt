@@ -72,8 +72,15 @@ object ChartDefaults {
     // ── 상호작용 ────────────────────────────────────────────
     const val MAX_ZOOM_SCALE: Double = 10.0
 
-    /** 스크럽 tick 햅틱 격자 — 손가락이 이 거리(iOS pt / AOS dp)를 넘어 이동할 때마다 1회. */
-    const val SCRUB_HAPTIC_SPACING_DP: Double = 12.0
+    /**
+     * 스크럽 tick 햅틱 격자 — 손가락이 이 거리(iOS pt / AOS dp)를 넘어 이동할 때마다 1회.
+     *
+     * 1.1.1: 12.0 → 6.0. 12pt는 플롯 폭 302pt(iPhone) 기준 전구간 25회뿐이라 실기에서
+     * "띄엄띄엄"하다는 실사용 피드백. 데이터 값(Y) 기준 tick은 채택하지 않았다 — 종합분석은
+     * 다중 시리즈라 기준 시리즈·단위를 정해야 하고, 값이 평평한 구간에선 손가락을 움직여도
+     * 무진동이 되어 밀도 불만이 오히려 심해진다.
+     */
+    const val SCRUB_HAPTIC_SPACING_DP: Double = 6.0
 
     /** 스크럽 tick 최소 간격 — 빠른 플릭에서 진동이 연속음으로 뭉개지는 것을 막는 상한(≈28Hz). */
     const val SCRUB_HAPTIC_MIN_INTERVAL_MS: Long = 35
